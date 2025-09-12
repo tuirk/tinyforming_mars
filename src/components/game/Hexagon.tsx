@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Hex } from '@/lib/game/types';
-import { WaterCube, GreeneryCube, HeatCube, ScienceTagIcon, EnergyTagIcon, ProductionTagIcon, NatureTagIcon } from './icons';
+import { WaterCube, GreeneryCube, HeatCube, ScienceTagIcon, EnergyTagIcon, ProductionTagIcon, NatureTagIcon, BuildingTagIcon } from './icons';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -45,6 +45,7 @@ export function Hexagon({ hex, size }: HexagonProps) {
         case 'Energy': icon = <EnergyTagIcon {...iconProps} />; break;
         case 'Production': icon = <ProductionTagIcon {...iconProps} />; break;
         case 'Nature': icon = <NatureTagIcon {...iconProps} />; break;
+        case 'Building': icon = <BuildingTagIcon {...iconProps} />; break;
     }
 
     return (

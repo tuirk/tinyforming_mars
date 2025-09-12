@@ -108,3 +108,10 @@ export const NatureTagIcon = (props: SVGProps<SVGSVGElement>) => (
         <path d="M50 55 V 20" stroke="currentColor" strokeWidth="6" fill="none" />
     </svg>
 );
+
+export const BuildingTagIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 100 100" {...props}>
+        <path d="M20 80 L 50 20 L 80 80 Z" stroke="currentColor" strokeWidth="8" fill="none" />
+        <path d="M35 80 V 50 H 65 V 80" stroke="currentColor" strokeWidth="6" fill="none" />
+    </svg>
+);

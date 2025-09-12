@@ -1,13 +1,12 @@
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Hex } from './types';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = [
   ...Array.from({ length: 19 }, (_, i) => {
       const hexId = i + 1;
-      let hex = {
+      let hex: Hex = {
           id: hexId,
-          type: 'land' as 'land' | 'water',
+          type: 'land',
           cubes: [],
-          bonusTag: undefined,
       };
 
       // Water hexes based on image
@@ -32,20 +31,32 @@ export const THARSIS_MAP: MapData = {
   hexes: THARSIS_MAP_HEXES,
 };
 
-const ELYSIUM_MAP_HEXES: MapData['hexes'] = [
-  ...Array.from({ length: 19 }, (_, i) => {
-    const hex = {
-      id: i + 1,
-      type: 'land' as 'land' | 'water',
-      cubes: [],
-    };
-    // Elysium has a different water layout. Placeholder for now.
-    if ([2, 4, 10, 16, 18].includes(i + 1)) {
-      hex.type = 'water';
+const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
+    id: i + 1,
+    type: 'land' as 'land' | 'water',
+    cubes: [],
+    bonusTag: undefined,
+  }))
+  .map(hex => {
+    switch (hex.id) {
+      // Water hexes
+      case 1: case 2: case 6: case 9: case 11:
+        hex.type = 'water';
+        break;
+    }
+    switch (hex.id) {
+      // Bonus Tags
+      case 1: hex.bonusTag = 'Science'; break;
+      case 2: hex.bonusTag = 'Production'; break;
+      case 4: hex.bonusTag = 'Building'; break;
+      case 7: hex.bonusTag = 'Science'; break;
+      case 9: case 10: case 11:
+        hex.bonusTag = 'Nature'; break;
+      case 14: case 16: case 17: case 19:
+        hex.bonusTag = 'Production'; break;
     }
     return hex;
-  }),
-];
+});
 
 
 export const ELYSIUM_MAP: MapData = {
