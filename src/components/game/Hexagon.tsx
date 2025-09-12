@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { Hex } from '@/lib/game/types';
 import { WaterCube, GreeneryCube, HeatCube } from './icons';
 import { cn } from '@/lib/utils';
