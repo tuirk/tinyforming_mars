@@ -3,6 +3,7 @@ export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type CubeType = 'Water' | 'Greenery' | 'Heat';
 export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Building';
 export type HexType = 'land' | 'water';
+export type MapId = 'Tharsis' | 'Elysium';
 
 export interface Hex {
   id: number;
@@ -13,6 +14,7 @@ export interface Hex {
 }
 
 export interface MapData {
+  id: MapId;
   name: string;
   hexes: Hex[];
 }

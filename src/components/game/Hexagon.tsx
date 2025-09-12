@@ -2,8 +2,10 @@
 
 import { useMemo } from 'react';
 import type { Hex } from '@/lib/game/types';
-import { WaterCube, GreeneryCube, HeatCube } from './icons';
+import { WaterCube, GreeneryCube, HeatCube, ScienceTagIcon, EnergyTagIcon, ProductionTagIcon, NatureTagIcon } from './icons';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 interface HexagonProps {
   hex: Hex;
@@ -24,6 +26,40 @@ export function Hexagon({ hex, size }: HexagonProps) {
   }, [size]);
 
   const cube = hex.cubes[0];
+
+  const renderBonus = () => {
+    if (!hex.bonusTag) return null;
+
+    const iconProps = {
+        x: size - (size / 4),
+        y: size - (size / 4),
+        width: size / 2,
+        height: size / 2,
+        className: 'fill-background/50 stroke-foreground/50',
+        strokeWidth: 4,
+    };
+
+    let icon = null;
+    switch(hex.bonusTag) {
+        case 'Science': icon = <ScienceTagIcon {...iconProps} />; break;
+        case 'Energy': icon = <EnergyTagIcon {...iconProps} />; break;
+        case 'Production': icon = <ProductionTagIcon {...iconProps} />; break;
+        case 'Nature': icon = <NatureTagIcon {...iconProps} />; break;
+    }
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <g>{icon}</g>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Bonus: {hex.bonusTag} tag placement</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+  }
 
   return (
     <svg
@@ -48,6 +84,8 @@ export function Hexagon({ hex, size }: HexagonProps) {
         )}
         strokeWidth="2"
       />
+      
+      {renderBonus()}
       
       {cube && (
         <g className="cube-animation">

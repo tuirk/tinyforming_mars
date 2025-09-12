@@ -1,17 +1,64 @@
-import type { GameState, MapData, ProjectCardData, StandardProject } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId } from './types';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = [
-  ...Array.from({ length: 19 }, (_, i) => ({
-    id: i + 1,
-    type: [5, 7, 9, 11, 15].includes(i + 1) ? 'water' : 'land',
-    cubes: [],
-  })),
+  ...Array.from({ length: 19 }, (_, i) => {
+      const hexId = i + 1;
+      let hex = {
+          id: hexId,
+          type: 'land' as 'land' | 'water',
+          cubes: [],
+          bonusTag: undefined,
+      };
+
+      // Water hexes based on image
+      if ([5, 6, 9, 11, 14].includes(hexId)) {
+          hex.type = 'water';
+      }
+
+      // Special tags based on image
+      if (hexId === 2) hex.bonusTag = 'Energy';
+      if (hexId === 4 || hexId === 7 || hexId === 13 || hexId === 16) hex.bonusTag = 'Nature';
+      if (hexId === 17) hex.bonusTag = 'Science';
+      if (hexId === 18) hex.bonusTag = 'Production';
+
+      return hex;
+  }),
 ];
 
+
 export const THARSIS_MAP: MapData = {
+  id: 'Tharsis',
   name: 'Tharsis',
   hexes: THARSIS_MAP_HEXES,
 };
+
+const ELYSIUM_MAP_HEXES: MapData['hexes'] = [
+  ...Array.from({ length: 19 }, (_, i) => {
+    const hex = {
+      id: i + 1,
+      type: 'land' as 'land' | 'water',
+      cubes: [],
+    };
+    // Elysium has a different water layout. Placeholder for now.
+    if ([2, 4, 10, 16, 18].includes(i + 1)) {
+      hex.type = 'water';
+    }
+    return hex;
+  }),
+];
+
+
+export const ELYSIUM_MAP: MapData = {
+    id: 'Elysium',
+    name: 'Elysium',
+    hexes: ELYSIUM_MAP_HEXES,
+};
+
+export const MAPS: Record<MapId, MapData> = {
+    Tharsis: THARSIS_MAP,
+    Elysium: ELYSIUM_MAP,
+};
+
 
 export const PROJECT_CARDS: ProjectCardData[] = [
     {
@@ -83,7 +130,7 @@ export const STANDARD_PROJECTS: StandardProject[] = [
     },
 ];
 
-export const getInitialGameState = (): GameState => {
+export const getInitialGameState = (playerMap: MapId, aiMap: MapId): GameState => {
   const startingPlayer = 'White';
   
   return {
@@ -98,7 +145,7 @@ export const getInitialGameState = (): GameState => {
         projectCards: PROJECT_CARDS.slice(0, 3), // Give first 3 cards for demo
         playedProjectCards: [],
         victoryPoints: 0,
-        map: { ...THARSIS_MAP, hexes: JSON.parse(JSON.stringify(THARSIS_MAP_HEXES)) },
+        map: { ...MAPS[playerMap], hexes: JSON.parse(JSON.stringify(MAPS[playerMap].hexes)) },
       },
       Black: {
         id: 'Black',
@@ -108,7 +155,7 @@ export const getInitialGameState = (): GameState => {
         projectCards: PROJECT_CARDS.slice(1, 4), // Give different cards for demo
         playedProjectCards: [],
         victoryPoints: 0,
-        map: { ...THARSIS_MAP, hexes: JSON.parse(JSON.stringify(THARSIS_MAP_HEXES)) },
+        map: { ...MAPS[aiMap], hexes: JSON.parse(JSON.stringify(MAPS[aiMap].hexes)) },
       },
     },
     currentPlayer: startingPlayer,

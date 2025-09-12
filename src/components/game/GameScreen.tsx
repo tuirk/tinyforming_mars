@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getInitialGameState, STANDARD_PROJECTS } from '@/lib/game/constants';
-import type { GameState, Player, Hex, ProjectCardData, StandardProject, PlayerColor } from '@/lib/game/types';
+import { getInitialGameState, MAPS } from '@/lib/game/constants';
+import type { GameState, Player, Hex, ProjectCardData, StandardProject, PlayerColor, MapId } from '@/lib/game/types';
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
 import { ActionPanel } from './ActionPanel';
@@ -10,6 +10,7 @@ import { GameStatus } from './GameStatus';
 import { getAISuggestion, getAIExplanation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { MapSelection } from './MapSelection';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -19,8 +20,13 @@ export function GameScreen() {
 
   useEffect(() => {
     setIsClient(true);
-    setGameState(getInitialGameState());
   }, []);
+
+  const handleStartGame = (playerMap: MapId) => {
+    const mapIds = Object.keys(MAPS) as MapId[];
+    const aiMap = mapIds[Math.floor(Math.random() * mapIds.length)];
+    setGameState(getInitialGameState(playerMap, aiMap));
+  };
 
   const handleHexClick = (hex: Hex, player: PlayerColor) => {
     if (!gameState || gameState.currentPlayer !== player || player !== 'White') return;
@@ -108,7 +114,7 @@ export function GameScreen() {
     }
   }, [gameState, processAIMove]);
 
-  if (!isClient || !gameState) {
+  if (!isClient) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-background text-foreground">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -116,6 +122,11 @@ export function GameScreen() {
       </div>
     );
   }
+
+  if (!gameState) {
+    return <MapSelection onMapSelect={handleStartGame} maps={Object.values(MAPS)} />;
+  }
+
 
   const humanPlayer = gameState.players.White;
   const aiPlayer = gameState.players.Black;
@@ -130,11 +141,11 @@ export function GameScreen() {
         />
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="flex flex-col items-center">
-            <h2 className="text-lg font-headline mb-2">Your Board (Player White)</h2>
+            <h2 className="text-lg font-headline mb-2">Your Board ({humanPlayer.map.name})</h2>
             <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, 'White')} />
           </div>
           <div className="flex flex-col items-center">
-            <h2 className="text-lg font-headline mb-2">AI's Board (Player Black)</h2>
+            <h2 className="text-lg font-headline mb-2">AI's Board ({aiPlayer.map.name})</h2>
             <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, 'Black')} />
           </div>
         </div>
@@ -152,7 +163,6 @@ export function GameScreen() {
             onActivateCard={handleActivateCard}
             onStandardProject={handleStandardProject}
             onPass={handlePass}
-            standardProjects={STANDARD_PROJECTS}
             />
         </div>
       </aside>
