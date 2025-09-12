@@ -83,8 +83,8 @@ export const STANDARD_PROJECTS: StandardProject[] = [
     },
 ];
 
-export const getInitialGameState = (): GameState => {
-  const startingPlayer = Math.random() < 0.5 ? 'White' : 'Black';
+export const getInitialGameState = (isClient: boolean = false): GameState => {
+  const startingPlayer = isClient ? (Math.random() < 0.5 ? 'White' : 'Black') : 'White';
   
   return {
     generation: 1,

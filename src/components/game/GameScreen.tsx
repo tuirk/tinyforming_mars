@@ -11,6 +11,7 @@ import { getAISuggestion, getAIExplanation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -19,8 +20,8 @@ export function GameScreen() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setGameState(getInitialGameState());
     setIsClient(true);
+    setGameState(getInitialGameState(true));
   }, []);
 
   const handleHexClick = (hex: Hex) => {
