@@ -19,8 +19,8 @@ export function GameScreen() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsClient(true);
     setGameState(getInitialGameState());
+    setIsClient(true);
   }, []);
 
   const handleHexClick = (hex: Hex) => {
