@@ -25,6 +25,20 @@ export function Hexagon({ hex, size }: HexagonProps) {
     return hexPoints.join(' ');
   }, [size]);
 
+  const innerPoints = useMemo(() => {
+    const margin = 4;
+    const innerSize = size - margin;
+    const hexPoints = [];
+    for (let i = 0; i < 6; i++) {
+      const angle_deg = 60 * i - 30;
+      const angle_rad = Math.PI / 180 * angle_deg;
+      const x = size + innerSize * Math.cos(angle_rad);
+      const y = size + innerSize * Math.sin(angle_rad);
+      hexPoints.push(`${x},${y}`);
+    }
+    return hexPoints.join(' ');
+}, [size]);
+
   const cube = hex.cubes[0];
 
   const renderBonus = () => {
@@ -80,11 +94,19 @@ export function Hexagon({ hex, size }: HexagonProps) {
         points={points}
         className={cn(
           "transition-colors duration-300",
-          hex.type === 'water' ? "fill-primary/30 stroke-primary/80" : "fill-secondary/30 stroke-border",
+          hex.type === 'water' ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30",
           "hover:fill-accent/30"
         )}
         strokeWidth="2"
       />
+      
+      {hex.bonusTag && (
+          <polygon
+              points={innerPoints}
+              className="fill-transparent stroke-orange-400/80"
+              strokeWidth="3"
+          />
+      )}
       
       {renderBonus()}
       
