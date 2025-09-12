@@ -76,6 +76,18 @@ export function Hexagon({ hex, size }: HexagonProps) {
     )
   }
 
+  const frameColorClass = {
+      gray: "stroke-gray-400/80",
+      white: "stroke-gray-200/90",
+      green: "stroke-green-500/90",
+      orange: "stroke-orange-500/90",
+  }[hex.frameColor || ''];
+
+  const hexTypeClass = (hex.type === 'water' ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30");
+  
+  const hexFillClass = (hex.frameColor === 'white') ? "fill-gray-100" : hexTypeClass;
+
+
   return (
     <svg
       viewBox={`0 0 ${size * 2} ${size * 2}`}
@@ -94,17 +106,17 @@ export function Hexagon({ hex, size }: HexagonProps) {
         points={points}
         className={cn(
           "transition-colors duration-300",
-          hex.type === 'water' ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30",
+          hexFillClass,
           "hover:fill-accent/30"
         )}
         strokeWidth="2"
       />
       
-      {hex.bonusTag && (
+      {hex.frameColor && (
           <polygon
               points={innerPoints}
-              className="fill-transparent stroke-orange-400/80"
-              strokeWidth="3"
+              className={cn("fill-transparent", frameColorClass)}
+              strokeWidth="4"
           />
       )}
       
