@@ -83,8 +83,8 @@ export const STANDARD_PROJECTS: StandardProject[] = [
     },
 ];
 
-export const getInitialGameState = (isClient: boolean = false): GameState => {
-  const startingPlayer = isClient ? (Math.random() < 0.5 ? 'White' : 'Black') : 'White';
+export const getInitialGameState = (): GameState => {
+  const startingPlayer = 'White';
   
   return {
     generation: 1,
@@ -98,6 +98,7 @@ export const getInitialGameState = (isClient: boolean = false): GameState => {
         projectCards: PROJECT_CARDS.slice(0, 3), // Give first 3 cards for demo
         playedProjectCards: [],
         victoryPoints: 0,
+        map: { ...THARSIS_MAP, hexes: JSON.parse(JSON.stringify(THARSIS_MAP_HEXES)) },
       },
       Black: {
         id: 'Black',
@@ -107,11 +108,11 @@ export const getInitialGameState = (isClient: boolean = false): GameState => {
         projectCards: PROJECT_CARDS.slice(1, 4), // Give different cards for demo
         playedProjectCards: [],
         victoryPoints: 0,
+        map: { ...THARSIS_MAP, hexes: JSON.parse(JSON.stringify(THARSIS_MAP_HEXES)) },
       },
     },
     currentPlayer: startingPlayer,
     startingPlayer: startingPlayer,
-    map: THARSIS_MAP,
     cubeSupply: {
       Water: 10,
       Greenery: 20,

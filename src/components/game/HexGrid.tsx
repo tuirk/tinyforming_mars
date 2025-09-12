@@ -23,7 +23,7 @@ const MAP_STRUCTURE = [
 ];
 
 export function HexGrid({ map, onHexClick }: HexGridProps) {
-  const HEX_SIZE = 50;
+  const HEX_SIZE = 40; // Reduced size to fit two grids
   const HEX_WIDTH = HEX_SIZE * Math.sqrt(3);
   const HEX_HEIGHT = HEX_SIZE * 2;
 
@@ -49,13 +49,13 @@ export function HexGrid({ map, onHexClick }: HexGridProps) {
   }, [map.hexes]);
 
   return (
-    <div className="w-full flex items-center justify-center p-4" style={{ perspective: '1000px' }}>
+    <div className="w-full flex items-center justify-center p-2" style={{ perspective: '800px' }}>
       <div 
         className="relative transition-transform duration-500" 
         style={{
           width: hexPositions.width,
           height: hexPositions.height,
-          transform: 'rotateX(50deg) rotateZ(0deg) scale(0.9)',
+          transform: 'rotateX(50deg) rotateZ(0deg) scale(0.8)',
           transformStyle: 'preserve-3d',
         }}
       >

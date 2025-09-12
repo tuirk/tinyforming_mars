@@ -2,16 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getInitialGameState, STANDARD_PROJECTS } from '@/lib/game/constants';
-import type { GameState, Player, Hex, ProjectCardData, StandardProject } from '@/lib/game/types';
+import type { GameState, Player, Hex, ProjectCardData, StandardProject, PlayerColor } from '@/lib/game/types';
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
 import { ActionPanel } from './ActionPanel';
 import { GameStatus } from './GameStatus';
 import { getAISuggestion, getAIExplanation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
-import { useMemo } from 'react';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -21,16 +19,16 @@ export function GameScreen() {
 
   useEffect(() => {
     setIsClient(true);
-    setGameState(getInitialGameState(true));
+    setGameState(getInitialGameState());
   }, []);
 
-  const handleHexClick = (hex: Hex) => {
-    if (!gameState || gameState.currentPlayer !== 'White') return;
-    console.log('Hex clicked:', hex.id);
+  const handleHexClick = (hex: Hex, player: PlayerColor) => {
+    if (!gameState || gameState.currentPlayer !== player || player !== 'White') return;
+    console.log(`Hex clicked on ${player}'s board:`, hex.id);
     // Placeholder for cube placement logic
     toast({
       title: 'Action',
-      description: `You clicked on hex #${hex.id}. Cube placement logic to be implemented.`,
+      description: `You clicked on hex #${hex.id} on your board. Cube placement logic to be implemented.`,
     });
   };
 
@@ -123,18 +121,27 @@ export function GameScreen() {
   const aiPlayer = gameState.players.Black;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 flex flex-col md:flex-row gap-4 overflow-hidden">
-      <div className="flex-grow flex flex-col gap-4 items-center justify-center md:w-3/5 lg:w-2/3">
+    <div className="min-h-screen bg-background text-foreground p-4 flex flex-col xl:flex-row gap-4 overflow-hidden">
+      <div className="flex-grow flex flex-col gap-4 items-center justify-center xl:w-3/5">
         <GameStatus
           generation={gameState.generation}
           currentPlayer={gameState.currentPlayer}
           isAIThinking={isAIThinking}
         />
-        <HexGrid map={gameState.map} onHexClick={handleHexClick} />
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="flex flex-col items-center">
+            <h2 className="text-lg font-headline mb-2">Your Board (Player White)</h2>
+            <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, 'White')} />
+          </div>
+          <div className="flex flex-col items-center">
+            <h2 className="text-lg font-headline mb-2">AI's Board (Player Black)</h2>
+            <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, 'Black')} />
+          </div>
+        </div>
       </div>
 
-      <aside className="w-full md:w-2/5 lg:w-1/3 flex flex-col gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+      <aside className="w-full xl:w-2/5 flex flex-col gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
             <PlayerDashboard player={humanPlayer} isCurrentPlayer={gameState.currentPlayer === humanPlayer.id} />
             <PlayerDashboard player={aiPlayer} isCurrentPlayer={gameState.currentPlayer === aiPlayer.id} />
         </div>

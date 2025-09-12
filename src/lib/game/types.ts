@@ -35,6 +35,7 @@ export interface Player {
   projectCards: ProjectCardData[];
   playedProjectCards: ProjectCardData[];
   victoryPoints: number;
+  map: MapData;
 }
 
 export interface ProjectCardData {
@@ -67,7 +68,6 @@ export interface GameState {
   };
   currentPlayer: PlayerColor;
   startingPlayer: PlayerColor;
-  map: MapData;
   cubeSupply: {
     Water: number;
     Greenery: number;
