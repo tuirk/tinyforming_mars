@@ -83,9 +83,7 @@ export function Hexagon({ hex, size }: HexagonProps) {
       orange: "stroke-orange-500/90",
   }[hex.frameColor || ''];
 
-  const hexTypeClass = (hex.type === 'water' ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30");
-  
-  const hexFillClass = (hex.frameColor === 'white') ? "fill-gray-100" : hexTypeClass;
+  const hexFillClass = (hex.type === 'water' ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30");
 
 
   return (
