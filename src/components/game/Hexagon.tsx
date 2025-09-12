@@ -80,8 +80,8 @@ export function Hexagon({ hex, size }: HexagonProps) {
         points={points}
         className={cn(
           "transition-colors duration-300",
-          hex.type === 'water' ? "fill-primary/20 stroke-primary/50" : "fill-secondary/20 stroke-border",
-          "hover:fill-accent/20"
+          hex.type === 'water' ? "fill-primary/30 stroke-primary/80" : "fill-secondary/30 stroke-border",
+          "hover:fill-accent/30"
         )}
         strokeWidth="2"
       />
