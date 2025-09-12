@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCardView } from './ProjectCardView';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { STANDARD_PROJECTS } from '@/lib/game/constants';
 
 interface ActionPanelProps {
   player: Player;
@@ -12,7 +13,6 @@ interface ActionPanelProps {
   onActivateCard: (card: ProjectCardData) => void;
   onStandardProject: (project: StandardProject) => void;
   onPass: () => void;
-  standardProjects: StandardProject[];
 }
 
 export function ActionPanel({
@@ -21,7 +21,6 @@ export function ActionPanel({
   onActivateCard,
   onStandardProject,
   onPass,
-  standardProjects,
 }: ActionPanelProps) {
   return (
     <div className="flex flex-col h-full">
@@ -51,7 +50,7 @@ export function ActionPanel({
         </TabsContent>
         <TabsContent value="standard" className="flex-grow mt-4">
           <div className="space-y-2">
-            {standardProjects.map((project) => (
+            {STANDARD_PROJECTS.map((project) => (
               <Button
                 key={project.id}
                 variant="secondary"
