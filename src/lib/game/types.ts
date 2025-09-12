@@ -11,6 +11,7 @@ export interface Hex {
   bonusTag?: Tag;
   owner?: PlayerColor;
   cubes: CubeType[];
+  frameColor?: 'gray' | 'white' | 'green' | 'orange';
 }
 
 export interface MapData {

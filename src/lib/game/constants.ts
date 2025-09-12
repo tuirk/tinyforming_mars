@@ -38,22 +38,33 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
     bonusTag: undefined,
   }))
   .map(hex => {
+    // Define types and bonuses based on the corrected Elysium layout
     switch (hex.id) {
-      // Water hexes
-      case 1: case 2: case 6: case 9: case 11:
-        hex.type = 'water';
-        break;
-    }
-    switch (hex.id) {
-      // Bonus Tags
-      case 1: hex.bonusTag = 'Science'; break;
-      case 2: hex.bonusTag = 'Production'; break;
-      case 4: hex.bonusTag = 'Building'; break;
-      case 7: hex.bonusTag = 'Science'; break;
-      case 9: case 10: case 11:
-        hex.bonusTag = 'Nature'; break;
-      case 14: case 16: case 17: case 19:
-        hex.bonusTag = 'Production'; break;
+      // Row 1
+      case 1: hex.type = 'water'; hex.bonusTag = 'Science'; break;
+      case 2: hex.type = 'water'; hex.bonusTag = 'Production'; break;
+      // 3 is default land
+
+      // Row 2
+      case 4: hex.bonusTag = 'Building'; hex.frameColor = 'gray'; break;
+      // 5 is default land
+      case 6: hex.type = 'water'; break;
+      case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
+
+      // Row 3
+      // 8 is default land
+      case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+      case 10: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
+      case 11: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+      // 12 is default land
+      
+      // Row 4
+      // 13, 14, 15, 16 are default land
+
+      // Row 5
+      case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+      // 18 is default land
+      case 19: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
     }
     return hex;
 });
