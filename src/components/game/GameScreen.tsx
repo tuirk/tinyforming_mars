@@ -31,7 +31,7 @@ export function GameScreen() {
   useEffect(() => {
     if (selectedMap && isClient && !gameState) {
       const mapIds = Object.keys(MAPS) as MapId[];
-      const aiMapId = mapIds.filter(id => id !== selectedMap)[0] || mapIds[Math.floor(Math.random() * mapIds.length)];
+      const aiMapId = mapIds.filter(id => id !== selectedMap)[Math.floor(Math.random() * (mapIds.length -1))] || mapIds.find(id => id !== selectedMap) || mapIds[0];
       setGameState(getInitialGameState(selectedMap, aiMapId));
     }
   }, [selectedMap, gameState, isClient]);
@@ -148,40 +148,37 @@ export function GameScreen() {
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 flex flex-col xl:flex-row gap-4 overflow-hidden">
-      <div className="flex-grow flex flex-col gap-4 items-center justify-center xl:w-3/5">
+    <div className="min-h-screen bg-background text-foreground p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="xl:col-span-2 flex flex-col gap-4">
         <GameStatus
           generation={gameState.generation}
           currentPlayerId={currentPlayer.id}
           isAIThinking={isAIThinking}
         />
         <Supply gameState={gameState} />
-        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="flex flex-col items-center">
-            <h2 className="text-lg font-headline mb-2">Your Board ({humanPlayer.map.name})</h2>
-            <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, humanPlayer)} />
-          </div>
-          <div className="flex flex-col items-center">
-            <h2 className="text-lg font-headline mb-2">AI's Board ({aiPlayer.map.name})</h2>
-            <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, aiPlayer)} />
-          </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            <div className="flex flex-col gap-4">
+                <h2 className="text-lg font-headline text-center">AI's Board ({aiPlayer.map.name})</h2>
+                <PlayerDashboard player={aiPlayer} isCurrentPlayer={currentPlayer.id === aiPlayer.id} />
+                <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, aiPlayer)} />
+            </div>
+            <div className="flex flex-col gap-4">
+                <h2 className="text-lg font-headline text-center">Your Board ({humanPlayer.map.name})</h2>
+                <PlayerDashboard player={humanPlayer} isCurrentPlayer={currentPlayer.id === humanPlayer.id} />
+                <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, humanPlayer)} />
+            </div>
         </div>
       </div>
 
-      <aside className="w-full xl:w-2/5 flex flex-col gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-            <PlayerDashboard player={humanPlayer} isCurrentPlayer={currentPlayer.id === humanPlayer.id} />
-            <PlayerDashboard player={aiPlayer} isCurrentPlayer={currentPlayer.id === aiPlayer.id} />
-        </div>
-        <div className="bg-card p-4 rounded-lg flex-grow">
-            <ActionPanel
-            player={humanPlayer}
-            isCurrentPlayer={currentPlayer.id === humanPlayer.id && !currentPlayer.isAI}
-            onActivateCard={handleActivateCard}
-            onStandardProject={handleStandardProject}
-            onPass={handlePass}
-            />
-        </div>
+      <aside className="xl:col-span-1 bg-card p-4 rounded-lg">
+        <ActionPanel
+          player={humanPlayer}
+          isCurrentPlayer={currentPlayer.id === humanPlayer.id && !currentPlayer.isAI}
+          onActivateCard={handleActivateCard}
+          onStandardProject={handleStandardProject}
+          onPass={handlePass}
+        />
       </aside>
     </div>
   );
