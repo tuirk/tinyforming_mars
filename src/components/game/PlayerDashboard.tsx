@@ -3,9 +3,9 @@
 import type { Player } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CityToken, SpecialProjectToken, WaterCube, GreeneryCube, HeatCube } from './icons';
+import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube } from './icons';
 import { cn } from '@/lib/utils';
-import { Coins, Star } from 'lucide-react';
+import { Coins, Star, Building2 } from 'lucide-react';
 
 interface PlayerDashboardProps {
   player: Player;
@@ -56,7 +56,7 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
         
         <div className="flex justify-around gap-2 text-center">
           <div className="flex flex-col items-center gap-1">
-            <CityToken className="h-8 w-8" />
+            <Building2 className="h-8 w-8" />
             <span className="font-bold text-md">{player.tokens.city}</span>
             <span className="text-xs text-muted-foreground">Cities</span>
           </div>
