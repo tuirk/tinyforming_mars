@@ -69,7 +69,8 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
       case 11: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
       // 12 is default land
       
-      // Row 4 (13, 14, 15, 16) are default land
+      // Row 4 
+      // 13, 14, 15, 16 are default land
 
       // Row 5
       case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
@@ -177,7 +178,7 @@ export const getInitialGameState = (playerMap: MapId, aiMap: MapId): GameState =
         projectCards: PROJECT_CARDS.slice(0, 3), // Give first 3 cards for demo
         playedProjectCards: [],
         victoryPoints: 0,
-        map: { ...MAPS[playerMap], hexes: JSON.parse(JSON.stringify(MAPS[playerMap].hexes)) },
+        map: JSON.parse(JSON.stringify(MAPS[playerMap])),
       },
       Black: {
         id: 'Black',
@@ -187,7 +188,7 @@ export const getInitialGameState = (playerMap: MapId, aiMap: MapId): GameState =
         projectCards: PROJECT_CARDS.slice(1, 4), // Give different cards for demo
         playedProjectCards: [],
         victoryPoints: 0,
-        map: { ...MAPS[aiMap], hexes: JSON.parse(JSON.stringify(MAPS[aiMap].hexes)) },
+        map: JSON.parse(JSON.stringify(MAPS[aiMap])),
       },
     },
     currentPlayer: startingPlayer,
