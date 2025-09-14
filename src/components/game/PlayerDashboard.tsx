@@ -3,30 +3,13 @@
 import type { Player } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { NatureResource, ProductionResource, ScienceResource, WaterCube, GreeneryCube, HeatCube, CityToken, SpecialProjectToken } from './icons';
+import { CityToken, SpecialProjectToken } from './icons';
 import { cn } from '@/lib/utils';
 import { Coins, Star } from 'lucide-react';
 
 interface PlayerDashboardProps {
   player: Player;
   isCurrentPlayer: boolean;
-}
-
-const resourceIcons = {
-  Nature: NatureResource,
-  Production: ProductionResource,
-  Science: ScienceResource,
-};
-
-const cubeIcons = {
-    Water: WaterCube,
-    Greenery: GreeneryCube,
-    Heat: HeatCube,
-}
-
-const tokenIcons = {
-    city: CityToken,
-    specialProject: SpecialProjectToken,
 }
 
 export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProps) {
@@ -53,40 +36,14 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
             </div>
         </div>
         <Separator className="my-3" />
-        <div className="grid grid-cols-3 gap-4 text-center">
-          {Object.entries(player.resources).map(([type, value]) => {
-            const Icon = resourceIcons[type as keyof typeof resourceIcons];
-            return (
-              <div key={type} className="flex flex-col items-center gap-1">
-                <Icon className="h-8 w-8" />
-                <span className="font-bold text-lg">{value}</span>
-                <span className="text-xs text-muted-foreground">{type}</span>
-              </div>
-            );
-          })}
-        </div>
-        <Separator className="my-3" />
-        <div className="grid grid-cols-3 gap-4 text-center">
-          {Object.entries(player.parameterCubes).map(([type, value]) => {
-            const Icon = cubeIcons[type as keyof typeof cubeIcons];
-            return (
-              <div key={type} className="flex flex-col items-center gap-1">
-                <Icon className="h-8 w-8" />
-                <span className="font-bold text-lg">{value}</span>
-                <span className="text-xs text-muted-foreground">{type}</span>
-              </div>
-            );
-          })}
-        </div>
-        <Separator className="my-3" />
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="flex justify-around gap-4 text-center">
           <div className="flex flex-col items-center gap-1">
-            <CityToken className="h-8 w-8" />
+            <CityToken className="h-10 w-10" />
             <span className="font-bold text-lg">{player.tokens.city}</span>
             <span className="text-xs text-muted-foreground">Cities</span>
           </div>
           <div className="flex flex-col items-center gap-1">
-            <SpecialProjectToken className="h-8 w-8" />
+            <SpecialProjectToken className="h-10 w-10" />
             <span className="font-bold text-lg">{player.tokens.specialProject}</span>
             <span className="text-xs text-muted-foreground">Projects</span>
           </div>

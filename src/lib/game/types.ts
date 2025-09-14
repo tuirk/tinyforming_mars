@@ -79,6 +79,11 @@ export interface GameState {
     Greenery: number;
     Heat: number;
   };
+  resourceSupply: {
+      Nature: number;
+      Production: number;
+      Science: number;
+  };
   projectCardDeck: ProjectCardData[];
   isGameOver: boolean;
   passCount: number;
