@@ -1,3 +1,4 @@
+
 import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Hex } from './types';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
@@ -194,9 +195,9 @@ export const getInitialGameState = (playerMap: MapId, aiMap: MapId): GameState =
     currentPlayer: startingPlayer,
     startingPlayer: startingPlayer,
     cubeSupply: {
-      Water: 10,
-      Greenery: 20,
-      Heat: 30,
+      Water: 4,
+      Greenery: 7,
+      Heat: 11,
     },
     projectCardDeck: PROJECT_CARDS,
     isGameOver: false,
