@@ -27,6 +27,12 @@ export interface Resources {
   Science: number;
 }
 
+export interface PlayerProjectCard {
+  card: ProjectCardData;
+  facingPlayerId: PlayerColor;
+  usedThisGeneration: boolean;
+}
+
 export interface Player {
   id: PlayerColor;
   isAI: boolean;
@@ -41,23 +47,33 @@ export interface Player {
     city: number;
     specialProject: number;
   };
-  projectCards: ProjectCardData[];
-  playedProjectCards: ProjectCardData[];
+  projectCards: PlayerProjectCard[];
   victoryPoints: number;
   map: MapData;
+}
+
+export interface ProjectCardEffect {
+  description: string;
+  cost: number;
+  requirements: {
+    tags?: Partial<Record<Tag, number>>;
+    resources?: Partial<Resources>;
+    parameters?: {
+        heat?: number;
+        greenery?: number;
+        water?: number;
+    }
+  };
+  effect: (gameState: GameState, player: Player) => { newGameState: GameState; newPlayer: Player };
 }
 
 export interface ProjectCardData {
   id: string;
   title: string;
-  description: string;
-  cost: number;
   tags: Tag[];
-  requirements: {
-    tags?: Partial<Record<Tag, number>>;
-    resources?: Partial<Resources>;
+  effects: {
+    [key in PlayerColor]: ProjectCardEffect;
   };
-  effect: (gameState: GameState, player: Player) => { newGameState: GameState; newPlayer: Player };
 }
 
 export interface StandardProject {

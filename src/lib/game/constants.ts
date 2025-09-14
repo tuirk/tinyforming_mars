@@ -1,5 +1,4 @@
-
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, PlayerProjectCard } from './types';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
     id: i + 1,
@@ -68,39 +67,41 @@ export const PROJECT_CARDS: ProjectCardData[] = [
     {
         id: 'proj-001',
         title: 'Geothermal Vents',
-        description: 'Gain 2 Heat cubes. Requires 1 Science tag.',
-        cost: 4,
         tags: ['Energy'],
-        requirements: { tags: { Science: 1 } },
-        effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+        effects: {
+            White: {
+                description: 'Gain 2 Heat cubes. Requires 1 Science tag.',
+                cost: 4,
+                requirements: { tags: { Science: 1 } },
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+            },
+            Black: {
+                description: 'Gain 1 Heat cube.',
+                cost: 2,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+            }
+        }
     },
     {
         id: 'proj-002',
         title: 'Asteroid Mining',
-        description: 'Gain 3 Production resources.',
-        cost: 8,
         tags: ['Production'],
-        requirements: {},
-        effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+        effects: {
+            White: {
+                description: 'Gain 3 Production resources.',
+                cost: 8,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+            },
+            Black: {
+                description: 'Gain 1 Production resource.',
+                cost: 3,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+            }
+        }
     },
-    {
-        id: 'proj-003',
-        title: 'Research Outpost',
-        description: 'Gain 1 Science resource for each Science tag you have.',
-        cost: 6,
-        tags: ['Science'],
-        requirements: {},
-        effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
-    },
-    {
-        id: 'proj-004',
-        title: 'Adapted Lichen',
-        description: 'Place a Greenery cube. Requires 1 Nature tag.',
-        cost: 5,
-        tags: ['Nature'],
-        requirements: { tags: { Nature: 1 } },
-        effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
-    }
 ];
 
 export const STANDARD_PROJECTS: StandardProject[] = [
@@ -137,28 +138,40 @@ export const STANDARD_PROJECTS: StandardProject[] = [
 export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameState => {
   const isHumanWhite = Math.random() < 0.5;
 
+  const humanPlayerId = isHumanWhite ? 'White' : 'Black';
+  const aiPlayerId = isHumanWhite ? 'Black' : 'White';
+
+  // Placeholder for project card setup
+  const humanProjectCards: PlayerProjectCard[] = [
+    { card: PROJECT_CARDS[0], facingPlayerId: humanPlayerId, usedThisGeneration: false },
+    { card: PROJECT_CARDS[1], facingPlayerId: humanPlayerId, usedThisGeneration: false },
+  ];
+
+  const aiProjectCards: PlayerProjectCard[] = [
+      { card: PROJECT_CARDS[0], facingPlayerId: aiPlayerId, usedThisGeneration: false },
+      { card: PROJECT_CARDS[1], facingPlayerId: aiPlayerId, usedThisGeneration: false },
+  ];
+
   const humanPlayer: Player = {
-    id: isHumanWhite ? 'White' : 'Black',
+    id: humanPlayerId,
     isAI: false,
     credits: 5,
-    resources: { Nature: 0, Production: 0, Science: 0 },
+    resources: { Nature: 2, Production: 1, Science: 1 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: PROJECT_CARDS.slice(0, 3),
-    playedProjectCards: [],
+    projectCards: humanProjectCards,
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[playerMapId])),
   };
 
   const aiPlayer: Player = {
-    id: isHumanWhite ? 'Black' : 'White',
+    id: aiPlayerId,
     isAI: true,
     credits: 5,
-    resources: { Nature: 0, Production: 0, Science: 0 },
+    resources: { Nature: 2, Production: 1, Science: 1 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: PROJECT_CARDS.slice(1, 4),
-    playedProjectCards: [],
+    projectCards: aiProjectCards,
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[aiMapId])),
   };
