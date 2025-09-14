@@ -1,28 +1,39 @@
 import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Hex } from './types';
 
-const THARSIS_MAP_HEXES: MapData['hexes'] = [
-  ...Array.from({ length: 19 }, (_, i) => {
-      const hexId = i + 1;
-      let hex: Hex = {
-          id: hexId,
-          type: 'land',
-          cubes: [],
-      };
+const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
+    id: i + 1,
+    type: 'land' as 'land' | 'water',
+    cubes: [],
+  }))
+  .map(hex => {
+    switch (hex.id) {
+        // Row 1
+        case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        // 2 is default land
+        case 3: hex.type = 'water'; hex.bonusTag = 'Science'; break;
 
-      // Water hexes based on image
-      if ([5, 6, 9, 11, 14].includes(hexId)) {
-          hex.type = 'water';
-      }
+        // Row 2 (4, 5, 6, 7) are all default land
 
-      // Special tags based on image
-      if (hexId === 2) hex.bonusTag = 'Energy';
-      if (hexId === 4 || hexId === 7 || hexId === 13 || hexId === 16) hex.bonusTag = 'Nature';
-      if (hexId === 17) hex.bonusTag = 'Science';
-      if (hexId === 18) hex.bonusTag = 'Production';
+        // Row 3
+        case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
+        case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+        case 10: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+        // 11 is default land
+        case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
+        
+        // Row 4
+        // 13 is default land
+        // 14 is default land
+        case 15: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+        case 16: hex.type = 'water'; break;
 
-      return hex;
-  }),
-];
+        // Row 5
+        case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        // 18 is default land
+        case 19: hex.bonusTag = 'Building'; hex.frameColor = 'gray'; break;
+    }
+    return hex;
+});
 
 
 export const THARSIS_MAP: MapData = {
@@ -58,8 +69,7 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
       case 11: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
       // 12 is default land
       
-      // Row 4
-      // 13, 14, 15, 16 are default land
+      // Row 4 (13, 14, 15, 16) are default land
 
       // Row 5
       case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
