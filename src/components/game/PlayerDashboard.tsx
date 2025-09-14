@@ -3,7 +3,7 @@
 import type { Player } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { NatureResource, ProductionResource, ScienceResource } from './icons';
+import { NatureResource, ProductionResource, ScienceResource, WaterCube, GreeneryCube, HeatCube } from './icons';
 import { cn } from '@/lib/utils';
 import { Coins, Star } from 'lucide-react';
 
@@ -17,6 +17,12 @@ const resourceIcons = {
   Production: ProductionResource,
   Science: ScienceResource,
 };
+
+const cubeIcons = {
+    Water: WaterCube,
+    Greenery: GreeneryCube,
+    Heat: HeatCube,
+}
 
 export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProps) {
   return (
@@ -45,6 +51,19 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
         <div className="grid grid-cols-3 gap-4 text-center">
           {Object.entries(player.resources).map(([type, value]) => {
             const Icon = resourceIcons[type as keyof typeof resourceIcons];
+            return (
+              <div key={type} className="flex flex-col items-center gap-1">
+                <Icon className="h-8 w-8" />
+                <span className="font-bold text-lg">{value}</span>
+                <span className="text-xs text-muted-foreground">{type}</span>
+              </div>
+            );
+          })}
+        </div>
+        <Separator className="my-3" />
+        <div className="grid grid-cols-3 gap-4 text-center">
+          {Object.entries(player.parameterCubes).map(([type, value]) => {
+            const Icon = cubeIcons[type as keyof typeof cubeIcons];
             return (
               <div key={type} className="flex flex-col items-center gap-1">
                 <Icon className="h-8 w-8" />
