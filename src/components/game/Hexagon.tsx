@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Hex } from '@/lib/game/types';
-import { WaterCube, GreeneryCube, HeatCube, ScienceTagIcon, EnergyTagIcon, ProductionTagIcon, NatureTagIcon } from './icons';
+import { WaterCube, GreeneryCube, HeatCube, ScienceTagIcon, EnergyTagIcon, ProductionTagIcon, NatureTagIcon, SpaceTagIcon } from './icons';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
