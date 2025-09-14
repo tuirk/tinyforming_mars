@@ -24,6 +24,7 @@ export function GameScreen() {
 
   const handleStartGame = (playerMap: MapId) => {
     const mapIds = Object.keys(MAPS) as MapId[];
+    // Ensure AI map can be different from player's map
     const aiMap = mapIds[Math.floor(Math.random() * mapIds.length)];
     setGameState(getInitialGameState(playerMap, aiMap));
   };
