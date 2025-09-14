@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { MapData, Hex } from '@/lib/game/types';
+import type { MapData, Hex, Player } from '@/lib/game/types';
 import { Hexagon } from './Hexagon';
 
 interface HexGridProps {
