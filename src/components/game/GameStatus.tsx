@@ -6,11 +6,11 @@ import { Loader2 } from 'lucide-react';
 
 interface GameStatusProps {
   generation: number;
-  currentPlayer: PlayerColor;
+  currentPlayerId: PlayerColor;
   isAIThinking: boolean;
 }
 
-export function GameStatus({ generation, currentPlayer, isAIThinking }: GameStatusProps) {
+export function GameStatus({ generation, currentPlayerId, isAIThinking }: GameStatusProps) {
   return (
     <Card className="w-full p-2 px-4 shadow-lg">
       <div className="flex justify-between items-center">
@@ -23,7 +23,7 @@ export function GameStatus({ generation, currentPlayer, isAIThinking }: GameStat
             </>
           ) : (
             <span className="font-headline">
-              Current Player: <span className={currentPlayer === 'White' ? 'text-primary' : 'text-accent'}>{currentPlayer}</span>
+              Current Player: <span className={currentPlayerId === 'White' ? 'text-primary' : 'text-accent'}>{currentPlayerId}</span>
             </span>
           )}
         </div>

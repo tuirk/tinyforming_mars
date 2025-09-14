@@ -4,6 +4,7 @@ export type CubeType = 'Water' | 'Greenery' | 'Heat';
 export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Building';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
+export type TokenType = 'city' | 'specialProject';
 
 export interface Hex {
   id: number;
@@ -28,12 +29,17 @@ export interface Resources {
 
 export interface Player {
   id: PlayerColor;
+  isAI: boolean;
   credits: number;
   resources: Resources;
   parameterCubes: {
     Water: number;
     Greenery: number;
     Heat: number;
+  };
+  tokens: {
+    city: number;
+    specialProject: number;
   };
   projectCards: ProjectCardData[];
   playedProjectCards: ProjectCardData[];
@@ -65,12 +71,9 @@ export interface StandardProject {
 export interface GameState {
   generation: number;
   phase: 'Research' | 'Action' | 'Income' | 'End';
-  players: {
-    White: Player;
-    Black: Player;
-  };
-  currentPlayer: PlayerColor;
-  startingPlayer: PlayerColor;
+  players: Player[];
+  currentPlayerIndex: number;
+  startingPlayerIndex: number;
   cubeSupply: {
     Water: number;
     Greenery: number;

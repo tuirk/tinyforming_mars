@@ -1,5 +1,5 @@
 
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Hex } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player } from './types';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
     id: i + 1,
@@ -8,29 +8,15 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
   }))
   .map(hex => {
     switch (hex.id) {
-        // Row 1
         case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        // 2 is default land
         case 3: hex.type = 'water'; hex.bonusTag = 'Science'; break;
-
-        // Row 2 (4, 5, 6, 7) are all default land
-
-        // Row 3
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
         case 10: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
-        // 11 is default land
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-        
-        // Row 4
-        // 13 is default land
-        // 14 is default land
         case 15: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
         case 16: hex.type = 'water'; break;
-
-        // Row 5
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        // 18 is default land
         case 19: hex.bonusTag = 'Building'; hex.frameColor = 'gray'; break;
     }
     return hex;
@@ -50,32 +36,16 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
     bonusTag: undefined,
   }))
   .map(hex => {
-    // Define types and bonuses based on the corrected Elysium layout
     switch (hex.id) {
-      // Row 1
       case 1: hex.type = 'water'; hex.bonusTag = 'Science'; break;
       case 2: hex.type = 'water'; hex.bonusTag = 'Production'; break;
-      // 3 is default land
-
-      // Row 2
       case 4: hex.bonusTag = 'Building'; hex.frameColor = 'gray'; break;
-      // 5 is default land
       case 6: hex.type = 'water'; break;
       case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
-
-      // Row 3
-      // 8 is default land
       case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
       case 10: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
       case 11: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
-      // 12 is default land
-      
-      // Row 4 
-      // 13, 14, 15, 16 are default land
-
-      // Row 5
       case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-      // 18 is default land
       case 19: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
     }
     return hex;
@@ -164,36 +134,44 @@ export const STANDARD_PROJECTS: StandardProject[] = [
     },
 ];
 
-export const getInitialGameState = (playerMap: MapId, aiMap: MapId): GameState => {
-  const startingPlayer = 'White';
-  
+export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameState => {
+  const isHumanWhite = Math.random() < 0.5;
+
+  const humanPlayer: Player = {
+    id: isHumanWhite ? 'White' : 'Black',
+    isAI: false,
+    credits: 5,
+    resources: { Nature: 2, Production: 1, Science: 1 },
+    parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
+    tokens: { city: 2, specialProject: 1 },
+    projectCards: PROJECT_CARDS.slice(0, 3),
+    playedProjectCards: [],
+    victoryPoints: 0,
+    map: JSON.parse(JSON.stringify(MAPS[playerMapId])),
+  };
+
+  const aiPlayer: Player = {
+    id: isHumanWhite ? 'Black' : 'White',
+    isAI: true,
+    credits: 5,
+    resources: { Nature: 2, Production: 1, Science: 1 },
+    parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
+    tokens: { city: 2, specialProject: 1 },
+    projectCards: PROJECT_CARDS.slice(1, 4),
+    playedProjectCards: [],
+    victoryPoints: 0,
+    map: JSON.parse(JSON.stringify(MAPS[aiMapId])),
+  };
+
+  const players = [humanPlayer, aiPlayer].sort((a, b) => a.id === 'White' ? -1 : 1);
+  const startingPlayerIndex = players.findIndex(p => p.id === 'White');
+
   return {
     generation: 1,
     phase: 'Action',
-    players: {
-      White: {
-        id: 'White',
-        credits: 5,
-        resources: { Nature: 2, Production: 1, Science: 1 },
-        parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
-        projectCards: PROJECT_CARDS.slice(0, 3), // Give first 3 cards for demo
-        playedProjectCards: [],
-        victoryPoints: 0,
-        map: JSON.parse(JSON.stringify(MAPS[playerMap])),
-      },
-      Black: {
-        id: 'Black',
-        credits: 5,
-        resources: { Nature: 2, Production: 1, Science: 1 },
-        parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
-        projectCards: PROJECT_CARDS.slice(1, 4), // Give different cards for demo
-        playedProjectCards: [],
-        victoryPoints: 0,
-        map: JSON.parse(JSON.stringify(MAPS[aiMap])),
-      },
-    },
-    currentPlayer: startingPlayer,
-    startingPlayer: startingPlayer,
+    players,
+    currentPlayerIndex: startingPlayerIndex,
+    startingPlayerIndex: startingPlayerIndex,
     cubeSupply: {
       Water: 4,
       Greenery: 7,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getInitialGameState, MAPS } from '@/lib/game/constants';
-import type { GameState, Player, Hex, ProjectCardData, StandardProject, PlayerColor, MapId } from '@/lib/game/types';
+import type { GameState, Player, Hex, ProjectCardData, StandardProject, MapId } from '@/lib/game/types';
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
 import { ActionPanel } from './ActionPanel';
@@ -28,16 +28,19 @@ export function GameScreen() {
   };
   
   useEffect(() => {
-    if (selectedMap && !gameState) {
+    if (selectedMap && isClient && !gameState) {
       const mapIds = Object.keys(MAPS) as MapId[];
       const aiMapId = mapIds[Math.floor(Math.random() * mapIds.length)];
       setGameState(getInitialGameState(selectedMap, aiMapId));
     }
-  }, [selectedMap, gameState]);
+  }, [selectedMap, gameState, isClient]);
 
-  const handleHexClick = (hex: Hex, player: PlayerColor) => {
-    if (!gameState || gameState.currentPlayer !== player || player !== 'White') return;
-    console.log(`Hex clicked on ${player}'s board:`, hex.id);
+  const handleHexClick = (hex: Hex, player: Player) => {
+    if (!gameState) return;
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer.isAI || player.id !== currentPlayer.id) return;
+    
+    console.log(`Hex clicked on ${player.id}'s board:`, hex.id);
     // Placeholder for cube placement logic
     toast({
       title: 'Action',
@@ -46,13 +49,15 @@ export function GameScreen() {
   };
 
   const handlePlayerAction = (action: () => void) => {
-    if (!gameState || gameState.currentPlayer !== 'White') return;
+    if (!gameState) return;
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer.isAI) return;
 
     action();
 
     setGameState(prev => {
         if (!prev) return null;
-        return { ...prev, currentPlayer: 'Black' };
+        return { ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length };
     });
   };
   
@@ -84,14 +89,14 @@ export function GameScreen() {
   
   const processAIMove = useCallback(async (currentState: GameState) => {
     setIsAIThinking(true);
-    const aiPlayer = currentState.players.Black;
+    const aiPlayer = currentState.players.find(p => p.isAI);
+    if (!aiPlayer) return;
     
     const suggestion = await getAISuggestion({
       projectCards: aiPlayer.projectCards.map(c => c.title),
       gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
     });
 
-    // In a real game, you'd find the card/action and apply its effects
     const explanationInput = {
       move: `Action: ${suggestion.suggestedCard}. Reason: ${suggestion.reason}`,
       gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits and is deciding its move.`,
@@ -107,7 +112,7 @@ export function GameScreen() {
         if (!prev) return null;
         // Here you would update the game state based on the AI's move.
         // For now, we just pass the turn back to the player.
-        return { ...prev, currentPlayer: 'White', passCount: 0 };
+        return { ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length, passCount: 0 };
     });
 
     setIsAIThinking(false);
@@ -115,9 +120,12 @@ export function GameScreen() {
 
 
   useEffect(() => {
-    if (gameState && gameState.currentPlayer === 'Black') {
-      const timer = setTimeout(() => processAIMove(gameState), 1000);
-      return () => clearTimeout(timer);
+    if (gameState) {
+      const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+      if (currentPlayer.isAI) {
+        const timer = setTimeout(() => processAIMove(gameState), 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [gameState, processAIMove]);
 
@@ -134,39 +142,39 @@ export function GameScreen() {
     return <MapSelection onMapSelect={handleStartGame} maps={Object.values(MAPS)} />;
   }
 
-
-  const humanPlayer = gameState.players.White;
-  const aiPlayer = gameState.players.Black;
+  const humanPlayer = gameState.players.find(p => !p.isAI)!;
+  const aiPlayer = gameState.players.find(p => p.isAI)!;
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 flex flex-col xl:flex-row gap-4 overflow-hidden">
       <div className="flex-grow flex flex-col gap-4 items-center justify-center xl:w-3/5">
         <GameStatus
           generation={gameState.generation}
-          currentPlayer={gameState.currentPlayer}
+          currentPlayerId={currentPlayer.id}
           isAIThinking={isAIThinking}
         />
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="flex flex-col items-center">
             <h2 className="text-lg font-headline mb-2">Your Board ({humanPlayer.map.name})</h2>
-            <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, 'White')} />
+            <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, humanPlayer)} />
           </div>
           <div className="flex flex-col items-center">
             <h2 className="text-lg font-headline mb-2">AI's Board ({aiPlayer.map.name})</h2>
-            <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, 'Black')} />
+            <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, aiPlayer)} />
           </div>
         </div>
       </div>
 
       <aside className="w-full xl:w-2/5 flex flex-col gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-            <PlayerDashboard player={humanPlayer} isCurrentPlayer={gameState.currentPlayer === humanPlayer.id} />
-            <PlayerDashboard player={aiPlayer} isCurrentPlayer={gameState.currentPlayer === aiPlayer.id} />
+            <PlayerDashboard player={humanPlayer} isCurrentPlayer={currentPlayer.id === humanPlayer.id} />
+            <PlayerDashboard player={aiPlayer} isCurrentPlayer={currentPlayer.id === aiPlayer.id} />
         </div>
         <div className="bg-card p-4 rounded-lg flex-grow">
             <ActionPanel
             player={humanPlayer}
-            isCurrentPlayer={gameState.currentPlayer === humanPlayer.id}
+            isCurrentPlayer={currentPlayer.id === humanPlayer.id && !currentPlayer.isAI}
             onActivateCard={handleActivateCard}
             onStandardProject={handleStandardProject}
             onPass={handlePass}
