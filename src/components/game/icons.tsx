@@ -47,14 +47,6 @@ export const HeatCube = (props: SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-export const CityToken = (props: SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M8 20V8c0-2.2 1.8-4 4-4s4 1.8 4 4v12"/>
-        <path d="M2 20h20"/>
-        <path d="M14 14h-4"/>
-    </svg>
-);
-
 export const SpecialProjectToken = (props: SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
         <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/>
@@ -83,14 +75,14 @@ export const TagIcon = ({ tag, ...props }: {tag: Tag} & SVGProps<SVGSVGElement>)
          return <ProductionResource {...props} />;
       case 'Science':
         return <ScienceResource {...props} />;
-      case 'Building':
+      case 'Space':
         return (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <path d="M12 2l-8 4 8 4 8-4-8-4z" />
-                <path d="M4 10v8l8 4 8-4v-8" />
-                <path d="M4 10l8 4 8-4" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <path d="M5 22h14"/>
+                <path d="M4 17a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3H4v-3z"/>
             </svg>
-        )
+        );
       default:
         return null;
     }
@@ -112,10 +104,13 @@ export const EnergyTagIcon = (props: SVGProps<SVGSVGElement>) => (
 );
 
 export const ProductionTagIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 100 100" {...props}>
-        <rect x="25" y="40" width="50" height="40" stroke="currentColor" strokeWidth="8" fill="none"/>
-        <path d="M35 40 V 20 H 65 V 40" stroke="currentColor" strokeWidth="8" fill="none" />
-        <circle cx="50" cy="60" r="10" stroke="currentColor" strokeWidth="6" fill="none" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M2 13a4 4 0 108 0 4 4 0 10-8 0" />
+        <path d="M14 13a4 4 0 108 0 4 4 0 10-8 0" />
+        <path d="M6 13V2h8v11" />
+        <path d="M10 2v4" />
+        <path d="M10 6h12v11" />
+        <path d="M14 17a4 4 0 108 0 4 4 0 10-8 0" />
     </svg>
 );
 
@@ -126,9 +121,10 @@ export const NatureTagIcon = (props: SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-export const BuildingTagIcon = (props: SVGProps<SVGSVGElement>) => (
-    <svg viewBox="0 0 100 100" {...props}>
-        <path d="M20 80 L 50 20 L 80 80 Z" stroke="currentColor" strokeWidth="8" fill="none" />
-        <path d="M35 80 V 50 H 65 V 80" stroke="currentColor" strokeWidth="6" fill="none" />
+export const SpaceTagIcon = (props: SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <path d="M5 22h14"/>
+        <path d="M4 17a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3H4v-3z"/>
     </svg>
 );

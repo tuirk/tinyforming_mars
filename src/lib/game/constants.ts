@@ -16,7 +16,7 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 15: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
         case 16: hex.type = 'water'; break;
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        case 19: hex.bonusTag = 'Building'; hex.frameColor = 'gray'; break;
+        case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
     }
     return hex;
 });
@@ -38,7 +38,7 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
     switch (hex.id) {
       case 1: hex.type = 'water'; hex.bonusTag = 'Science'; break;
       case 2: hex.type = 'water'; hex.bonusTag = 'Production'; break;
-      case 4: hex.bonusTag = 'Building'; hex.frameColor = 'gray'; break;
+      case 4: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
       case 6: hex.type = 'water'; break;
       case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
       case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
@@ -88,7 +88,7 @@ export const PROJECT_CARDS: ProjectCardData[] = [
         id: 'proj-002',
         title: 'Asteroid Mining',
         type: 'Grey',
-        tags: ['Production', 'Building'],
+        tags: ['Production', 'Space'],
         effects: {
             White: {
                 description: 'Gain 3 Production resources.',

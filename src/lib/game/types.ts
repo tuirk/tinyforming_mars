@@ -1,7 +1,7 @@
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type CubeType = 'Water' | 'Greenery' | 'Heat';
-export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Building';
+export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
 export type TokenType = 'city' | 'specialProject';
@@ -83,7 +83,7 @@ export interface StandardProject {
     title: string;
     description: string;
     cost: number;
-    action: (gameState: GameState, player: Player) => { newGameState: GameState; newPlayer: Player };
+    action: (gameState: GameState, player: Player) => { newGameState: GameS_state: GameState; newPlayer: Player };
 }
 
 export interface GameState {
