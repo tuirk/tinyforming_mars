@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 import { Tag } from '@/lib/game/types';
 
 export const NatureResource = (props: SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="hsl(120, 50%, 50%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     <path d="M12 11.5l-4.5 2.5" />
     <path d="M12 11.5l4.5 2.5" />
@@ -13,7 +13,7 @@ export const NatureResource = (props: SVGProps<SVGSVGElement>) => (
 );
 
 export const ProductionResource = (props: SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="hsl(30, 70%, 50%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M2 13a4 4 0 108 0 4 4 0 10-8 0" />
     <path d="M14 13a4 4 0 108 0 4 4 0 10-8 0" />
     <path d="M6 13V2h8v11" />
@@ -24,7 +24,7 @@ export const ProductionResource = (props: SVGProps<SVGSVGElement>) => (
 );
 
 export const ScienceResource = (props: SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="hsl(200, 60%, 50%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M12 2L8 22l8-6-8-6 8 22" />
   </svg>
 );

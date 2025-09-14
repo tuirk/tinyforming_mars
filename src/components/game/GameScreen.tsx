@@ -11,6 +11,7 @@ import { getAISuggestion, getAIExplanation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { MapSelection } from './MapSelection';
+import { Supply } from './Supply';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -30,7 +31,7 @@ export function GameScreen() {
   useEffect(() => {
     if (selectedMap && isClient && !gameState) {
       const mapIds = Object.keys(MAPS) as MapId[];
-      const aiMapId = mapIds[Math.floor(Math.random() * mapIds.length)];
+      const aiMapId = mapIds.filter(id => id !== selectedMap)[0] || mapIds[Math.floor(Math.random() * mapIds.length)];
       setGameState(getInitialGameState(selectedMap, aiMapId));
     }
   }, [selectedMap, gameState, isClient]);
@@ -154,6 +155,7 @@ export function GameScreen() {
           currentPlayerId={currentPlayer.id}
           isAIThinking={isAIThinking}
         />
+        <Supply gameState={gameState} />
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="flex flex-col items-center">
             <h2 className="text-lg font-headline mb-2">Your Board ({humanPlayer.map.name})</h2>
