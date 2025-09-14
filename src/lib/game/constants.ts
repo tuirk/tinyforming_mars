@@ -67,7 +67,8 @@ export const PROJECT_CARDS: ProjectCardData[] = [
     {
         id: 'proj-001',
         title: 'Geothermal Vents',
-        tags: ['Energy'],
+        type: 'Heat',
+        tags: ['Energy', 'Science'],
         effects: {
             White: {
                 description: 'Gain 2 Heat cubes. Requires 1 Science tag.',
@@ -86,7 +87,8 @@ export const PROJECT_CARDS: ProjectCardData[] = [
     {
         id: 'proj-002',
         title: 'Asteroid Mining',
-        tags: ['Production'],
+        type: 'Grey',
+        tags: ['Production', 'Building'],
         effects: {
             White: {
                 description: 'Gain 3 Production resources.',

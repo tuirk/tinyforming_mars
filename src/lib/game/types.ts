@@ -5,6 +5,7 @@ export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Building';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
 export type TokenType = 'city' | 'specialProject';
+export type CardType = 'Heat' | 'Greenery' | 'Water' | 'Grey';
 
 export interface Hex {
   id: number;
@@ -70,6 +71,7 @@ export interface ProjectCardEffect {
 export interface ProjectCardData {
   id: string;
   title: string;
+  type: CardType;
   tags: Tag[];
   effects: {
     [key in PlayerColor]: ProjectCardEffect;
