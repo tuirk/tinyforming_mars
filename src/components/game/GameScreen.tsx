@@ -17,17 +17,23 @@ export function GameScreen() {
   const [isClient, setIsClient] = useState(false);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const { toast } = useToast();
+  const [selectedMap, setSelectedMap] = useState<MapId | null>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   const handleStartGame = (playerMap: MapId) => {
-    const mapIds = Object.keys(MAPS) as MapId[];
-    // Ensure AI map can be different from player's map
-    const aiMap = mapIds[Math.floor(Math.random() * mapIds.length)];
-    setGameState(getInitialGameState(playerMap, aiMap));
+    setSelectedMap(playerMap);
   };
+  
+  useEffect(() => {
+    if (selectedMap && !gameState) {
+      const mapIds = Object.keys(MAPS) as MapId[];
+      const aiMapId = mapIds[Math.floor(Math.random() * mapIds.length)];
+      setGameState(getInitialGameState(selectedMap, aiMapId));
+    }
+  }, [selectedMap, gameState]);
 
   const handleHexClick = (hex: Hex, player: PlayerColor) => {
     if (!gameState || gameState.currentPlayer !== player || player !== 'White') return;
