@@ -23,7 +23,7 @@ const MAP_STRUCTURE = [
 ];
 
 export function HexGrid({ map, onHexClick }: HexGridProps) {
-  const HEX_SIZE = 40; // Reduced size to fit two grids
+  const HEX_SIZE = 50; // Increased size by 25% from 40 to 50
   const HEX_WIDTH = HEX_SIZE * Math.sqrt(3);
   const HEX_HEIGHT = HEX_SIZE * 2;
 
