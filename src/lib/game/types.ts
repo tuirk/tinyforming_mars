@@ -83,7 +83,7 @@ export interface StandardProject {
     title: string;
     description: string;
     cost: number;
-    action: (gameState: GameState, player: Player) => { newGameState: GameS_state: GameState; newPlayer: Player };
+    action: (gameState: GameState, player: Player) => { newGameState: GameState; newPlayer: Player };
 }
 
 export interface GameState {
