@@ -49,36 +49,32 @@ export function CardDraft({ player, card, onDraft, draftTurn }: CardDraftProps) 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                 {/* Side A */}
                 <div className="flex flex-col gap-4 items-center p-4 rounded-lg border border-dashed">
                     <h3 className="font-headline text-xl">Choose Side A</h3>
-                    <div className="flex gap-4 items-center">
-                        <div className="w-[250px]">
-                            <p className="text-center font-semibold mb-2">Your Project (Slot 1)</p>
-                            <ProjectCardView card={{effect: card.sideA.slot1, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id}/>
-                        </div>
-                        <ArrowRight className="w-8 h-8 text-muted-foreground shrink-0"/>
-                        <div className="w-[250px]">
-                            <p className="text-center font-semibold mb-2">Opponent's Project (Slot 2)</p>
-                            <ProjectCardView card={{effect: card.sideA.slot2, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id === 'White' ? 'Black' : 'White'}/>
-                        </div>
+                    <div className="w-[250px]">
+                        <p className="text-center font-semibold mb-2">Your Project (Slot 1)</p>
+                        <ProjectCardView card={{effect: card.sideA.slot1, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id}/>
+                    </div>
+                    <ArrowRight className="w-8 h-8 text-muted-foreground shrink-0 rotate-90 md:rotate-0"/>
+                    <div className="w-[250px]">
+                        <p className="text-center font-semibold mb-2">Opponent's Project (Slot 2)</p>
+                        <ProjectCardView card={{effect: card.sideA.slot2, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id === 'White' ? 'Black' : 'White'}/>
                     </div>
                     <Button onClick={() => onDraft(card.sideA)} className="mt-4 w-full">Select Side A</Button>
                 </div>
                  {/* Side B */}
                  <div className="flex flex-col gap-4 items-center p-4 rounded-lg border border-dashed">
                     <h3 className="font-headline text-xl">Choose Side B</h3>
-                    <div className="flex gap-4 items-center">
-                        <div className="w-[250px]">
-                            <p className="text-center font-semibold mb-2">Your Project (Slot 1)</p>
-                            <ProjectCardView card={{effect: card.sideB.slot1, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id}/>
-                        </div>
-                        <ArrowRight className="w-8 h-8 text-muted-foreground shrink-0"/>
-                        <div className="w-[250px]">
-                            <p className="text-center font-semibold mb-2">Opponent's Project (Slot 2)</p>
-                            <ProjectCardView card={{effect: card.sideB.slot2, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id === 'White' ? 'Black' : 'White'}/>
-                        </div>
+                    <div className="w-[250px]">
+                        <p className="text-center font-semibold mb-2">Your Project (Slot 1)</p>
+                        <ProjectCardView card={{effect: card.sideB.slot1, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id}/>
+                    </div>
+                    <ArrowRight className="w-8 h-8 text-muted-foreground shrink-0 rotate-90 md:rotate-0"/>
+                    <div className="w-[250px]">
+                        <p className="text-center font-semibold mb-2">Opponent's Project (Slot 2)</p>
+                        <ProjectCardView card={{effect: card.sideB.slot2, usedThisGeneration: false}} canActivate={false} onActivate={()=>{}} playerId={player.id === 'White' ? 'Black' : 'White'}/>
                     </div>
                     <Button onClick={() => onDraft(card.sideB)} className="mt-4 w-full">Select Side B</Button>
                 </div>
