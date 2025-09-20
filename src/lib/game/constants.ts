@@ -169,6 +169,16 @@ PROJECT_CARDS[0] = {
 };
 
 // Card 2
+PROJECT_CARDS[1].sideA.slot1 = {
+  id: "2-A1",
+  name: "Grass",
+  cost: { credits: 2, reducible: false },
+  tagRequirements: { ...emptyReq, Nature: 3 },
+  parameterRequirements: { ...emptyParams, Heat: 3 },
+  effect: "Place 1 Greenery Cube. It must be placed adjacent to a city.",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Energy: 1, Production: 1 },
+};
 PROJECT_CARDS[1].sideB.slot1 = {
   id: "2-B1",
   name: "Aquifer Pumping",
@@ -191,6 +201,16 @@ PROJECT_CARDS[1].sideB.slot2 = {
 };
 
 // Card 3
+PROJECT_CARDS[2].sideA.slot1 = {
+    id: "3-A1",
+    name: "Asteroid Mining",
+    cost: { credits: 0, reducible: false },
+    tagRequirements: { ...emptyReq, Space: 1 },
+    parameterRequirements: { ...emptyParams },
+    effect: "Gain 1 Credit for each Production and Space Tag you have on your Project cards.",
+    effectType: "utility",
+    automaticTags: { ...emptyReq, Energy: 1, Nature: 1 },
+};
 PROJECT_CARDS[2].sideB.slot1 = {
   id: "3-B1",
   name: "Methane from Titan",
@@ -214,6 +234,16 @@ PROJECT_CARDS[2].sideB.slot2 = {
 };
 
 // Card 4
+PROJECT_CARDS[3].sideA.slot1 = {
+    id: "4-A1",
+    name: "Ice Asteroid",
+    cost: { credits: 3, reducible: false },
+    tagRequirements: { ...emptyReq, Space: 2 },
+    parameterRequirements: { ...emptyParams },
+    effect: "Place 1 Water Cube. If this Cube is placed adjacent to one or more Greenery Cubes, return one of those Greenery Cubes to the supply.",
+    effectType: "water",
+    automaticTags: { ...emptyReq, Energy: 1, Production: 1 },
+};
 PROJECT_CARDS[3].sideB.slot1 = {
   id: "4-B1",
   name: "Asteroid",
