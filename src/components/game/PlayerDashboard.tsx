@@ -23,6 +23,8 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
     Nature: player.tags.Nature + player.bonusTagsFromCities.Nature,
     Space: player.tags.Space + player.bonusTagsFromCities.Space,
   };
+  
+  const hasTags = Object.values(allTags).some(count => count > 0);
 
   return (
     <Card className={cn(
@@ -65,15 +67,19 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
 
         <Separator className="my-2" />
 
-        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs">
-          {Object.entries(allTags).map(([tag, count]) => (
-              count > 0 && (
-              <div key={tag} className="flex items-center justify-center gap-1">
-                <TagIcon tag={tag as any} className="w-4 h-4" />
-                <span>{count}</span>
-              </div>
-              )
-          ))}
+        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[20px]">
+          {hasTags ? (
+            Object.entries(allTags).map(([tag, count]) => (
+                count > 0 && (
+                <div key={tag} className="flex items-center justify-center gap-1">
+                  <TagIcon tag={tag as any} className="w-4 h-4" />
+                  <span>{count}</span>
+                </div>
+                )
+            ))
+          ) : (
+            <div className="col-span-3 text-center text-muted-foreground italic">No tags</div>
+          )}
         </div>
 
         <Separator className="my-2" />
