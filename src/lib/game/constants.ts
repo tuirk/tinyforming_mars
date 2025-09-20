@@ -75,11 +75,11 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 11: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 12: break;
         
-        // Row 4
+        // Row 4 - ALL EMPTY
         case 13: break;
-        case 14: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 14: break;
         case 15: break;
-        case 16: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 16: break;
 
         // Row 5
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
@@ -146,7 +146,7 @@ PROJECT_CARDS[0] = {
       id: "1-A1",
       name: "Methane From Titan",
       cost: 7,
-      tags: ["Space"],
+      tags: ["Space", "Heat"],
       requirements: ["heat >= 2", "space_tag >= 1"],
       effect: "Gain 1 heat cube. If you spend 1 additional heat cube, gain 2 credits and 1 additional space tag."
     },
@@ -224,7 +224,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   
   const { humanProject, aiProject, remainingDeck } = drawSharedCardRound(PROJECT_CARDS);
   
-  const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0 };
+  const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
   const initialBonusTags = { Production: 0, Science: 0, Nature: 0, Space: 0 };
 
   const humanPlayer: Player = {
