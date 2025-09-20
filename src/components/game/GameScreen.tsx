@@ -176,29 +176,21 @@ export function GameScreen() {
     setIsAIThinking(true);
     const aiPlayer = currentState.players.find(p => p.isAI);
     if (!aiPlayer) return;
-    
-    const shouldPass = Math.random() > 0.2; 
-    
-    if (shouldPass) {
-        toast({ title: "AI passes."});
-        setGameState(produce(draft => {
-            if (!draft) return;
-            draft.passCount++;
-            if (draft.passCount >= draft.players.length) {
-                endGeneration();
-            } else {
-                draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
-            }
-        }));
-        setIsAIThinking(false);
-        return;
-    }
 
     try {
+        const affordableCards = aiPlayer.projectCards.filter(c => c.effect.cost.credits <= aiPlayer.credits && !c.usedThisGeneration);
+
         const suggestion = await getAISuggestion({
-          projectCards: aiPlayer.projectCards.map(c => c.effect.name),
+          projectCards: affordableCards.map(c => c.effect.name),
           gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
         });
+
+        if (suggestion.suggestedCard === 'Pass') {
+            toast({ title: "AI passes.", description: suggestion.reason });
+            handlePass();
+            setIsAIThinking(false);
+            return;
+        }
 
         const explanationInput = {
           move: `Action: ${suggestion.suggestedCard}. Reason: ${suggestion.reason}`,
@@ -216,6 +208,11 @@ export function GameScreen() {
             const aiPlayerIndex = draft.players.findIndex(p => p.isAI);
             if (aiPlayerIndex !== -1) {
               // Placeholder for AI action logic (e.g. deduct cost)
+              const playedCard = draft.players[aiPlayerIndex].projectCards.find(c => c.effect.name === suggestion.suggestedCard);
+              if (playedCard) {
+                draft.players[aiPlayerIndex].credits -= playedCard.effect.cost.credits;
+                playedCard.usedThisGeneration = true;
+              }
             }
             draft.passCount = 0;
             draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
@@ -223,19 +220,10 @@ export function GameScreen() {
     } catch(error) {
         console.error("AI Action failed:", error);
         toast({ title: "AI action failed. Passing.", variant: 'destructive' });
-        setGameState(produce(draft => {
-            if (!draft) return;
-            draft.passCount++;
-            if (draft.passCount >= draft.players.length) {
-                endGeneration();
-            } else {
-                draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
-            }
-        }));
+        handlePass();
+    } finally {
+      setIsAIThinking(false);
     }
-
-
-    setIsAIThinking(false);
   }, [toast, endGeneration]);
 
 
