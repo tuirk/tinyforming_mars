@@ -68,24 +68,8 @@ export function GameScreen() {
         });
     });
   }
-
-  const handlePlayerAction = (action: (p: Player) => Player, postActionCallback?: () => void) => {
-    if (!gameState) return;
-    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-    if (currentPlayer.isAI) return;
-
-    setGameState(produce(draft => {
-      if (!draft) return;
-      const playerIndex = draft.players.findIndex(p => p.id === currentPlayer.id);
-      if (playerIndex !== -1) {
-        draft.players[playerIndex] = action(draft.players[playerIndex]);
-      }
-      draft.passCount = 0;
-      draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
-    }));
-  };
   
-  const endGeneration = () => {
+  const endGeneration = useCallback(() => {
     setGameState(produce(draft => {
         if (!draft) return;
         
@@ -106,7 +90,7 @@ export function GameScreen() {
         draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
         draft.currentPlayerIndex = draft.startingPlayerIndex;
     }));
-  }
+  }, [toast]);
 
   const handlePass = () => {
     if (!gameState) return;
@@ -124,12 +108,22 @@ export function GameScreen() {
   }
 
   const handleActivateCard = (card: PlayerProjectCard) => {
-    handlePlayerAction((player) => {
+    if (!gameState) return;
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer.isAI) return;
+
+    setGameState(produce(draft => {
+      if (!draft) return;
+      
+      const playerIndex = draft.players.findIndex(p => p.id === currentPlayer.id);
+      if (playerIndex === -1) return;
+      
+      const player = draft.players[playerIndex];
       const cost = typeof card.effect.cost === 'string' ? parseInt(card.effect.cost.split(' ')[0], 10) : card.effect.cost || 0;
       
       if (player.credits < cost) {
         toast({ title: "Not enough credits!", variant: 'destructive' });
-        return player;
+        return;
       }
       
       toast({
@@ -137,21 +131,33 @@ export function GameScreen() {
         description: `Activated card: ${card.effect.name}.`,
       });
 
-      return produce(player, draft => {
-          draft.credits -= cost;
-          const cardInHand = draft.projectCards.find(c => c.effect.id === card.effect.id);
-          if (cardInHand) {
-              cardInHand.usedThisGeneration = true;
-          }
-      });
-    });
+      player.credits -= cost;
+      const cardInHand = player.projectCards.find(c => c.effect.id === card.effect.id);
+      if (cardInHand) {
+          cardInHand.usedThisGeneration = true;
+      }
+
+      draft.passCount = 0;
+      draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+    }));
   };
 
   const handleStandardProject = (project: StandardProject) => {
-    handlePlayerAction((player) => {
+    if (!gameState) return;
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer.isAI) return;
+    
+    setGameState(produce(draft => {
+        if (!draft) return;
+
+        const playerIndex = draft.players.findIndex(p => p.id === currentPlayer.id);
+        if (playerIndex === -1) return;
+
+        const player = draft.players[playerIndex];
+
         if(player.standardProjectUsed) {
           toast({ title: "Standard Project already used this generation.", variant: 'destructive' });
-          return player;
+          return;
         }
 
         console.log('Completing project:', project.title);
@@ -160,10 +166,10 @@ export function GameScreen() {
           description: `Completed project: ${project.title}. Effect logic to be implemented.`,
         });
 
-        return produce(player, draft => {
-          draft.standardProjectUsed = true;
-        });
-    });
+        player.standardProjectUsed = true;
+        draft.passCount = 0;
+        draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+    }));
   };
   
   const processAIMove = useCallback(async (currentState: GameState) => {
@@ -179,7 +185,6 @@ export function GameScreen() {
             if (!draft) return;
             draft.passCount++;
             if (draft.passCount >= draft.players.length) {
-                // This call will handle generation end logic
                 endGeneration();
             } else {
                 draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
@@ -231,7 +236,7 @@ export function GameScreen() {
 
 
     setIsAIThinking(false);
-  }, [toast]);
+  }, [toast, endGeneration]);
 
 
   useEffect(() => {
@@ -283,7 +288,7 @@ export function GameScreen() {
                   <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, aiPlayer)} />
               </div>
               <div className="lg:w-[280px] w-full flex-shrink-0">
-                  <PlayerDashboard player={aiPlayer} isCurrentPlayer={currentPlayer.id === aiPlayer.id} />
+                  <PlayerDashboard player={aiPlayer} currentPlayerId={currentPlayer.id} />
               </div>
             </div>
 
@@ -294,7 +299,7 @@ export function GameScreen() {
                   <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, humanPlayer)} />
               </div>
               <div className="lg:w-[280px] w-full flex-shrink-0">
-                  <PlayerDashboard player={humanPlayer} isCurrentPlayer={currentPlayer.id === humanPlayer.id} />
+                  <PlayerDashboard player={humanPlayer} currentPlayerId={currentPlayer.id} />
               </div>
             </div>
         </div>
@@ -303,7 +308,7 @@ export function GameScreen() {
       <aside className="xl:col-span-1 bg-card p-4 rounded-lg">
         <ActionPanel
           player={humanPlayer}
-          isCurrentPlayer={currentPlayer.id === humanPlayer.id && !currentPlayer.isAI}
+          currentPlayerId={currentPlayer.id}
           onActivateCard={handleActivateCard}
           onStandardProject={handleStandardProject}
           onPass={handlePass}

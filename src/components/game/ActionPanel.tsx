@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Player, PlayerProjectCard, StandardProject } from '@/lib/game/types';
+import type { Player, PlayerProjectCard, StandardProject, PlayerColor } from '@/lib/game/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCardView } from './ProjectCardView';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 interface ActionPanelProps {
   player: Player;
-  isCurrentPlayer: boolean;
+  currentPlayerId: PlayerColor;
   onActivateCard: (card: PlayerProjectCard) => void;
   onStandardProject: (project: StandardProject) => void;
   onPass: () => void;
@@ -20,12 +20,13 @@ interface ActionPanelProps {
 
 export function ActionPanel({
   player,
-  isCurrentPlayer,
+  currentPlayerId,
   onActivateCard,
   onStandardProject,
   onPass,
 }: ActionPanelProps) {
 
+  const isCurrentPlayer = player.id === currentPlayerId && !player.isAI;
   const canPerformStandardProject = isCurrentPlayer && !player.standardProjectUsed;
 
   const renderStandardProjectButton = (project: StandardProject) => {
@@ -111,5 +112,3 @@ export function ActionPanel({
     </div>
   );
 }
-
-    
