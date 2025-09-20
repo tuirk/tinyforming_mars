@@ -164,7 +164,7 @@ export function GameScreen() {
             }
         }));
         setIsAIThinking(false);
-        return; // Return early to prevent double turn advancement
+        return;
     }
 
 
