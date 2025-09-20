@@ -1,5 +1,6 @@
 import type { SVGProps } from 'react';
 import { Tag } from '@/lib/game/types';
+import { Leaf, Zap, Building, Orbit, Beaker, Factory, Wind, Atom } from 'lucide-react';
 
 export const NatureResource = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="hsl(120, 50%, 50%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -66,33 +67,23 @@ export const BuildingTagIcon = (props: SVGProps<SVGSVGElement>) => (
 export const TagIcon = ({ tag, ...props }: {tag: Tag} & SVGProps<SVGSVGElement>) => {
     switch (tag) {
       case 'Energy':
-        return (
-          <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-            <path d="M12 2l-2 9h4l-2 9" />
-          </svg>
-        );
-      case 'Nature':
-      case 'Plant':
-        return (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            <path d="M12 11.5l-4.5 2.5" />
-          </svg>
-        );
+        return <Zap {...props} />;
       case 'Production':
-         return <ProductionResource {...props} />;
+        return <Factory {...props} />;
+      case 'Nature':
+        return <NatureResource {...props} />;
       case 'Science':
-        return <ScienceResource {...props} />;
+        return <Beaker {...props} />;
       case 'Space':
-        return (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                <path d="M5 22h14"/>
-                <path d="M4 17a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3H4v-3z"/>
-            </svg>
-        );
+        return <Orbit {...props} />;
+      case 'Plant':
+        return <Leaf {...props} />;
       case 'Building':
-        return <BuildingTagIcon {...props} />
+        return <Building {...props} />
+      case 'Heat':
+        return <Wind {...props} />;
+      case 'Water':
+        return <Atom {...props} />; // Placeholder, needs better icon
       default:
         return null;
     }
