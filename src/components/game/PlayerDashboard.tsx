@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Player, PlayerColor } from '@/lib/game/types';
+import type { Player, PlayerColor, Tag } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube, NatureResource, ProductionResource, ScienceResource } from './icons';
@@ -16,13 +16,17 @@ interface PlayerDashboardProps {
 
 export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProps) {
   const isCurrentPlayer = player.id === currentPlayerId;
+
   const allTags = {
-    ...player.tags,
-    Production: player.tags.Production + player.bonusTagsFromCities.Production,
-    Science: player.tags.Science + player.bonusTagsFromCities.Science,
-    Nature: player.tags.Nature + player.bonusTagsFromCities.Nature,
-    Space: player.tags.Space + player.bonusTagsFromCities.Space,
+    ...player.permanentTags,
   };
+  
+  // This logic to sum up tags from different sources will be more complex later
+  // For now, we just combine permanent and bonus tags
+  for (const key in player.bonusTagsFromCities) {
+    const tag = key as keyof typeof player.bonusTagsFromCities;
+    allTags[tag] = (allTags[tag] || 0) + player.bonusTagsFromCities[tag];
+  }
   
   const hasTags = Object.values(allTags).some(count => count > 0);
   const hasResourceTokens = Object.values(player.resourceTokens).some(count => count > 0);
@@ -68,10 +72,10 @@ export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProp
 
         <Separator className="my-2" />
 
-        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[20px]">
+        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[40px] items-start">
           {hasTags ? (
             Object.entries(allTags).map(([tag, count]) => (
-                count > 0 && (
+                (count ?? 0) > 0 && (
                 <div key={tag} className="flex items-center justify-center gap-1">
                   <TagIcon tag={tag as any} className="w-4 h-4" />
                   <span>{count}</span>
@@ -88,9 +92,9 @@ export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProp
         <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[20px]">
           {hasResourceTokens ? (
               <>
-                {player.resourceTokens.Nature > 0 && <div className="flex items-center justify-center gap-1"><NatureResource className="w-4 h-4" /><span>{player.resourceTokens.Nature}</span></div>}
-                {player.resourceTokens.Production > 0 && <div className="flex items-center justify-center gap-1"><ProductionResource className="w-4 h-4" /><span>{player.resourceTokens.Production}</span></div>}
-                {player.resourceTokens.Science > 0 && <div className="flex items-center justify-center gap-1"><ScienceResource className="w-4 h-4" /><span>{player.resourceTokens.Science}</span></div>}
+                {(player.resourceTokens.Nature ?? 0) > 0 && <div className="flex items-center justify-center gap-1"><NatureResource className="w-4 h-4" /><span>{player.resourceTokens.Nature}</span></div>}
+                {(player.resourceTokens.Production ?? 0) > 0 && <div className="flex items-center justify-center gap-1"><ProductionResource className="w-4 h-4" /><span>{player.resourceTokens.Production}</span></div>}
+                {(player.resourceTokens.Science ?? 0) > 0 && <div className="flex items-center justify-center gap-1"><ScienceResource className="w-4 h-4" /><span>{player.resourceTokens.Science}</span></div>}
               </>
           ) : (
             <div className="col-span-3 text-center text-muted-foreground italic">No resource tokens</div>

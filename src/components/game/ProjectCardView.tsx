@@ -20,33 +20,30 @@ interface ProjectCardViewProps {
 export function ProjectCardView({ card, playerId, canActivate, onActivate }: ProjectCardViewProps) {
   const { effect, usedThisGeneration } = card;
 
-  const getCardType = () => {
-    if (effect.tags?.includes('Heat')) return 'Heat';
-    if (effect.tags?.includes('Plant')) return 'Greenery';
-    if (effect.tags?.includes('Water')) return 'Water';
-    return 'Grey';
-  };
-
-  const cardType = getCardType();
-
   const cardTypeStyles: Record<string, string> = {
-      Heat: 'bg-red-950/30 border-red-500/30',
-      Greenery: 'bg-green-950/30 border-green-500/30',
-      Water: 'bg-blue-950/30 border-blue-500/30',
-      Grey: 'bg-gray-800/30 border-gray-500/30'
+      heat: 'bg-red-950/30 border-red-500/30',
+      greenery: 'bg-green-950/30 border-green-500/30',
+      water: 'bg-blue-950/30 border-blue-500/30',
+      utility: 'bg-gray-800/30 border-gray-500/30'
   };
   
   const cardTypeIcons: Record<string, React.ReactNode> = {
-      Heat: <Flame className="w-5 h-5 text-red-400" />,
-      Greenery: <Leaf className="w-5 h-5 text-green-400" />,
-      Water: <Droplets className="w-5 h-5 text-blue-400" />,
-      Grey: null,
+      heat: <Flame className="w-5 h-5 text-red-400" />,
+      greenery: <Leaf className="w-5 h-5 text-green-400" />,
+      water: <Droplets className="w-5 h-5 text-blue-400" />,
+      utility: null,
   };
 
-  const costString = typeof effect.cost === 'string' ? effect.cost : effect.cost?.toString();
+  const cost = effect.cost.credits;
+  const isReducible = effect.cost.reducible;
+
+  const requirementEntries = Object.entries(effect.tagRequirements).filter(([, value]) => value > 0);
+  const paramRequirementEntries = Object.entries(effect.parameterRequirements).filter(([, value]) => value > 0);
+  
+  const automaticTags = Object.entries(effect.automaticTags).filter(([, value]) => value > 0);
 
   return (
-    <Card className={cn("w-full h-auto flex flex-col relative overflow-hidden", cardTypeStyles[cardType])}>
+    <Card className={cn("w-full h-auto flex flex-col relative overflow-hidden", cardTypeStyles[effect.effectType])}>
         {usedThisGeneration && (
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
                 <CheckCircle className="w-16 h-16 text-green-500" />
@@ -55,21 +52,19 @@ export function ProjectCardView({ card, playerId, canActivate, onActivate }: Pro
         <CardHeader className="pb-2">
             <div className="flex justify-between items-start gap-2">
                 <CardTitle className="font-headline text-lg">{effect.name}</CardTitle>
-                {effect.cost !== undefined && (
-                  <div className="flex items-center gap-1 text-yellow-400 font-bold shrink-0">
-                      {costString} <Coins className="h-4 w-4" />
-                  </div>
-                )}
+                <div className="flex items-center gap-1 text-yellow-400 font-bold shrink-0">
+                    {cost}{isReducible ? '*' : ''} <Coins className="h-4 w-4" />
+                </div>
             </div>
              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
                 <div className="flex gap-2 items-center flex-wrap">
-                    {effect.tags?.map(tag => (
+                    {automaticTags.map(([tag, count]) => (
                         <TooltipProvider key={tag}>
                             <Tooltip>
                                 <TooltipTrigger>
                                     <Badge variant="secondary" className="gap-1 text-xs px-2 py-0.5">
                                         <TagIcon tag={tag as any} className="w-3 h-3" />
-                                        {tag}
+                                        {tag} {count > 1 ? `x${count}`: ''}
                                     </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -80,16 +75,23 @@ export function ProjectCardView({ card, playerId, canActivate, onActivate }: Pro
                     ))}
                 </div>
                  <div className="flex items-center gap-1">
-                    {cardTypeIcons[cardType]}
+                    {cardTypeIcons[effect.effectType]}
                  </div>
             </div>
         </CardHeader>
         <CardContent className="py-2 flex-grow">
             <p className="text-sm text-foreground/90">{effect.effect}</p>
-             {effect.requirements && effect.requirements.length > 0 && (
-                <CardDescription className="text-xs mt-2 italic">
-                    Requires: {effect.requirements.join(', ')}
-                </CardDescription>
+             {(requirementEntries.length > 0 || paramRequirementEntries.length > 0) && (
+                <div className="text-xs mt-2 italic text-muted-foreground space-y-1">
+                    <p>
+                        Requires: 
+                        {requirementEntries.map(([tag, value]) => `${value} ${tag}`).join(', ')}
+                        {requirementEntries.length > 0 && paramRequirementEntries.length > 0 && ', '}
+                        {paramRequirementEntries.map(([param, value]) => `${value} ${param}`).join(', ')}
+                    </p>
+                    {effect.costReductionRule && <p>Reduction: {effect.costReductionRule}</p>}
+                    {effect.parameterReductionRule && <p>Reduction: {effect.parameterReductionRule}</p>}
+                </div>
              )}
         </CardContent>
         <CardFooter className="p-2 flex gap-2">
