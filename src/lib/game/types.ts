@@ -1,7 +1,7 @@
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type CubeType = 'Water' | 'Greenery' | 'Heat';
-export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space';
+export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space' | 'Plant';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
 export type TokenType = 'city' | 'specialProject';
@@ -28,14 +28,32 @@ export interface Resources {
   Science: number;
 }
 
-export interface PlayerProjectCard {
-  card: ProjectCardData;
-  effects: {
-    player: ProjectCardEffect;
-    opponent: ProjectCardEffect;
-  };
+export type ProjectEffect = {
+  id: string;    
+  name: string;
+  cost?: number | string;
+  tags?: string[];
+  requirements?: string[];
+  effect: string;
+};
+
+export type CardSide = {
+  slot1: ProjectEffect; // always for the card owner
+  slot2: ProjectEffect; // always for the opponent
+};
+
+export type ProjectCardData = {
+  cardId: number;
+  sideA: CardSide;
+  sideB: CardSide;
+};
+
+export type PlayerProjectCard = {
+  cardId: number;
+  effect: ProjectEffect;
   usedThisGeneration: boolean;
-}
+};
+
 
 export interface Player {
   id: PlayerColor;
@@ -54,29 +72,6 @@ export interface Player {
   projectCards: PlayerProjectCard[];
   victoryPoints: number;
   map: MapData;
-}
-
-export interface ProjectCardEffect {
-  description: string;
-  cost: number;
-  requirements: {
-    tags?: Partial<Record<Tag, number>>;
-    resources?: Partial<Resources>;
-    parameters?: {
-        heat?: number;
-        greenery?: number;
-        water?: number;
-    }
-  };
-  effect: (gameState: GameState, player: Player) => { newGameState: GameState; newPlayer: Player };
-}
-
-export interface ProjectCardData {
-  id: string;
-  title: string;
-  type: CardType;
-  tags: Tag[];
-  projects: ProjectCardEffect[];
 }
 
 export interface StandardProject {
