@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import type { Player } from '@/lib/game/types';
+import type { Player, PlayerColor } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube, NatureResource, ProductionResource, ScienceResource } from './icons';
@@ -12,10 +11,11 @@ import { TagIcon } from './icons';
 
 interface PlayerDashboardProps {
   player: Player;
-  isCurrentPlayer: boolean;
+  currentPlayerId: PlayerColor;
 }
 
-export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProps) {
+export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProps) {
+  const isCurrentPlayer = player.id === currentPlayerId;
   const allTags = {
     ...player.tags,
     Production: player.tags.Production + player.bonusTagsFromCities.Production,
