@@ -8,6 +8,8 @@ import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube, NatureResource,
 import { cn } from '@/lib/utils';
 import { Coins, Star, Building2, Flame } from 'lucide-react';
 import { TagIcon } from './icons';
+import { TokenDisplay } from './TokenDisplay';
+import { useToast } from '@/hooks/use-toast';
 
 interface PlayerDashboardProps {
   player: Player;
@@ -16,6 +18,7 @@ interface PlayerDashboardProps {
 
 export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProps) {
   const isCurrentPlayer = player.id === currentPlayerId;
+  const { toast } = useToast();
 
   const allTags = {
     ...player.permanentTags,
@@ -30,6 +33,13 @@ export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProp
   
   const hasTags = Object.values(allTags).some(count => count > 0);
   const hasResourceTokens = Object.values(player.resourceTokens).some(count => count > 0);
+  
+  const handleTokenClick = (tokenType: string) => {
+    toast({
+      title: `${tokenType} Token Clicked`,
+      description: `Logic to use this token will be implemented soon.`,
+    });
+  };
 
   return (
     <Card className={cn(
@@ -105,21 +115,33 @@ export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProp
         <Separator className="my-2" />
         
         <div className="flex justify-around gap-2 text-center">
-          <div className="flex flex-col items-center gap-1">
+           <TokenDisplay
+            label="Cities"
+            value={player.tokens.city - player.cities.length}
+            tooltip="Available cities to build."
+            onClick={() => handleTokenClick('City')}
+            isClickable={isCurrentPlayer && player.tokens.city - player.cities.length > 0}
+          >
             <Building2 className="h-8 w-8" />
-            <span className="font-bold text-md">{player.tokens.city - player.cities.length}</span>
-            <span className="text-xs text-muted-foreground">Cities</span>
-          </div>
-          <div className="flex flex-col items-center gap-1">
+          </TokenDisplay>
+          <TokenDisplay
+            label="Projects"
+            value={player.tokens.specialProject}
+            tooltip="Available special projects."
+            onClick={() => handleTokenClick('Special Project')}
+            isClickable={isCurrentPlayer && player.tokens.specialProject > 0}
+          >
             <SpecialProjectToken className="h-8 w-8" />
-            <span className="font-bold text-md">{player.tokens.specialProject}</span>
-            <span className="text-xs text-muted-foreground">Projects</span>
-          </div>
-           <div className="flex flex-col items-center gap-1">
+          </TokenDisplay>
+          <TokenDisplay
+            label="Heat"
+            value={player.personalSupply.heat}
+            tooltip="Heat accumulated for terraforming."
+            onClick={() => handleTokenClick('Heat')}
+            isClickable={isCurrentPlayer && player.personalSupply.heat > 0}
+          >
             <Flame className="h-8 w-8 text-red-500" />
-            <span className="font-bold text-md">{player.personalSupply.heat}</span>
-            <span className="text-xs text-muted-foreground">Heat</span>
-          </div>
+          </TokenDisplay>
         </div>
       </CardContent>
     </Card>
