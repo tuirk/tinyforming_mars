@@ -38,6 +38,12 @@ export function GameScreen() {
     }
   }, [selectedMap, gameState, isClient]);
 
+  useEffect(() => {
+    if (gameState && gameState.generation > 1) {
+      toast({ title: `Generation ${gameState.generation} starting!`});
+    }
+  }, [gameState?.generation, toast]);
+
   const handleHexClick = (hex: Hex, player: Player) => {
     if (!gameState) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -90,7 +96,6 @@ export function GameScreen() {
             });
             draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
             draft.currentPlayerIndex = draft.startingPlayerIndex;
-            toast({ title: `Generation ${draft.generation} starting!`});
         }));
     } else {
         setGameState(produce(draft => {
