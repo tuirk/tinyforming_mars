@@ -266,6 +266,17 @@ PROJECT_CARDS[3].sideB.slot2 = {
 };
 
 // Card 5
+PROJECT_CARDS[4].sideA.slot1 = {
+    id: "5-A1",
+    name: "Water from Europa",
+    cost: { credits: 3, reducible: true },
+    tagRequirements: { ...emptyReq, Energy: 1, Space: 1 },
+    parameterRequirements: { ...emptyParams },
+    costReductionRule: "Reduce the cost by 1 Credit for each additional Space Tag beyond the first",
+    effect: "Place 1 Water Cube",
+    effectType: "water",
+    automaticTags: { ...emptyReq, Production: 1, Nature: 1 },
+};
 PROJECT_CARDS[4].sideB.slot1 = {
     id: "5-B1",
     name: "Great Dam",
@@ -289,6 +300,16 @@ PROJECT_CARDS[4].sideB.slot2 = {
 };
 
 // Card 6
+PROJECT_CARDS[5].sideA.slot1 = {
+    id: "6-A1",
+    name: "Artificial Lake",
+    cost: { credits: 2, reducible: false },
+    tagRequirements: { ...emptyReq, Production: 2 },
+    parameterRequirements: { ...emptyParams, Heat: 4 },
+    effect: "Place 1 Water Cube. It must be placed adjacent to at least one city.",
+    effectType: "water",
+    automaticTags: { ...emptyReq, Nature: 2 },
+};
 PROJECT_CARDS[5].sideB.slot1 = {
     id: "6-B1",
     name: "Nuclear Power",
@@ -312,6 +333,16 @@ PROJECT_CARDS[5].sideB.slot2 = {
 };
 
 // Card 7
+PROJECT_CARDS[6].sideA.slot1 = {
+    id: "7-A1",
+    name: "Ice Cap Melting",
+    cost: { credits: 3, reducible: false },
+    tagRequirements: { ...emptyReq, Energy: 2 },
+    parameterRequirements: { ...emptyParams, Heat: 5 },
+    effect: "Place 1 Water Cube. It must be placed in any unoccupied hex on the South row.",
+    effectType: "water",
+    automaticTags: { ...emptyReq, Production: 1, Nature: 1 },
+};
 PROJECT_CARDS[6].sideB.slot1 = {
     id: "7-B1",
     name: "Comet",
@@ -459,3 +490,4 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     
 
     
+
