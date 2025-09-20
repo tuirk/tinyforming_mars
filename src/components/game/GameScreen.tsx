@@ -30,6 +30,11 @@ export function GameScreen() {
   const handleStartGame = (playerMap: MapId) => {
     setSelectedMap(playerMap);
   };
+
+  const handleStopGame = () => {
+    setGameState(null);
+    setSelectedMap(null);
+  };
   
   useEffect(() => {
     if (selectedMap && isClient && !gameState) {
@@ -262,6 +267,7 @@ export function GameScreen() {
           currentPlayerIndex={gameState.currentPlayerIndex}
           players={gameState.players}
           isAIThinking={isAIThinking}
+          onStopGame={handleStopGame}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Supply gameState={gameState} />
