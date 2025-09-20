@@ -45,6 +45,27 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
         }
     }, [setupStep, drawnCard, draftTurn, draftingPlayerId, gameState]);
 
+    // Effect to handle turn progression after a card has been drafted.
+    useEffect(() => {
+        if (setupStep !== 'card-draft' || draftTurn === 0) return;
+
+        // This effect runs when draftTurn changes, which now happens *after* gameState is updated.
+        // The total cards drafted will be 2 * draftTurn.
+        const expectedTotalCards = draftTurn * 2;
+        const actualTotalCards = gameState.players.reduce((sum, p) => sum + p.projectCards.length, 0);
+
+        if (actualTotalCards === expectedTotalCards) {
+            if (draftTurn >= 3) {
+                toast({ title: 'Card Draft Complete', description: 'All players have their starting projects. Time to place cities.' });
+                setSetupStep('city-placement');
+            } else {
+                 // W, B, W drafting order
+                const nextDrafter = (draftTurn === 1) ? (draftingPlayerId === 'White' ? 'Black' : 'White') : 'White';
+                setDraftingPlayerId(nextDrafter);
+            }
+        }
+    }, [draftTurn, gameState.players, setupStep]);
+
 
     const handleCardDraft = (chosenSide: CardSide) => {
         setDrawnCard(null); // Clear the card for the next turn
@@ -52,10 +73,8 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
         setGameState(produce(draft => {
             if (!draft) return;
     
-            const humanPlayerIndex = draft.players.findIndex(p => !p.isAI);
-            const aiPlayerIndex = draft.players.findIndex(p => p.isAI);
             const draftingPlayerIndex = draft.players.findIndex(p => p.id === draftingPlayerId);
-            const opponentPlayerIndex = draftingPlayerIndex === humanPlayerIndex ? aiPlayerIndex : humanPlayerIndex;
+            const opponentPlayerIndex = draftingPlayerIndex === 0 ? 1 : 0;
 
             draft.players[draftingPlayerIndex].projectCards.push({ effect: chosenSide.slot1, usedThisGeneration: false });
             draft.players[opponentPlayerIndex].projectCards.push({ effect: chosenSide.slot2, usedThisGeneration: false });
@@ -65,21 +84,9 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
             if (draftedCard) {
                 draft.projectCards.discardPile.push(draftedCard);
             }
-
-            const nextDraftTurn = draftTurn + 1;
-            
-            if (nextDraftTurn >= 3) {
-                // End of drafting
-                toast({ title: 'Card Draft Complete', description: 'All players have their starting projects. Time to place cities.' });
-                setSetupStep('city-placement');
-            } else {
-                // Next turn
-                setDraftTurn(nextDraftTurn);
-                // W, B, W drafting order
-                const nextDrafter = (nextDraftTurn === 1) ? (draftingPlayerId === 'White' ? 'Black' : 'White') : 'White';
-                setDraftingPlayerId(nextDrafter);
-            }
         }));
+
+        setDraftTurn(prev => prev + 1);
     };
 
     const handleCityPlacement = (hex: Hex, playerId: PlayerColor) => {
