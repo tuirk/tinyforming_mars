@@ -71,10 +71,10 @@ export function GameScreen() {
 
   const handleActivateCard = (playerCard: PlayerProjectCard) => {
     handlePlayerAction(() => {
-        console.log('Activating card:', playerCard.card.title);
+        console.log('Activating card:', playerCard.effect.name);
         toast({
         title: 'Action',
-        description: `Activated card: ${playerCard.card.title}. Effect logic to be implemented.`,
+        description: `Activated card: ${playerCard.effect.name}. Effect logic to be implemented.`,
         });
     });
   };
@@ -95,7 +95,7 @@ export function GameScreen() {
     if (!aiPlayer) return;
     
     const suggestion = await getAISuggestion({
-      projectCards: aiPlayer.projectCards.map(c => c.card.title),
+      projectCards: aiPlayer.projectCards.map(c => c.effect.name),
       gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
     });
 

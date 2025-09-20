@@ -36,7 +36,7 @@ export function ActionPanel({
               {player.projectCards.length > 0 ? (
                 player.projectCards.map((pCard) => (
                   <ProjectCardView
-                    key={pCard.card.id}
+                    key={pCard.effect.id}
                     playerCard={pCard}
                     onActivate={() => onActivateCard(pCard)}
                     canActivate={isCurrentPlayer && !pCard.usedThisGeneration}
