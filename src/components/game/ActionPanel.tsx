@@ -72,7 +72,7 @@ export function ActionPanel({
           <TabsTrigger value="standard">Standard</TabsTrigger>
         </TabsList>
         <TabsContent value="projects" className="flex-grow mt-4">
-          <ScrollArea className="h-[calc(100vh-320px)] pr-4">
+          <ScrollArea className="h-[calc(100vh-280px)] pr-4">
             <div className="space-y-4">
               {player.projectCards.length > 0 ? (
                 player.projectCards.map((card) => (
