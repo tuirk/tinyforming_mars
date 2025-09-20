@@ -104,10 +104,14 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
     }, [placementTurn, setupStep, toast, gameState.players]);
 
     const handleCityPlacement = (hex: Hex, playerId: PlayerColor) => {
+        const isFinalPlacement = placementTurn >= 1;
+
         setGameState(produce(draft => {
             if (!draft) return;
 
             const playerIndex = draft.players.findIndex(p => p.id === playerId);
+            if (playerIndex === -1) return;
+
             const player = draft.players[playerIndex];
             const hexOnMap = player.map.hexes.find(h => h.id === hex.id);
 
@@ -116,17 +120,20 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
             hexOnMap.occupiedBy = { type: 'city', playerId };
             player.cities.push(hex.id);
             
-            if (placementTurn >= 1) { // Both players have placed cities
+            if (isFinalPlacement) { // Both players have placed cities
                 // Finalize setup
                 draft.generation = 1;
                 draft.phase = 'Action';
                 draft.currentPlayerIndex = draft.players.findIndex(p => p.id === 'White');
                 draft.startingPlayerIndex = draft.currentPlayerIndex;
-                setSetupStep('complete');
-            } else {
-                setPlacementTurn(1);
             }
         }));
+
+        if (isFinalPlacement) {
+            setSetupStep('complete');
+        } else {
+            setPlacementTurn(1);
+        }
     }
 
     if (!gameState) return null;
