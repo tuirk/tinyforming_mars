@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Hex } from '@/lib/game/types';
-import { WaterCube, GreeneryCube, HeatCube, ScienceResource, ProductionResource, NatureResource } from './icons';
+import { WaterCube, GreeneryCube, HeatCube, ScienceResource, ProductionResource, NatureResource, SpaceTagIcon } from './icons';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Building2 } from 'lucide-react';
@@ -43,7 +43,8 @@ export function Hexagon({ hex, size }: HexagonProps) {
   const occupiedBy = hex.occupiedBy;
 
   const renderBonus = () => {
-    if (!hex.resourceTokenIcon) return null;
+    const bonusType = hex.resourceTokenIcon || hex.bonusTag;
+    if (!bonusType) return null;
 
     const iconProps = {
         x: size - (size / 4),
@@ -55,11 +56,16 @@ export function Hexagon({ hex, size }: HexagonProps) {
     };
 
     let icon = null;
-    switch(hex.resourceTokenIcon) {
+    switch(bonusType) {
         case 'Science': icon = <ScienceResource {...iconProps} />; break;
         case 'Production': icon = <ProductionResource {...iconProps} />; break;
         case 'Nature': icon = <NatureResource {...iconProps} />; break;
+        case 'Space': icon = <SpaceTagIcon {...iconProps} />; break;
     }
+
+    const tooltipText = hex.resourceTokenIcon 
+      ? `Resource Bonus: Gain 1 ${hex.resourceTokenIcon} token when placing water here.`
+      : `Bonus Tag: Gain 1 ${hex.bonusTag} tag when placing a city here.`;
 
     return (
         <TooltipProvider>
@@ -68,7 +74,7 @@ export function Hexagon({ hex, size }: HexagonProps) {
                     <g>{icon}</g>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Resource Bonus: Gain 1 {hex.resourceTokenIcon} token when placing water here.</p>
+                    <p>{tooltipText}</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
