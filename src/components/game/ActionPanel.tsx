@@ -1,6 +1,7 @@
+
 'use client';
 
-import type { Player, ProjectEffect, StandardProject } from '@/lib/game/types';
+import type { Player, PlayerProjectCard, StandardProject } from '@/lib/game/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCardView } from './ProjectCardView';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ActionPanelProps {
   player: Player;
   isCurrentPlayer: boolean;
-  onActivateCard: (card: ProjectEffect) => void;
+  onActivateCard: (card: PlayerProjectCard) => void;
   onStandardProject: (project: StandardProject) => void;
   onPass: () => void;
 }
@@ -77,10 +78,10 @@ export function ActionPanel({
               {player.projectCards.length > 0 ? (
                 player.projectCards.map((card) => (
                   <ProjectCardView
-                    key={card.id}
-                    cardEffect={card}
+                    key={card.effect.id}
+                    card={card}
                     onActivate={() => onActivateCard(card)}
-                    canActivate={isCurrentPlayer}
+                    canActivate={isCurrentPlayer && !card.usedThisGeneration}
                     playerId={player.id}
                   />
                 ))

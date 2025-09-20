@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { getInitialGameState, MAPS } from '@/lib/game/constants';
-import type { GameState, Player, Hex, ProjectEffect, StandardProject, MapId } from '@/lib/game/types';
+import type { GameState, Player, Hex, PlayerProjectCard, StandardProject, MapId } from '@/lib/game/types';
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
 import { ActionPanel } from './ActionPanel';
@@ -93,7 +94,7 @@ export function GameScreen() {
             draft.passCount = 0;
             draft.players.forEach(p => {
                 p.standardProjectUsed = false;
-                // Add income, reset cards, etc. here in the future
+                p.projectCards.forEach(c => c.usedThisGeneration = false);
             });
             draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
             draft.currentPlayerIndex = draft.startingPlayerIndex;
@@ -107,15 +108,20 @@ export function GameScreen() {
     }
   }
 
-  const handleActivateCard = (card: ProjectEffect) => {
+  const handleActivateCard = (card: PlayerProjectCard) => {
     handlePlayerAction((player) => {
-        console.log('Activating card:', card.name);
+        console.log('Activating card:', card.effect.name);
         toast({
         title: 'Action',
-        description: `Activated card: ${card.name}. Effect logic to be implemented.`,
+        description: `Activated card: ${card.effect.name}. Effect logic to be implemented.`,
         });
-        // This is where you'd implement the card's effect on the player state
-        return player;
+        const newPlayer = produce(player, draft => {
+            const cardInHand = draft.projectCards.find(c => c.effect.id === card.effect.id);
+            if (cardInHand) {
+                cardInHand.usedThisGeneration = true;
+            }
+        });
+        return newPlayer;
     });
   };
 
@@ -146,7 +152,7 @@ export function GameScreen() {
 
 
     const suggestion = await getAISuggestion({
-      projectCards: aiPlayer.projectCards.map(c => c.name),
+      projectCards: aiPlayer.projectCards.map(c => c.effect.name),
       gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
     });
 

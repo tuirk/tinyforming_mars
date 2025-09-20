@@ -16,10 +16,7 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 3: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
 
         // Row 2
-        case 4: break;
-        case 5: break;
-        case 6: break;
-        case 7: break;
+        case 4: break; case 5: break; case 6: break; case 7: break;
 
         // Row 3
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
@@ -218,9 +215,8 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
   const initialBonusTags = { Production: 0, Science: 0, Nature: 0, Space: 0 };
 
-  // For now, statically assign player1 to human and player2 to AI
-  const humanPlayerCards = activeCards.map(c => c.player1Side);
-  const aiPlayerCards = activeCards.map(c => c.player2Side);
+  const humanPlayerCards = activeCards.map(c => ({ effect: c.player1Side, usedThisGeneration: false }));
+  const aiPlayerCards = activeCards.map(c => ({ effect: c.player2Side, usedThisGeneration: false }));
 
   const humanPlayer: Player = {
     id: humanPlayerId,
@@ -286,3 +282,5 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     passCount: 0,
   };
 };
+
+    

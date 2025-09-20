@@ -11,7 +11,6 @@ export type BonusTag = 'Production' | 'Science' | 'Nature' | 'Space';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
 export type TokenType = 'city' | 'specialProject';
-export type CardType = 'Heat' | 'Greenery' | 'Water' | 'Grey';
 
 export interface Hex {
   id: number;
@@ -53,7 +52,6 @@ export type ProjectCardData = {
 };
 
 export type PlayerProjectCard = {
-  cardId: number;
   effect: ProjectEffect;
   usedThisGeneration: boolean;
 };
@@ -98,7 +96,7 @@ export interface Player {
     city: number;
     specialProject: number;
   };
-  projectCards: ProjectEffect[];
+  projectCards: PlayerProjectCard[];
   victoryPoints: number;
   map: MapData;
   standardProjectUsed: boolean;
