@@ -18,8 +18,8 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
-        case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
+        case 17: hex.bonusTag = 'Production'; hex.frame_color = 'orange'; break;
+        case 19: hex.bonusTag = 'Space'; hex.frame_color = 'gray'; break;
     }
     return hex;
 });
@@ -235,7 +235,18 @@ PROJECT_CARDS[3].sideB.slot2 = {
   automaticTags: { ...emptyReq, Energy: 2 },
 };
 
-// Card 5 - SideB Slot2
+// Card 5
+PROJECT_CARDS[4].sideB.slot1 = {
+    id: "5-B1",
+    name: "Great Dam",
+    cost: { credits: 3, reducible: true },
+    tagRequirements: { ...emptyReq, Production: 1, Nature: 1 },
+    parameterRequirements: { ...emptyParams, Water: 2 },
+    costReductionRule: "Reduce the cost by 1 Credit for every Water Cube beyond two",
+    effect: "Gain 1 Heat Cube",
+    effectType: "heat",
+    automaticTags: { ...emptyReq, Energy: 1, Science: 1 },
+};
 PROJECT_CARDS[4].sideB.slot2 = {
   id: "5-B2",
   name: "Lichen",
@@ -247,7 +258,18 @@ PROJECT_CARDS[4].sideB.slot2 = {
   automaticTags: { ...emptyReq, Production: 2 },
 };
 
-// Card 6 - SideB Slot2
+// Card 6
+PROJECT_CARDS[5].sideB.slot1 = {
+    id: "6-B1",
+    name: "Nuclear Power",
+    cost: { credits: 3, reducible: true },
+    tagRequirements: { ...emptyReq, Production: 1, Science: 1 },
+    parameterRequirements: { ...emptyParams },
+    costReductionRule: "Reduce the cost by 1 Credit for each Energy Tag you have (minimum cost of 1)",
+    effect: "Gain 1 Heat Cube",
+    effectType: "heat",
+    automaticTags: { ...emptyReq, Nature: 1, Space: 1 },
+};
 PROJECT_CARDS[5].sideB.slot2 = {
   id: "6-B2",
   name: "Trees",
@@ -259,7 +281,17 @@ PROJECT_CARDS[5].sideB.slot2 = {
   automaticTags: { ...emptyReq, Space: 2 },
 };
 
-// Card 7 - SideB Slot2
+// Card 7
+PROJECT_CARDS[6].sideB.slot1 = {
+    id: "7-B1",
+    name: "Comet",
+    cost: { credits: 3, reducible: false },
+    tagRequirements: { ...emptyReq, Energy: 1, Space: 1 },
+    parameterRequirements: { ...emptyParams },
+    effect: "Gain 1 Heat Cube. You may also place 1 Water Cube if you now have five or more Heat Cubes.",
+    effectType: "heat",
+    automaticTags: { ...emptyReq, Nature: 2 },
+};
 PROJECT_CARDS[6].sideB.slot2 = {
   id: "7-B2",
   name: "Algae",
@@ -391,6 +423,8 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     passCount: 0,
   };
 };
+
+    
 
     
 
