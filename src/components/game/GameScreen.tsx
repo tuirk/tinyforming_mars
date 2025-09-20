@@ -62,7 +62,10 @@ export function GameScreen() {
   const advanceTurn = () => {
     setGameState(prev => {
         if (!prev) return null;
-        return { ...prev, passCount: 0, currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length };
+        return produce(prev, draft => {
+            draft.passCount = 0;
+            draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+        });
     });
   }
 
@@ -110,18 +113,27 @@ export function GameScreen() {
 
   const handleActivateCard = (card: PlayerProjectCard) => {
     handlePlayerAction((player) => {
-        console.log('Activating card:', card.effect.name);
-        toast({
+      const cost = typeof card.effect.cost === 'string' ? parseInt(card.effect.cost.split(' ')[0], 10) : card.effect.cost || 0;
+      
+      if (player.credits < cost) {
+        toast({ title: "Not enough credits!", variant: 'destructive' });
+        return player;
+      }
+      
+      console.log('Activating card:', card.effect.name);
+      toast({
         title: 'Action',
-        description: `Activated card: ${card.effect.name}. Effect logic to be implemented.`,
-        });
-        const newPlayer = produce(player, draft => {
-            const cardInHand = draft.projectCards.find(c => c.effect.id === card.effect.id);
-            if (cardInHand) {
-                cardInHand.usedThisGeneration = true;
-            }
-        });
-        return newPlayer;
+        description: `Activated card: ${card.effect.name}.`,
+      });
+
+      const newPlayer = produce(player, draft => {
+          draft.credits -= cost;
+          const cardInHand = draft.projectCards.find(c => c.effect.id === card.effect.id);
+          if (cardInHand) {
+              cardInHand.usedThisGeneration = true;
+          }
+      });
+      return newPlayer;
     });
   };
 
@@ -273,3 +285,5 @@ export function GameScreen() {
     </div>
   );
 }
+
+    
