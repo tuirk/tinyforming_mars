@@ -1,4 +1,5 @@
 
+
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type ParameterType = 'Water' | 'Greenery' | 'Heat';
@@ -106,7 +107,7 @@ export interface StandardProject {
 
 export interface GameState {
   generation: number;
-  phase: 'Research' | 'Action' | 'Income' | 'End';
+  phase: 'Setup' | 'Research' | 'Action' | 'Income' | 'End';
   players: Player[];
   currentPlayerIndex: number;
   startingPlayerIndex: number;

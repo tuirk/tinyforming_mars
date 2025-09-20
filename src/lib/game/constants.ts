@@ -472,14 +472,9 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   const humanPlayerId = isHumanWhite ? 'White' : 'Black';
   const aiPlayerId = isHumanWhite ? 'Black' : 'White';
   
-  const { activeCards, remainingDeck } = drawInitialCards(PROJECT_CARDS);
-  
   const initialTags: Requirements<Record<Tag, number>> = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
   const initialBonusTags = { Production: 0, Science: 0, Nature: 0, Space: 0 };
   const initialResourceTokens = { Nature: 0, Production: 0, Science: 0 };
-
-  const humanPlayerCards = activeCards.map(c => ({ effect: c.player1Side, usedThisGeneration: false }));
-  const aiPlayerCards = activeCards.map(c => ({ effect: c.player2Side, usedThisGeneration: false }));
 
   const humanPlayer: Player = {
     id: humanPlayerId,
@@ -492,7 +487,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: humanPlayerCards,
+    projectCards: [],
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[playerMapId])),
     standardProjectUsed: false,
@@ -509,7 +504,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: aiPlayerCards,
+    projectCards: [],
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[aiMapId])),
     standardProjectUsed: false,
@@ -519,8 +514,8 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   const startingPlayerIndex = players.findIndex(p => p.id === 'White');
 
   return {
-    generation: 1,
-    phase: 'Action',
+    generation: 0,
+    phase: 'Setup',
     players,
     currentPlayerIndex: startingPlayerIndex,
     startingPlayerIndex: startingPlayerIndex,
@@ -538,23 +533,12 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
       }
     },
     projectCards: {
-      drawDeck: remainingDeck,
+      drawDeck: [...PROJECT_CARDS],
       discardPile: [],
-      activeCards: activeCards,
+      activeCards: [],
     },
     isGameOver: false,
     gameEndTriggered: false,
     passCount: 0,
   };
 };
-
-    
-
-    
-
-    
-
-
-
-
-    
