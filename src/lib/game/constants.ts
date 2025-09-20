@@ -1,5 +1,6 @@
+
 import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, PlayerProjectCard } from './types';
-import { dealInitialProjects } from './state';
+import { drawSharedCardRound } from './state';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
     id: i + 1,
@@ -177,7 +178,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   const humanPlayerId = isHumanWhite ? 'White' : 'Black';
   const aiPlayerId = isHumanWhite ? 'Black' : 'White';
   
-  const { humanProjects, aiProjects, remainingDeck } = dealInitialProjects();
+  const { humanProject, aiProject, remainingDeck } = drawSharedCardRound(PROJECT_CARDS);
 
   const humanPlayer: Player = {
     id: humanPlayerId,
@@ -186,7 +187,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     resources: { Nature: 2, Production: 1, Science: 1 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: humanProjects,
+    projectCards: [humanProject],
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[playerMapId])),
   };
@@ -198,7 +199,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     resources: { Nature: 2, Production: 1, Science: 1 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: aiProjects,
+    projectCards: [aiProject],
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[aiMapId])),
   };

@@ -1,5 +1,5 @@
 // src/lib/game/state.ts
-import type { ProjectCardData, PlayerProjectCard } from "./types";
+import type { ProjectCardData, PlayerProjectCard, CardSide } from "./types";
 import { PROJECT_CARDS } from "./constants";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -11,42 +11,39 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function pickRandomSide(card: ProjectCardData) {
+function pickRandomSide(card: ProjectCardData): CardSide {
   return Math.random() < 0.5 ? card.sideA : card.sideB;
 }
 
 /**
- * Deal initial projects:
+ * Draws one shared card for the round:
  * - Shuffle deck
- * - Draw one card for human (owner)
- * - Draw one card for AI (owner)
- * - For each card: randomly choose side (A or B)
- *   - slot1 -> owner
- *   - slot2 -> opponent
+ * - Reveal top card (side A or B at random)
+ * - Slot1 -> Human, Slot2 -> AI
  */
-export function dealInitialProjects() {
-  const deck = shuffle(PROJECT_CARDS.slice());
-  if (deck.length < 2) throw new Error("Not enough cards to deal initial projects.");
+export function drawSharedCardRound(initialDeck: ProjectCardData[]) {
+  const deck = shuffle(initialDeck);
+  if (deck.length === 0) throw new Error("Deck is empty!");
 
-  const humanDealtCard = deck.pop()!; // owner = human
-  const aiDealtCard = deck.pop()!;    // owner = ai
+  const card = deck[0]; // top card
+  const side = pickRandomSide(card);
 
-  const humanSide = pickRandomSide(humanDealtCard);
-  const aiSide = pickRandomSide(aiDealtCard);
+  const humanProject: PlayerProjectCard = {
+    cardId: card.cardId,
+    effect: side.slot1,
+    usedThisGeneration: false,
+  };
 
-  const humanProjects: PlayerProjectCard[] = [
-    { cardId: humanDealtCard.cardId, effect: humanSide.slot1, usedThisGeneration: false }, // owner slot
-    { cardId: aiDealtCard.cardId, effect: aiSide.slot2, usedThisGeneration: false }        // opponent slot from ai's card
-  ];
-
-  const aiProjects: PlayerProjectCard[] = [
-    { cardId: aiDealtCard.cardId, effect: aiSide.slot1, usedThisGeneration: false },       // owner slot
-    { cardId: humanDealtCard.cardId, effect: humanSide.slot2, usedThisGeneration: false }  // opponent slot from human's card
-  ];
+  const aiProject: PlayerProjectCard = {
+    cardId: card.cardId,
+    effect: side.slot2,
+    usedThisGeneration: false,
+  };
 
   return {
-    humanProjects,
-    aiProjects,
-    remainingDeck: deck
+    card,
+    humanProject,
+    aiProject,
+    remainingDeck: deck.slice(1)
   };
 }
