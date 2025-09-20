@@ -1,5 +1,5 @@
 
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, PlayerProjectCard } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, PlayerProjectCard, Tag } from './types';
 import { drawSharedCardRound } from './state';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
@@ -145,29 +145,36 @@ export const STANDARD_PROJECTS: StandardProject[] = [
     {
         id: 'std-01',
         title: 'Sell Patent',
-        description: 'Discard a Project Card to gain 2 Credits.',
+        description: 'Gain 1 Credit.',
         cost: 0,
         action: (gs, p) => ({ newGameState: gs, newPlayer: p }),
     },
     {
         id: 'std-02',
         title: 'Build City',
-        description: 'Place a city on a land hex.',
-        cost: 10,
+        description: 'Requires: 1 Energy, 1 Space tag. Place a city.',
+        cost: 2,
         action: (gs, p) => ({ newGameState: gs, newPlayer: p }),
     },
     {
         id: 'std-03',
         title: 'Import Water',
-        description: 'Place a Water cube.',
-        cost: 6,
+        description: 'Requires: 1 Science tag. Place a water tile.',
+        cost: 3,
         action: (gs, p) => ({ newGameState: gs, newPlayer: p }),
     },
     {
         id: 'std-04',
         title: 'Greenhouses',
-        description: 'Place a Greenery cube.',
-        cost: 7,
+        description: 'Requires: 2 Nature tags. Place a greenery tile.',
+        cost: 3,
+        action: (gs, p) => ({ newGameState: gs, newPlayer: p }),
+    },
+    {
+        id: 'std-05',
+        title: 'Energy Farms',
+        description: 'Requires: 1 Energy, 1 Science tag. Gain 1 Heat tile.',
+        cost: 3,
         action: (gs, p) => ({ newGameState: gs, newPlayer: p }),
     },
 ];
@@ -179,29 +186,35 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   const aiPlayerId = isHumanWhite ? 'Black' : 'White';
   
   const { humanProject, aiProject, remainingDeck } = drawSharedCardRound(PROJECT_CARDS);
-
+  
+  const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0 };
+  
   const humanPlayer: Player = {
     id: humanPlayerId,
     isAI: false,
     credits: 5,
+    tags: {...initialTags},
     resources: { Nature: 2, Production: 1, Science: 1 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
     projectCards: [humanProject],
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[playerMapId])),
+    standardProjectUsed: false,
   };
 
   const aiPlayer: Player = {
     id: aiPlayerId,
     isAI: true,
     credits: 5,
+    tags: {...initialTags},
     resources: { Nature: 2, Production: 1, Science: 1 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
     projectCards: [aiProject],
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[aiMapId])),
+    standardProjectUsed: false,
   };
 
   const players = [humanPlayer, aiPlayer].sort((a, b) => a.id === 'White' ? -1 : 1);

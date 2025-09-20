@@ -1,7 +1,7 @@
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type CubeType = 'Water' | 'Greenery' | 'Heat';
-export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space' | 'Plant';
+export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space' | 'Plant' | 'Building';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
 export type TokenType = 'city' | 'specialProject';
@@ -32,7 +32,7 @@ export type ProjectEffect = {
   id: string;    
   name: string;
   cost?: number | string;
-  tags?: string[];
+  tags?: Tag[];
   requirements?: string[];
   effect: string;
 };
@@ -59,6 +59,15 @@ export interface Player {
   id: PlayerColor;
   isAI: boolean;
   credits: number;
+  tags: {
+    Energy: number;
+    Production: number;
+    Nature: number;
+    Science: number;
+    Space: number;
+    Building: number;
+    Plant: number;
+  },
   resources: Resources;
   parameterCubes: {
     Water: number;
@@ -72,6 +81,7 @@ export interface Player {
   projectCards: PlayerProjectCard[];
   victoryPoints: number;
   map: MapData;
+  standardProjectUsed: boolean;
 }
 
 export interface StandardProject {
