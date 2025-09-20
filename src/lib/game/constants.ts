@@ -24,14 +24,14 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         // Row 3
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
-        case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
+        case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
         case 11: break; 
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         
         // Row 4
         case 13: break;
         case 14: break;
-        case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
+        case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
 
         // Row 5
@@ -268,13 +268,23 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     players,
     currentPlayerIndex: startingPlayerIndex,
     startingPlayerIndex: startingPlayerIndex,
-    creditsInSupply: 100, // Or some other number
-    parametersInSupply: {
-      Water: 4,
-      Greenery: 7,
-      Heat: 11,
+    supplies: {
+      credits: 100,
+      parameterTiles: {
+        Water: 4,
+        Greenery: 7,
+        Heat: 11,
+      },
+      resourceTokens: {
+        Nature: 2,
+        Production: 1,
+        Science: 1,
+      }
     },
-    projectCardDeck: remainingDeck,
+    projectCards: {
+      drawDeck: remainingDeck,
+      discardPile: [],
+    },
     isGameOver: false,
     gameEndTriggered: false,
     passCount: 0,

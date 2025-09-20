@@ -1,11 +1,10 @@
 
-
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type ParameterType = 'Water' | 'Greenery' | 'Heat';
 export type TileType = 'city' | ParameterType;
 
-export type Tag = 'Energy' | 'Production' | 'Nature' | 'Science' | 'Space' | 'Plant' | 'Building';
+export type Tag = 'Energy' | 'Production' | 'Nature' | 'Science' | 'Space' | 'Plant' | 'Building' | 'Heat' | 'Water';
 export type BonusTag = 'Production' | 'Science' | 'Nature' | 'Space';
 
 
@@ -71,6 +70,8 @@ export interface Player {
     Space: number;
     Building: number;
     Plant: number;
+    Heat: number;
+    Water: number;
   };
   bonusTagsFromCities: {
     Production: number;
@@ -111,13 +112,23 @@ export interface GameState {
   players: Player[];
   currentPlayerIndex: number;
   startingPlayerIndex: number;
-  parametersInSupply: {
-    Water: number;
-    Greenery: number;
-    Heat: number;
+  supplies: {
+    parameterTiles: {
+      Water: number;
+      Greenery: number;
+      Heat: number;
+    };
+    resourceTokens: {
+      Nature: number;
+      Production: number;
+      Science: number;
+    };
+    credits: number;
   };
-  creditsInSupply: number;
-  projectCardDeck: ProjectCardData[];
+  projectCards: {
+    drawDeck: ProjectCardData[];
+    discardPile: ProjectCardData[];
+  };
   isGameOver: boolean;
   gameEndTriggered: boolean;
   passCount: number;

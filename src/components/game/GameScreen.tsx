@@ -13,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { MapSelection } from './MapSelection';
 import { Supply } from './Supply';
 import { produce } from 'immer';
+import { ResourceTokenSupply } from './ResourceTokenSupply';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -207,7 +208,10 @@ export function GameScreen() {
           currentPlayerId={currentPlayer.id}
           isAIThinking={isAIThinking}
         />
-        <Supply gameState={gameState} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Supply gameState={gameState} />
+            <ResourceTokenSupply gameState={gameState} />
+        </div>
         
         <div className="flex flex-col gap-8">
             {/* AI Player Section */}
@@ -227,7 +231,7 @@ export function GameScreen() {
                   <h2 className="text-lg font-headline text-center mb-2">Your Board ({humanPlayer.map.name})</h2>
                   <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, humanPlayer)} />
               </div>
-              <div className="lg:w-[30%] w-full">
+              <div className="lg-w-[30%] w-full">
                   <PlayerDashboard player={humanPlayer} isCurrentPlayer={currentPlayer.id === humanPlayer.id} />
               </div>
             </div>

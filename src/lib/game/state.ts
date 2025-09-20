@@ -1,6 +1,5 @@
 // src/lib/game/state.ts
 import type { ProjectCardData, PlayerProjectCard, CardSide } from "./types";
-import { PROJECT_CARDS } from "./constants";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
