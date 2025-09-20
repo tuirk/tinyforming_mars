@@ -50,13 +50,11 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
         if (setupStep !== 'card-draft' || draftTurn === 0) return;
 
         // This effect runs when draftTurn changes, which now happens *after* gameState is updated.
-        // The total cards drafted will be 2 * draftTurn.
         const expectedTotalCards = draftTurn * 2;
         const actualTotalCards = gameState.players.reduce((sum, p) => sum + p.projectCards.length, 0);
 
         if (actualTotalCards === expectedTotalCards) {
             if (draftTurn >= 3) {
-                toast({ title: 'Card Draft Complete', description: 'All players have their starting projects. Time to place cities.' });
                 setSetupStep('city-placement');
             } else {
                  // W, B, W drafting order
@@ -66,6 +64,11 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
         }
     }, [draftTurn, gameState.players, setupStep]);
 
+    useEffect(() => {
+        if (setupStep === 'city-placement' && draftTurn >= 3) {
+            toast({ title: 'Card Draft Complete', description: 'All players have their starting projects. Time to place cities.' });
+        }
+    }, [setupStep, draftTurn, toast]);
 
     const handleCardDraft = (chosenSide: CardSide) => {
         setDrawnCard(null); // Clear the card for the next turn
@@ -88,6 +91,17 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
 
         setDraftTurn(prev => prev + 1);
     };
+    
+    useEffect(() => {
+        if (setupStep === 'city-placement' && placementTurn > 0) {
+            const placementOrder: PlayerColor[] = gameState.players.find(p => p.id === 'Black') ? ['Black', 'White'] : ['White', 'Black'];
+            const playerWhoPlaced = placementOrder[placementTurn -1];
+            toast({title: `${playerWhoPlaced} placed a city.`})
+        }
+        if (setupStep === 'complete') {
+            toast({ title: 'Setup Complete!', description: `Generation 1 begins. It's White's turn.` });
+        }
+    }, [placementTurn, setupStep, toast, gameState.players]);
 
     const handleCityPlacement = (hex: Hex, playerId: PlayerColor) => {
         setGameState(produce(draft => {
@@ -102,15 +116,12 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
             hexOnMap.occupiedBy = { type: 'city', playerId };
             player.cities.push(hex.id);
             
-            toast({title: `${playerId} placed a city on hex #${hex.id}.`})
-
             if (placementTurn >= 1) { // Both players have placed cities
                 // Finalize setup
                 draft.generation = 1;
                 draft.phase = 'Action';
                 draft.currentPlayerIndex = draft.players.findIndex(p => p.id === 'White');
                 draft.startingPlayerIndex = draft.currentPlayerIndex;
-                toast({ title: 'Setup Complete!', description: `Generation 1 begins. It's White's turn.` });
                 setSetupStep('complete');
             } else {
                 setPlacementTurn(1);
