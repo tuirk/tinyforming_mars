@@ -18,8 +18,8 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
-        case 17: hex.bonusTag = 'Production'; hex.frame_color = 'orange'; break;
-        case 19: hex.bonusTag = 'Space'; hex.frame_color = 'gray'; break;
+        case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
     }
     return hex;
 });
@@ -179,6 +179,17 @@ PROJECT_CARDS[1].sideA.slot1 = {
   effectType: "greenery",
   automaticTags: { ...emptyReq, Energy: 1, Production: 1 },
 };
+PROJECT_CARDS[1].sideA.slot2 = {
+  id: "2-A2",
+  name: "Geothermal Power",
+  cost: { credits: 3, reducible: true },
+  tagRequirements: { ...emptyReq, Production: 2, Nature: 1 },
+  parameterRequirements: { ...emptyParams },
+  costReductionRule: "Reduce the cost by 1 Credit for every two Heat Cubes you have (minimum cost of 1)",
+  effect: "Gain 1 Heat Cube",
+  effectType: "heat",
+  automaticTags: { ...emptyReq, Science: 1, Space: 1 },
+};
 PROJECT_CARDS[1].sideB.slot1 = {
   id: "2-B1",
   name: "Aquifer Pumping",
@@ -210,6 +221,17 @@ PROJECT_CARDS[2].sideA.slot1 = {
     effect: "Gain 1 Credit for each Production and Space Tag you have on your Project cards.",
     effectType: "utility",
     automaticTags: { ...emptyReq, Energy: 1, Nature: 1 },
+};
+PROJECT_CARDS[2].sideA.slot2 = {
+    id: "3-A2",
+    name: "GHG Factories",
+    cost: { credits: 3, reducible: true },
+    tagRequirements: { ...emptyReq, Production: 2 },
+    parameterRequirements: { ...emptyParams },
+    costReductionRule: "Reduce the cost by 1 Credit for each Production Tag you have beyond two (minimum cost of 1)",
+    effect: "Gain 1 Heat Cube",
+    effectType: "heat",
+    automaticTags: { ...emptyReq, Energy: 1, Science: 1 },
 };
 PROJECT_CARDS[2].sideB.slot1 = {
   id: "3-B1",
@@ -243,6 +265,16 @@ PROJECT_CARDS[3].sideA.slot1 = {
     effect: "Place 1 Water Cube. If this Cube is placed adjacent to one or more Greenery Cubes, return one of those Greenery Cubes to the supply.",
     effectType: "water",
     automaticTags: { ...emptyReq, Energy: 1, Production: 1 },
+};
+PROJECT_CARDS[3].sideA.slot2 = {
+  id: "4-A2",
+  name: "Fusion Power",
+  cost: { credits: 2, reducible: false },
+  tagRequirements: { ...emptyReq, Science: 2 },
+  parameterRequirements: { ...emptyParams },
+  effect: "Gain 1 Heat Cube and Gain 1 available Resource Token of your choice",
+  effectType: "heat",
+  automaticTags: { ...emptyReq, Production: 1, Nature: 1 },
 };
 PROJECT_CARDS[3].sideB.slot1 = {
   id: "4-B1",
@@ -490,4 +522,5 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     
 
     
+
 
