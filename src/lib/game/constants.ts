@@ -6,17 +6,19 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
     id: i + 1,
     type: 'land' as 'land' | 'water',
     cubes: [],
+    occupiedBy: { type: null, playerId: null },
+    isWaterReserved: false,
   }))
   .map(hex => {
     switch (hex.id) {
         case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        case 3: hex.type = 'water'; hex.bonusTag = 'Science'; break;
+        case 3: hex.type = 'water'; hex.bonusTag = 'Science'; hex.isWaterReserved = true; break;
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-        case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
-        case 10: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+        case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
+        case 10: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-        case 15: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
-        case 16: hex.type = 'water'; break;
+        case 15: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
+        case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
         case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
     }
@@ -35,17 +37,19 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
     type: 'land' as 'land' | 'water',
     cubes: [],
     bonusTag: undefined,
+    occupiedBy: { type: null, playerId: null },
+    isWaterReserved: false,
   }))
   .map(hex => {
     switch (hex.id) {
-      case 1: hex.type = 'water'; hex.bonusTag = 'Science'; break;
-      case 2: hex.type = 'water'; hex.bonusTag = 'Production'; break;
+      case 1: hex.type = 'water'; hex.bonusTag = 'Science'; hex.isWaterReserved = true; break;
+      case 2: hex.type = 'water'; hex.bonusTag = 'Production'; hex.isWaterReserved = true; break;
       case 4: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
-      case 6: hex.type = 'water'; break;
+      case 6: hex.type = 'water'; hex.isWaterReserved = true; break;
       case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
-      case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+      case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; break;
       case 10: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-      case 11: hex.type = 'water'; hex.bonusTag = 'Nature'; break;
+      case 11: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; break;
       case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
       case 19: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
     }
@@ -194,7 +198,8 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     isAI: false,
     credits: 5,
     tags: {...initialTags},
-    resources: { Nature: 2, Production: 1, Science: 1 },
+    cities: [],
+    personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
     projectCards: [humanProject],
@@ -208,7 +213,8 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     isAI: true,
     credits: 5,
     tags: {...initialTags},
-    resources: { Nature: 2, Production: 1, Science: 1 },
+    cities: [],
+    personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
     projectCards: [aiProject],
@@ -226,18 +232,15 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     players,
     currentPlayerIndex: startingPlayerIndex,
     startingPlayerIndex: startingPlayerIndex,
-    cubeSupply: {
+    creditsInSupply: 100, // Or some other number
+    parametersInSupply: {
       Water: 4,
       Greenery: 7,
       Heat: 11,
     },
-    resourceSupply: {
-        Nature: 2,
-        Production: 1,
-        Science: 1,
-    },
     projectCardDeck: remainingDeck,
     isGameOver: false,
+    gameEndTriggered: false,
     passCount: 0,
   };
 };

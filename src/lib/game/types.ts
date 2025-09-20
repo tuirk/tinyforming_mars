@@ -1,6 +1,8 @@
+
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
-export type CubeType = 'Water' | 'Greenery' | 'Heat';
+export type ParameterType = 'Water' | 'Greenery' | 'Heat';
+export type TileType = 'city' | ParameterType;
 export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space' | 'Plant' | 'Building';
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
@@ -12,8 +14,16 @@ export interface Hex {
   type: HexType;
   bonusTag?: Tag;
   owner?: PlayerColor;
-  cubes: CubeType[];
+  cubes: ParameterType[]; // Legacy, can be phased out
   frameColor?: 'gray' | 'white' | 'green' | 'orange';
+  
+  // New properties from requirements
+  isWaterReserved: boolean;
+  resourceTokenIcon?: ResourceType;
+  occupiedBy: {
+    type: TileType | null;
+    playerId: PlayerColor | null;
+  };
 }
 
 export interface MapData {
@@ -22,17 +32,11 @@ export interface MapData {
   hexes: Hex[];
 }
 
-export interface Resources {
-  Nature: number;
-  Production: number;
-  Science: number;
-}
-
 export type ProjectEffect = {
   id: string;    
   name: string;
   cost?: number | string;
-  tags?: Tag[];
+  tags?: string[];
   requirements?: string[];
   effect: string;
 };
@@ -54,7 +58,6 @@ export type PlayerProjectCard = {
   usedThisGeneration: boolean;
 };
 
-
 export interface Player {
   id: PlayerColor;
   isAI: boolean;
@@ -68,7 +71,10 @@ export interface Player {
     Building: number;
     Plant: number;
   },
-  resources: Resources;
+  cities: number[]; // hex IDs
+  personalSupply: {
+    heat: number;
+  },
   parameterCubes: {
     Water: number;
     Greenery: number;
@@ -98,17 +104,14 @@ export interface GameState {
   players: Player[];
   currentPlayerIndex: number;
   startingPlayerIndex: number;
-  cubeSupply: {
+  parametersInSupply: {
     Water: number;
     Greenery: number;
     Heat: number;
   };
-  resourceSupply: {
-      Nature: number;
-      Production: number;
-      Science: number;
-  };
+  creditsInSupply: number;
   projectCardDeck: ProjectCardData[];
   isGameOver: boolean;
+  gameEndTriggered: boolean;
   passCount: number;
 }
