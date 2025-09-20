@@ -22,6 +22,8 @@ export function GameScreen() {
   const [isAIThinking, setIsAIThinking] = useState(false);
   const { toast } = useToast();
   const [selectedMap, setSelectedMap] = useState<MapId | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -29,12 +31,17 @@ export function GameScreen() {
 
   const handleStartGame = (playerMap: MapId) => {
     setSelectedMap(playerMap);
+    setIsPaused(false);
   };
 
   const handleStopGame = () => {
     setGameState(null);
     setSelectedMap(null);
   };
+
+  const handleTogglePause = () => {
+    setIsPaused(prev => !prev);
+  }
   
   useEffect(() => {
     if (selectedMap && isClient && !gameState) {
@@ -52,7 +59,7 @@ export function GameScreen() {
   }, [gameState?.generation, toast]);
 
   const handleHexClick = (hex: Hex, player: Player) => {
-    if (!gameState) return;
+    if (!gameState || isPaused) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer.isAI || player.id !== currentPlayer.id) return;
     
@@ -98,7 +105,7 @@ export function GameScreen() {
   }, [toast]);
 
   const handlePass = () => {
-    if (!gameState) return;
+    if (!gameState || isPaused) return;
     const newPassCount = gameState.passCount + 1;
 
     if (newPassCount >= gameState.players.length) {
@@ -113,7 +120,7 @@ export function GameScreen() {
   }
 
   const handleActivateCard = (card: PlayerProjectCard) => {
-    if (!gameState) return;
+    if (!gameState || isPaused) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer.isAI) return;
 
@@ -148,7 +155,7 @@ export function GameScreen() {
   };
 
   const handleStandardProject = (project: StandardProject) => {
-    if (!gameState) return;
+    if (!gameState || isPaused) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer.isAI) return;
     
@@ -233,14 +240,14 @@ export function GameScreen() {
 
 
   useEffect(() => {
-    if (gameState) {
+    if (gameState && !isPaused) {
       const currentPlayer = gameState.players[gameState.currentPlayerIndex];
       if (currentPlayer.isAI && !isAIThinking) {
         const timer = setTimeout(() => processAIMove(gameState), 1000);
         return () => clearTimeout(timer);
       }
     }
-  }, [gameState, processAIMove, isAIThinking]);
+  }, [gameState, processAIMove, isAIThinking, isPaused]);
 
   if (!isClient) {
     return (
@@ -268,6 +275,8 @@ export function GameScreen() {
           players={gameState.players}
           isAIThinking={isAIThinking}
           onStopGame={handleStopGame}
+          isPaused={isPaused}
+          onTogglePause={handleTogglePause}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Supply gameState={gameState} />
@@ -306,6 +315,7 @@ export function GameScreen() {
           onActivateCard={handleActivateCard}
           onStandardProject={handleStandardProject}
           onPass={handlePass}
+          isPaused={isPaused}
         />
       </aside>
     </div>
