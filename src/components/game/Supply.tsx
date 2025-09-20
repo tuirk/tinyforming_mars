@@ -3,7 +3,7 @@
 
 import type { GameState } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NatureResource, ProductionResource, ScienceResource, WaterCube, GreeneryCube, HeatCube } from './icons';
+import { WaterCube, GreeneryCube, HeatCube } from './icons';
 import { Coins } from 'lucide-react';
 
 interface SupplyProps {
@@ -25,10 +25,10 @@ export function Supply({ gameState }: SupplyProps) {
       <CardContent className="flex justify-center items-center gap-6 p-3">
         <div className="flex items-center gap-2" title="Credits in Supply">
             <Coins className="h-8 w-8 text-yellow-400" />
-            <span className="font-bold text-lg">{gameState.creditsInSupply}</span>
+            <span className="font-bold text-lg">{gameState.supplies.credits}</span>
         </div>
         <div className="flex gap-4">
-            {Object.entries(gameState.parametersInSupply).map(([type, value]) => {
+            {Object.entries(gameState.supplies.parameterTiles).map(([type, value]) => {
                 const Icon = parameterIcons[type as keyof typeof parameterIcons];
                 return (
                 <div key={type} className="flex items-center gap-2">
