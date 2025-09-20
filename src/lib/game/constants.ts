@@ -168,7 +168,17 @@ PROJECT_CARDS[0] = {
   }
 };
 
-// Card 2 - SideB Slot2
+// Card 2
+PROJECT_CARDS[1].sideB.slot1 = {
+  id: "2-B1",
+  name: "Aquifer Pumping",
+  cost: { credits: 4, reducible: false },
+  tagRequirements: { ...emptyReq, Energy: 1, Nature: 1 },
+  parameterRequirements: { ...emptyParams },
+  effect: "Place 1 Water Cube. Gain 2 Credits if this Water Cube was not placed adjacent to any other Water Cubes.",
+  effectType: "water",
+  automaticTags: { ...emptyReq, Production: 1, Space: 1 },
+};
 PROJECT_CARDS[1].sideB.slot2 = {
   id: "2-B2",
   name: "Moss",
@@ -180,7 +190,17 @@ PROJECT_CARDS[1].sideB.slot2 = {
   automaticTags: { ...emptyReq, Production: 2 },
 };
 
-// Card 3 - SideB Slot2
+// Card 3
+PROJECT_CARDS[2].sideB.slot1 = {
+  id: "3-B1",
+  name: "Methane from Titan",
+  cost: { credits: 2, reducible: false },
+  tagRequirements: { ...emptyReq, Production: 1, Space: 1 },
+  parameterRequirements: { ...emptyParams },
+  effect: "Gain 1 Heat Cube. If you spend an additional 2 Credits and have an additional Space Tag, you may gain an additional Heat Cube.",
+  effectType: "heat",
+  automaticTags: { ...emptyReq, Energy: 1, Nature: 1 },
+};
 PROJECT_CARDS[2].sideB.slot2 = {
   id: "3-B2",
   name: "Bushes",
@@ -193,7 +213,17 @@ PROJECT_CARDS[2].sideB.slot2 = {
   automaticTags: { ...emptyReq, Energy: 2 },
 };
 
-// Card 4 - SideB Slot2
+// Card 4
+PROJECT_CARDS[3].sideB.slot1 = {
+  id: "4-B1",
+  name: "Asteroid",
+  cost: { credits: 4, reducible: false },
+  tagRequirements: { ...emptyReq, Energy: 1, Space: 1 },
+  parameterRequirements: { ...emptyParams },
+  effect: "Gain 1 Heat Cube. You may return 1 Greenery Cube from the board to the supply.",
+  effectType: "heat",
+  automaticTags: { ...emptyReq, Production: 2 },
+};
 PROJECT_CARDS[3].sideB.slot2 = {
   id: "4-B2",
   name: "Protected Valley",
