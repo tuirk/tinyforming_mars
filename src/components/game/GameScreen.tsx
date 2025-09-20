@@ -140,8 +140,8 @@ export function GameScreen() {
       }
       
       toast({
-        title: 'Action',
-        description: `Activated card: ${card.effect.name}.`,
+        title: 'Action: Activated Card',
+        description: `${card.effect.name}. Effect logic to be implemented.`,
       });
 
       player.credits -= cost;
@@ -175,7 +175,7 @@ export function GameScreen() {
 
         console.log('Completing project:', project.title);
         toast({
-          title: 'Action',
+          title: 'Action: Standard Project',
           description: `Completed project: ${project.title}. Effect logic to be implemented.`,
         });
 
