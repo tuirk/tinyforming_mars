@@ -12,31 +12,31 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
     switch (hex.id) {
         // Row 1
         case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        case 2: break; // Empty brown hex
+        case 2: break;
         case 3: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
 
         // Row 2
-        case 4: break; // Empty brown hex
-        case 5: break; // Empty brown hex
-        case 6: break; // Empty brown hex
-        case 7: break; // Empty brown hex
+        case 4: break;
+        case 5: break;
+        case 6: break;
+        case 7: break;
 
         // Row 3
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
-        case 11: break; // Empty brown hex
+        case 11: break; 
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         
         // Row 4
-        case 13: break; // Empty brown hex
-        case 14: break; // Empty brown hex
+        case 13: break;
+        case 14: break;
         case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
 
         // Row 5
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        case 18: break; // Empty brown hex
+        case 18: break;
         case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
     }
     return hex;
@@ -57,16 +57,34 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
   }))
   .map(hex => {
     switch (hex.id) {
-      case 1: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
-      case 2: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
-      case 4: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
-      case 6: hex.type = 'water'; hex.isWaterReserved = true; break;
-      case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
-      case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
-      case 10: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-      case 11: hex.type = 'water'; hex.isWaterReserved = true; break;
-      case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-      case 19: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        // Row 1
+        case 1: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
+        case 2: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
+        case 3: break;
+
+        // Row 2
+        case 4: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
+        case 5: break;
+        case 6: hex.type = 'water'; hex.isWaterReserved = true; break;
+        case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
+
+        // Row 3
+        case 8: break;
+        case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
+        case 10: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
+        case 11: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
+        case 12: break;
+        
+        // Row 4
+        case 13: break;
+        case 14: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 15: break;
+        case 16: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+
+        // Row 5
+        case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 18: break;
+        case 19: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
     }
     return hex;
 });
