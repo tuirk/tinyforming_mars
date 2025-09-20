@@ -83,6 +83,11 @@ export interface Player {
     Nature: number;
     Space: number;
   };
+  resourceTokens: {
+    Nature: number;
+    Production: number;
+    Science: number;
+  };
   cities: number[]; // hex IDs
   personalSupply: {
     heat: number;

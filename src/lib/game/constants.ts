@@ -14,23 +14,19 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
         case 2: break;
         case 3: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
-
         // Row 2
         case 4: break; case 5: break; case 6: break; case 7: break;
-
         // Row 3
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
         case 11: break;
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-        
         // Row 4
         case 13: break;
         case 14: break;
-        case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
+        case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
-
         // Row 5
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
         case 18: break;
@@ -214,6 +210,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   
   const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
   const initialBonusTags = { Production: 0, Science: 0, Nature: 0, Space: 0 };
+  const initialResourceTokens = { Nature: 0, Production: 0, Science: 0 };
 
   const humanPlayerCards = activeCards.map(c => ({ effect: c.player1Side, usedThisGeneration: false }));
   const aiPlayerCards = activeCards.map(c => ({ effect: c.player2Side, usedThisGeneration: false }));
@@ -224,6 +221,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     credits: 5,
     tags: {...initialTags},
     bonusTagsFromCities: {...initialBonusTags},
+    resourceTokens: {...initialResourceTokens},
     cities: [],
     personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
@@ -240,6 +238,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     credits: 5,
     tags: {...initialTags},
     bonusTagsFromCities: {...initialBonusTags},
+    resourceTokens: {...initialResourceTokens},
     cities: [],
     personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },

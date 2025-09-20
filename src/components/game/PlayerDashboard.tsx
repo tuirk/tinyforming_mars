@@ -5,7 +5,7 @@
 import type { Player } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube } from './icons';
+import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube, NatureResource, ProductionResource, ScienceResource } from './icons';
 import { cn } from '@/lib/utils';
 import { Coins, Star, Building2, Flame } from 'lucide-react';
 import { TagIcon } from './icons';
@@ -25,10 +25,11 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
   };
   
   const hasTags = Object.values(allTags).some(count => count > 0);
+  const hasResourceTokens = Object.values(player.resourceTokens).some(count => count > 0);
 
   return (
     <Card className={cn(
-      'transition-all duration-300',
+      'transition-all duration-300 w-full',
       isCurrentPlayer ? 'border-primary shadow-primary/20 shadow-lg' : ''
     )}>
       <CardHeader className="flex-row items-center justify-between pb-2 pt-4 px-4">
@@ -81,6 +82,21 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
             <div className="col-span-3 text-center text-muted-foreground italic">No tags</div>
           )}
         </div>
+        
+        <Separator className="my-2" />
+        
+        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[20px]">
+          {hasResourceTokens ? (
+              <>
+                {player.resourceTokens.Nature > 0 && <div className="flex items-center justify-center gap-1"><NatureResource className="w-4 h-4" /><span>{player.resourceTokens.Nature}</span></div>}
+                {player.resourceTokens.Production > 0 && <div className="flex items-center justify-center gap-1"><ProductionResource className="w-4 h-4" /><span>{player.resourceTokens.Production}</span></div>}
+                {player.resourceTokens.Science > 0 && <div className="flex items-center justify-center gap-1"><ScienceResource className="w-4 h-4" /><span>{player.resourceTokens.Science}</span></div>}
+              </>
+          ) : (
+            <div className="col-span-3 text-center text-muted-foreground italic">No resource tokens</div>
+          )}
+        </div>
+
 
         <Separator className="my-2" />
         
