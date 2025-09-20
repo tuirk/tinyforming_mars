@@ -33,31 +33,32 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
                 // AI drafting logic
                 const card = gameState.projectCards.drawDeck[0];
                 const chosenSide = Math.random() < 0.5 ? card.sideA : card.sideB;
-                handleCardDraft(chosenSide);
+                
+                // Add a delay for UX
+                const timer = setTimeout(() => handleCardDraft(chosenSide), 1500);
+                return () => clearTimeout(timer);
             } else {
                 // Human drafting
-                setDrawnCard(gameState.projectCards.drawDeck[0]);
+                const timer = setTimeout(() => setDrawnCard(gameState.projectCards.drawDeck[0]), 500);
+                return () => clearTimeout(timer);
             }
         }
-    }, [setupStep, drawnCard, draftTurn, draftingPlayerId, gameState, setGameState]);
+    }, [setupStep, drawnCard, draftTurn, draftingPlayerId, gameState]);
 
 
     const handleCardDraft = (chosenSide: CardSide) => {
+        setDrawnCard(null); // Clear the card for the next turn
+        
         setGameState(produce(draft => {
             if (!draft) return;
     
             const humanPlayerIndex = draft.players.findIndex(p => !p.isAI);
             const aiPlayerIndex = draft.players.findIndex(p => p.isAI);
+            const draftingPlayerIndex = draft.players.findIndex(p => p.id === draftingPlayerId);
+            const opponentPlayerIndex = draftingPlayerIndex === humanPlayerIndex ? aiPlayerIndex : humanPlayerIndex;
 
-            if (draft.players[humanPlayerIndex].id === draftingPlayerId) {
-                // Human is drafting
-                draft.players[humanPlayerIndex].projectCards.push({ effect: chosenSide.slot1, usedThisGeneration: false });
-                draft.players[aiPlayerIndex].projectCards.push({ effect: chosenSide.slot2, usedThisGeneration: false });
-            } else {
-                // AI is drafting
-                draft.players[aiPlayerIndex].projectCards.push({ effect: chosenSide.slot1, usedThisGeneration: false });
-                draft.players[humanPlayerIndex].projectCards.push({ effect: chosenSide.slot2, usedThisGeneration: false });
-            }
+            draft.players[draftingPlayerIndex].projectCards.push({ effect: chosenSide.slot1, usedThisGeneration: false });
+            draft.players[opponentPlayerIndex].projectCards.push({ effect: chosenSide.slot2, usedThisGeneration: false });
             
             // Move card from draw to discard
             const draftedCard = draft.projectCards.drawDeck.shift();
@@ -74,7 +75,6 @@ export function SetupPhase({ gameState, setGameState }: SetupPhaseProps) {
             } else {
                 // Next turn
                 setDraftTurn(nextDraftTurn);
-                setDrawnCard(null);
                 // W, B, W drafting order
                 const nextDrafter = (nextDraftTurn === 1) ? (draftingPlayerId === 'White' ? 'Black' : 'White') : 'White';
                 setDraftingPlayerId(nextDrafter);
