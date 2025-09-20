@@ -119,7 +119,7 @@ export function GameScreen() {
       if (playerIndex === -1) return;
       
       const player = draft.players[playerIndex];
-      const cost = typeof card.effect.cost === 'string' ? parseInt(card.effect.cost.split(' ')[0], 10) : card.effect.cost || 0;
+      const cost = card.effect.cost.credits;
       
       if (player.credits < cost) {
         toast({ title: "Not enough credits!", variant: 'destructive' });

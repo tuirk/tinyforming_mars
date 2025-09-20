@@ -78,7 +78,7 @@ export function ActionPanel({
             <div className="space-y-4">
               {player.projectCards.length > 0 ? (
                 player.projectCards.map((card) => {
-                  const cost = typeof card.effect.cost === 'string' ? parseInt(card.effect.cost.split(' ')[0], 10) : card.effect.cost || 0;
+                  const cost = card.effect.cost.credits;
                   const canAfford = player.credits >= cost;
                   const canActivate = isCurrentPlayer && !card.usedThisGeneration && canAfford;
 
