@@ -128,12 +128,10 @@ export function GameScreen() {
       const cost = typeof card.effect.cost === 'string' ? parseInt(card.effect.cost.split(' ')[0], 10) : card.effect.cost || 0;
       
       if (player.credits < cost) {
-        // This should not happen if button is disabled, but as a safeguard
         toast({ title: "Not enough credits!", variant: 'destructive' });
         return player;
       }
       
-      console.log('Activating card:', card.effect.name);
       toast({
         title: 'Action',
         description: `Activated card: ${card.effect.name}.`,
@@ -177,7 +175,16 @@ export function GameScreen() {
     
     if (shouldPass) {
         toast({ title: "AI passes."});
-        handlePass();
+        setGameState(produce(draft => {
+            if (!draft) return;
+            draft.passCount++;
+            if (draft.passCount >= draft.players.length) {
+                // This call will handle generation end logic
+                endGeneration();
+            } else {
+                draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+            }
+        }));
         setIsAIThinking(false);
         return;
     }
@@ -201,8 +208,6 @@ export function GameScreen() {
         
         setGameState(produce(draft => {
             if (!draft) return;
-            // Here you would update the game state based on the AI's move.
-            // For now, we just pass the turn back to the player.
             const aiPlayerIndex = draft.players.findIndex(p => p.isAI);
             if (aiPlayerIndex !== -1) {
               // Placeholder for AI action logic (e.g. deduct cost)
@@ -213,12 +218,20 @@ export function GameScreen() {
     } catch(error) {
         console.error("AI Action failed:", error);
         toast({ title: "AI action failed. Passing.", variant: 'destructive' });
-        handlePass();
+        setGameState(produce(draft => {
+            if (!draft) return;
+            draft.passCount++;
+            if (draft.passCount >= draft.players.length) {
+                endGeneration();
+            } else {
+                draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+            }
+        }));
     }
 
 
     setIsAIThinking(false);
-  }, [toast]); // handlePass is not a stable function, so we call it but don't depend on it to avoid re-renders. A better solution might be to wrap it in useCallback if needed.
+  }, [toast]);
 
 
   useEffect(() => {
@@ -253,7 +266,8 @@ export function GameScreen() {
       <div className="xl:col-span-2 flex flex-col gap-4">
         <GameStatus
           generation={gameState.generation}
-          currentPlayerId={currentPlayer.id}
+          currentPlayerIndex={gameState.currentPlayerIndex}
+          players={gameState.players}
           isAIThinking={isAIThinking}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

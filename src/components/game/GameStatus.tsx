@@ -1,19 +1,24 @@
+
 'use client';
 
-import { PlayerColor } from '@/lib/game/types';
+import { Player, PlayerColor } from '@/lib/game/types';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GameStatusProps {
   generation: number;
-  currentPlayerId: PlayerColor;
+  currentPlayerIndex: number;
+  players: Player[];
   isAIThinking: boolean;
 }
 
 const TOTAL_GENERATIONS = 12;
 
-export function GameStatus({ generation, currentPlayerId, isAIThinking }: GameStatusProps) {
+export function GameStatus({ generation, currentPlayerIndex, players, isAIThinking }: GameStatusProps) {
+  const currentPlayer = players[currentPlayerIndex];
+  const currentPlayerId = currentPlayer.id;
+
   return (
     <Card className="w-full p-2 px-4 shadow-lg">
       <div className="flex justify-between items-center">
@@ -32,7 +37,7 @@ export function GameStatus({ generation, currentPlayerId, isAIThinking }: GameSt
           </div>
         </div>
         <div className="flex items-center gap-2 text-lg">
-          {isAIThinking ? (
+          {isAIThinking && currentPlayer.isAI ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
               <span className="font-headline text-primary">AI is thinking...</span>
