@@ -3,7 +3,7 @@
 
 import { Player } from '@/lib/game/types';
 import { Card } from '@/components/ui/card';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,11 +24,13 @@ interface GameStatusProps {
   players: Player[];
   isAIThinking: boolean;
   onStopGame: () => void;
+  isPaused: boolean;
+  onTogglePause: () => void;
 }
 
 const TOTAL_GENERATIONS = 12;
 
-export function GameStatus({ generation, currentPlayerIndex, players, isAIThinking, onStopGame }: GameStatusProps) {
+export function GameStatus({ generation, currentPlayerIndex, players, isAIThinking, onStopGame, isPaused, onTogglePause }: GameStatusProps) {
   const currentPlayer = players[currentPlayerIndex];
   const currentPlayerId = currentPlayer.id;
 
@@ -51,7 +53,12 @@ export function GameStatus({ generation, currentPlayerIndex, players, isAIThinki
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-lg">
-            {isAIThinking && currentPlayer.isAI ? (
+            {isPaused ? (
+              <>
+                <Pause className="h-5 w-5 text-amber-400" />
+                <span className="font-headline text-amber-400">Paused</span>
+              </>
+            ) : isAIThinking && currentPlayer.isAI ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="font-headline text-primary">AI is thinking...</span>
@@ -62,6 +69,11 @@ export function GameStatus({ generation, currentPlayerIndex, players, isAIThinki
               </span>
             )}
           </div>
+
+          <Button variant="outline" size="sm" onClick={onTogglePause}>
+            {isPaused ? <Play className="mr-2" /> : <Pause className="mr-2" />}
+            {isPaused ? 'Resume' : 'Pause'}
+          </Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>

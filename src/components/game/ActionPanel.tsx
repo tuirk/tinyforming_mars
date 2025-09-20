@@ -16,6 +16,7 @@ interface ActionPanelProps {
   onActivateCard: (card: PlayerProjectCard) => void;
   onStandardProject: (project: StandardProject) => void;
   onPass: () => void;
+  isPaused: boolean;
 }
 
 export function ActionPanel({
@@ -24,13 +25,14 @@ export function ActionPanel({
   onActivateCard,
   onStandardProject,
   onPass,
+  isPaused,
 }: ActionPanelProps) {
 
   const isCurrentPlayer = player.id === currentPlayerId && !player.isAI;
   const canPerformStandardProject = isCurrentPlayer && !player.standardProjectUsed;
 
   const renderStandardProjectButton = (project: StandardProject) => {
-    const disabled = !canPerformStandardProject;
+    const disabled = !canPerformStandardProject || isPaused;
     const button = (
        <Button
           key={project.id}
@@ -46,7 +48,7 @@ export function ActionPanel({
         </Button>
     );
 
-    if (disabled && isCurrentPlayer) {
+    if (disabled && isCurrentPlayer && !isPaused) {
       return (
         <TooltipProvider>
           <Tooltip>
@@ -80,7 +82,7 @@ export function ActionPanel({
                 player.projectCards.map((card) => {
                   const cost = card.effect.cost.credits;
                   const canAfford = player.credits >= cost;
-                  const canActivate = isCurrentPlayer && !card.usedThisGeneration && canAfford;
+                  const canActivate = isCurrentPlayer && !card.usedThisGeneration && canAfford && !isPaused;
 
                   return (
                     <ProjectCardView
@@ -105,7 +107,7 @@ export function ActionPanel({
         </TabsContent>
       </Tabs>
       <div className="mt-4">
-        <Button onClick={onPass} disabled={!isCurrentPlayer} className="w-full" variant="outline">
+        <Button onClick={onPass} disabled={!isCurrentPlayer || isPaused} className="w-full" variant="outline">
           Pass
         </Button>
       </div>
