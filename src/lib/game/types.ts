@@ -30,7 +30,10 @@ export interface Resources {
 
 export interface PlayerProjectCard {
   card: ProjectCardData;
-  facingPlayerId: PlayerColor;
+  effects: {
+    player: ProjectCardEffect;
+    opponent: ProjectCardEffect;
+  };
   usedThisGeneration: boolean;
 }
 
@@ -73,9 +76,7 @@ export interface ProjectCardData {
   title: string;
   type: CardType;
   tags: Tag[];
-  effects: {
-    [key in PlayerColor]: ProjectCardEffect;
-  };
+  projects: ProjectCardEffect[];
 }
 
 export interface StandardProject {

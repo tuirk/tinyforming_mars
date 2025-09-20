@@ -30,11 +30,9 @@ const cardTypeIcons: Record<CardType, React.ReactNode> = {
 }
 
 export function ProjectCardView({ playerCard, playerId, canActivate, onActivate }: ProjectCardViewProps) {
-  const { card, facingPlayerId } = playerCard;
-  const effect = card.effects[facingPlayerId];
-  
-  const otherPlayerId = facingPlayerId === 'White' ? 'Black' : 'White';
-  const otherEffect = card.effects[otherPlayerId];
+  const { card, effects } = playerCard;
+  const playerEffect = effects.player;
+  const opponentEffect = effects.opponent;
 
   return (
     <Card className={cn(
@@ -46,7 +44,7 @@ export function ProjectCardView({ playerCard, playerId, canActivate, onActivate 
         <div className="flex justify-between items-start gap-2">
             <CardTitle className="font-headline text-lg">{card.title}</CardTitle>
             <div className="flex items-center gap-1 text-yellow-400 font-bold shrink-0">
-                {effect.cost} <Coins className="h-4 w-4" />
+                {playerEffect.cost} <Coins className="h-4 w-4" />
             </div>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
@@ -64,9 +62,9 @@ export function ProjectCardView({ playerCard, playerId, canActivate, onActivate 
         </div>
       </CardHeader>
       <CardContent className="py-2">
-        <p className="text-sm text-foreground/90">{effect.description}</p>
+        <p className="text-sm text-foreground/90">{playerEffect.description}</p>
         <CardDescription className="text-xs mt-2 italic">
-            <span className="font-semibold not-italic">Other side:</span> {otherEffect.description} ({otherEffect.cost}C)
+            <span className="font-semibold not-italic">Other side:</span> {opponentEffect.description} ({opponentEffect.cost}C)
         </CardDescription>
       </CardContent>
       <CardFooter>

@@ -1,4 +1,4 @@
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, PlayerProjectCard } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, PlayerProjectCard, ProjectCardEffect } from './types';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
     id: i + 1,
@@ -69,40 +69,66 @@ export const PROJECT_CARDS: ProjectCardData[] = [
         title: 'Geothermal Vents',
         type: 'Heat',
         tags: ['Energy', 'Science'],
-        effects: {
-            White: {
+        projects: [
+            {
                 description: 'Gain 2 Heat cubes. Requires 1 Science tag.',
                 cost: 4,
                 requirements: { tags: { Science: 1 } },
                 effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
             },
-            Black: {
+            {
                 description: 'Gain 1 Heat cube.',
                 cost: 2,
                 requirements: {},
                 effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+            },
+            // Dummy effects for the other side of the card
+            {
+                description: 'Dummy effect C for Geothermal Vents.',
+                cost: 3,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }),
+            },
+            {
+                description: 'Dummy effect D for Geothermal Vents.',
+                cost: 5,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }),
             }
-        }
+        ]
     },
     {
         id: 'proj-002',
         title: 'Asteroid Mining',
         type: 'Grey',
         tags: ['Production', 'Space'],
-        effects: {
-            White: {
+        projects: [
+            {
                 description: 'Gain 3 Production resources.',
                 cost: 8,
                 requirements: {},
                 effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
             },
-            Black: {
+            {
                 description: 'Gain 1 Production resource.',
                 cost: 3,
                 requirements: {},
                 effect: (gs, p) => ({ newGameState: gs, newPlayer: p }), // Placeholder
+            },
+            // Dummy effects for the other side of the card
+            {
+                description: 'Dummy effect C for Asteroid Mining.',
+                cost: 6,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }),
+            },
+            {
+                description: 'Dummy effect D for Asteroid Mining.',
+                cost: 7,
+                requirements: {},
+                effect: (gs, p) => ({ newGameState: gs, newPlayer: p }),
             }
-        }
+        ]
     },
 ];
 
@@ -137,22 +163,48 @@ export const STANDARD_PROJECTS: StandardProject[] = [
     },
 ];
 
+
+function dealProjectCards(): PlayerProjectCard[] {
+    const shuffledDeck = [...PROJECT_CARDS].sort(() => Math.random() - 0.5);
+    const dealtCards: PlayerProjectCard[] = [];
+
+    // We only need 2 cards for 2 players, but this is set up to be scalable
+    for (let i = 0; i < 2; i++) {
+        const card = shuffledDeck[i];
+        if (!card) continue;
+
+        // Randomly choose which side of the card is face up (0 = first two projects, 1 = last two projects)
+        const sideIndex = Math.floor(Math.random() * 2);
+        const sideStartIndex = sideIndex * 2;
+        const projectsOnSide = card.projects.slice(sideStartIndex, sideStartIndex + 2);
+
+        // Randomly assign top/bottom project from that side
+        const assignmentIndex = Math.floor(Math.random() * 2);
+        const playerEffect = projectsOnSide[assignmentIndex];
+        const opponentEffect = projectsOnSide[1 - assignmentIndex];
+
+        dealtCards.push({
+            card,
+            effects: {
+                player: playerEffect,
+                opponent: opponentEffect,
+            },
+            usedThisGeneration: false,
+        });
+    }
+    return dealtCards;
+}
+
 export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameState => {
   const isHumanWhite = Math.random() < 0.5;
 
   const humanPlayerId = isHumanWhite ? 'White' : 'Black';
   const aiPlayerId = isHumanWhite ? 'Black' : 'White';
+  
+  const dealtCards = dealProjectCards();
+  const humanProjectCards = [dealtCards[0]];
+  const aiProjectCards = [dealtCards[1]];
 
-  // Placeholder for project card setup
-  const humanProjectCards: PlayerProjectCard[] = [
-    { card: PROJECT_CARDS[0], facingPlayerId: humanPlayerId, usedThisGeneration: false },
-    { card: PROJECT_CARDS[1], facingPlayerId: humanPlayerId, usedThisGeneration: false },
-  ];
-
-  const aiProjectCards: PlayerProjectCard[] = [
-      { card: PROJECT_CARDS[0], facingPlayerId: aiPlayerId, usedThisGeneration: false },
-      { card: PROJECT_CARDS[1], facingPlayerId: aiPlayerId, usedThisGeneration: false },
-  ];
 
   const humanPlayer: Player = {
     id: humanPlayerId,
