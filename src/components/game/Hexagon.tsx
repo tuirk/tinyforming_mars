@@ -76,7 +76,14 @@ export function Hexagon({ hex, size }: HexagonProps) {
     )
   }
 
-  const hexFillClass = (hex.isWaterReserved ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30");
+  const frameColorClass = hex.frameColor ? {
+    'gray': 'stroke-gray-400',
+    'white': 'stroke-white',
+    'green': 'stroke-green-400',
+    'orange': 'stroke-orange-400',
+  }[hex.frameColor] : 'stroke-orange-300/30';
+
+  const hexFillClass = (hex.isWaterReserved ? "fill-blue-900/50" : "fill-orange-900/30");
 
 
   return (
@@ -98,6 +105,7 @@ export function Hexagon({ hex, size }: HexagonProps) {
         className={cn(
           "transition-colors duration-300",
           hexFillClass,
+          frameColorClass,
           "hover:fill-accent/30"
         )}
         strokeWidth="2"
