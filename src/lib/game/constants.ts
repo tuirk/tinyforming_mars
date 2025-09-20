@@ -65,8 +65,8 @@ export const MAPS: Record<MapId, MapData> = {
     Elysium: ELYSIUM_MAP,
 };
 
-const emptyReq = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
-const emptyParams = { Heat: 0, Greenery: 0, Water: 0 };
+const emptyReq: Requirements<Record<Tag, number>> = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
+const emptyParams: Requirements<Record<ParameterType, number>> = { Heat: 0, Greenery: 0, Water: 0 };
 
 export const PROJECT_CARDS: ProjectCardData[] = Array.from({ length: 7 }, (_, i) => ({
   cardId: i + 1,
@@ -166,6 +166,43 @@ PROJECT_CARDS[0] = {
       automaticTags: { ...emptyReq, Production: 1, Space: 1 },
     }
   }
+};
+
+// Card 2 - SideB Slot2
+PROJECT_CARDS[1].sideB.slot2 = {
+  id: "2-B2",
+  name: "Moss",
+  cost: { credits: 4, reducible: false },
+  tagRequirements: { ...emptyReq, Nature: 2 },
+  parameterRequirements: { ...emptyParams, Water: 1 },
+  effect: "Place 1 Greenery Cube. Gain 1 Credit for each Water Cube adjacent to the placed Greenery Cube.",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Production: 2 },
+};
+
+// Card 3 - SideB Slot2
+PROJECT_CARDS[2].sideB.slot2 = {
+  id: "3-B2",
+  name: "Bushes",
+  cost: { credits: 5, reducible: true },
+  tagRequirements: { ...emptyReq, Nature: 1 },
+  parameterRequirements: { ...emptyParams, Heat: 4 },
+  costReductionRule: "Reduce the cost by 1 Credit for every Greenery Cube adjacent to one of your cities (minimum cost of 1)",
+  effect: "Place 1 Greenery Cube",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Energy: 2 },
+};
+
+// Card 4 - SideB Slot2
+PROJECT_CARDS[3].sideB.slot2 = {
+  id: "4-B2",
+  name: "Protected Valley",
+  cost: { credits: 4, reducible: false },
+  tagRequirements: { ...emptyReq, Nature: 2 },
+  parameterRequirements: { ...emptyParams, Heat: 2 },
+  effect: "Place 1 Greenery Cube. It must be placed in a space reserved for a Water Cube.",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Energy: 2 },
 };
 
 
@@ -288,3 +325,5 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     passCount: 0,
   };
 };
+
+    
