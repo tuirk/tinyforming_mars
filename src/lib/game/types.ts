@@ -82,11 +82,6 @@ export interface Player {
   personalSupply: {
     heat: number;
   };
-  parameterCubes: {
-    Water: number;
-    Greenery: number;
-    Heat: number;
-  };
   tokens: {
     city: number;
     specialProject: number;

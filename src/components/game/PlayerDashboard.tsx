@@ -4,12 +4,13 @@
 import type { Player, PlayerColor, Tag } from '@/lib/game/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube, NatureResource, ProductionResource, ScienceResource } from './icons';
+import { SpecialProjectToken } from './icons';
 import { cn } from '@/lib/utils';
 import { Coins, Star, Building2, Flame } from 'lucide-react';
 import { TagIcon } from './icons';
 import { TokenDisplay } from './TokenDisplay';
 import { useToast } from '@/hooks/use-toast';
+import { NatureResource, ProductionResource, ScienceResource } from './icons';
 
 interface PlayerDashboardProps {
   player: Player;
@@ -63,23 +64,6 @@ export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProp
                 <span className="font-bold">{player.credits} Credits</span>
             </div>
         </div>
-        <Separator className="my-2" />
-
-        <div className="grid grid-cols-3 gap-2 text-center my-3">
-            <div>
-                <WaterCube className="h-8 w-8 mx-auto" />
-                <span className="font-bold text-sm">{player.parameterCubes.Water}</span>
-            </div>
-            <div>
-                <GreeneryCube className="h-8 w-8 mx-auto" />
-                <span className="font-bold text-sm">{player.parameterCubes.Greenery}</span>
-            </div>
-            <div>
-                <HeatCube className="h-8 w-8 mx-auto" />
-                <span className="font-bold text-sm">{player.parameterCubes.Heat}</span>
-            </div>
-        </div>
-
         <Separator className="my-2" />
 
         <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[40px] items-start">
