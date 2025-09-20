@@ -221,7 +221,7 @@ export function GameScreen() {
         
         <div className="flex flex-col gap-8">
             {/* AI Player Section */}
-            <div className="flex flex-col lg:flex-row gap-4 items-center">
+            <div className="flex flex-col lg:flex-row gap-4 items-start">
               <div className="flex-grow">
                   <h2 className="text-lg font-headline text-center mb-2">AI's Board ({aiPlayer.map.name})</h2>
                   <HexGrid map={aiPlayer.map} onHexClick={(hex) => handleHexClick(hex, aiPlayer)} />
@@ -232,7 +232,7 @@ export function GameScreen() {
             </div>
 
             {/* Human Player Section */}
-            <div className="flex flex-col lg:flex-row gap-4 items-center">
+            <div className="flex flex-col lg:flex-row gap-4 items-start">
               <div className="flex-grow">
                   <h2 className="text-lg font-headline text-center mb-2">Your Board ({humanPlayer.map.name})</h2>
                   <HexGrid map={humanPlayer.map} onHexClick={(hex) => handleHexClick(hex, humanPlayer)} />
