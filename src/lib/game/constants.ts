@@ -1,5 +1,4 @@
 
-
 import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player } from './types';
 import { drawSharedCardRound } from './state';
 
@@ -11,15 +10,33 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
   }))
   .map(hex => {
     switch (hex.id) {
+        // Row 1
         case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 2: break; // Empty brown hex
         case 3: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
+
+        // Row 2
+        case 4: break; // Empty brown hex
+        case 5: break; // Empty brown hex
+        case 6: break; // Empty brown hex
+        case 7: break; // Empty brown hex
+
+        // Row 3
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
-        case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
+        case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
+        case 11: break; // Empty brown hex
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-        case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
+        
+        // Row 4
+        case 13: break; // Empty brown hex
+        case 14: break; // Empty brown hex
+        case 15: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
+
+        // Row 5
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
+        case 18: break; // Empty brown hex
         case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
     }
     return hex;
