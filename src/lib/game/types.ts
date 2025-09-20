@@ -31,13 +31,21 @@ export interface MapData {
   hexes: Hex[];
 }
 
+export type Requirements<T> = {
+    [key in keyof T]?: number;
+}
+
 export type ProjectEffect = {
-  id: string;    
+  id: string;
   name: string;
-  cost?: number | string;
-  tags?: Tag[];
-  requirements?: string[];
+  cost: { credits: number, reducible: boolean };
+  tagRequirements: Requirements<Record<Tag, number>>;
+  parameterRequirements: Requirements<Record<ParameterType, number>>;
   effect: string;
+  effectType: 'heat' | 'greenery' | 'water' | 'utility';
+  automaticTags: Requirements<Record<Tag, number>>;
+  costReductionRule?: string;
+  parameterReductionRule?: string;
 };
 
 export type CardSide = {
@@ -66,28 +74,9 @@ export interface Player {
   id: PlayerColor;
   isAI: boolean;
   credits: number;
-  tags: {
-    Energy: number;
-    Production: number;
-    Nature: number;
-    Science: number;
-    Space: number;
-    Building: number;
-    Plant: number;
-    Heat: number;
-    Water: number;
-  };
-  bonusTagsFromCities: {
-    Production: number;
-    Science: number;
-    Nature: number;
-    Space: number;
-  };
-  resourceTokens: {
-    Nature: number;
-    Production: number;
-    Science: number;
-  };
+  permanentTags: Requirements<Record<Tag, number>>;
+  bonusTagsFromCities: Requirements<Record<BonusTag, number>>;
+  resourceTokens: Requirements<Record<ResourceType, number>>;
   cities: number[]; // hex IDs
   personalSupply: {
     heat: number;

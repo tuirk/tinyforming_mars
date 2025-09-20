@@ -1,5 +1,5 @@
 
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, Requirements, Tag } from './types';
 import { drawInitialCards } from './state';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
@@ -65,6 +65,8 @@ export const MAPS: Record<MapId, MapData> = {
     Elysium: ELYSIUM_MAP,
 };
 
+const emptyReq = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
+const emptyParams = { Heat: 0, Greenery: 0, Water: 0 };
 
 export const PROJECT_CARDS: ProjectCardData[] = Array.from({ length: 7 }, (_, i) => ({
   cardId: i + 1,
@@ -72,32 +74,44 @@ export const PROJECT_CARDS: ProjectCardData[] = Array.from({ length: 7 }, (_, i)
     slot1: {
       id: `${i + 1}-A1`,
       name: `Card ${i + 1} Side A, Project 1`,
-      cost: i + 1,
-      tags: ["Space"],
-      effect: "Placeholder effect A1."
+      cost: { credits: i + 1, reducible: false },
+      tagRequirements: {...emptyReq},
+      parameterRequirements: {...emptyParams},
+      effect: "Placeholder effect A1.",
+      effectType: 'utility',
+      automaticTags: { Space: 1},
     },
     slot2: {
       id: `${i + 1}-A2`,
       name: `Card ${i + 1} Side A, Project 2`,
-      cost: i + 1,
-      tags: ["Plant"],
-      effect: "Placeholder effect A2."
+      cost: { credits: i + 1, reducible: false },
+      tagRequirements: {...emptyReq},
+      parameterRequirements: {...emptyParams},
+      effect: "Placeholder effect A2.",
+      effectType: 'utility',
+      automaticTags: { Plant: 1},
     }
   },
   sideB: {
     slot1: {
       id: `${i + 1}-B1`,
       name: `Card ${i + 1} Side B, Project 1`,
-      cost: i + 1,
-      tags: ["Production", "Space"],
-      effect: "Placeholder effect B1."
+      cost: { credits: i + 1, reducible: false },
+      tagRequirements: {...emptyReq},
+      parameterRequirements: {...emptyParams},
+      effect: "Placeholder effect B1.",
+      effectType: 'utility',
+      automaticTags: { Production: 1, Space: 1},
     },
     slot2: {
       id: `${i + 1}-B2`,
       name: `Card ${i + 1} Side B, Project 2`,
-      cost: i + 1,
-      tags: ["Production"],
-      effect: "Placeholder effect B2."
+      cost: { credits: i + 1, reducible: false },
+      tagRequirements: {...emptyReq},
+      parameterRequirements: {...emptyParams},
+      effect: "Placeholder effect B2.",
+      effectType: 'utility',
+      automaticTags: { Production: 1},
     }
   }
 }));
@@ -108,35 +122,48 @@ PROJECT_CARDS[0] = {
   sideA: {
     slot1: {
       id: "1-A1",
-      name: "Methane From Titan",
-      cost: 7,
-      tags: ["Space", "Heat"],
-      requirements: ["heat >= 2", "space_tag >= 1"],
-      effect: "Gain 1 heat cube. If you spend 1 additional heat cube, gain 2 credits and 1 additional space tag."
+      name: "Research Outpost",
+      cost: { credits: 0, reducible: false },
+      tagRequirements: { ...emptyReq, Production: 1, Science: 1 },
+      parameterRequirements: {...emptyParams},
+      effect: "Place or Relocate one of your cities. If that city is not adjacent to any other Cube(s), Gain 1 available Resource Token of your choice.",
+      effectType: "utility",
+      automaticTags: { ...emptyReq, Energy: 1, Space: 1 },
     },
     slot2: {
       id: "1-A2",
-      name: "Bushes",
-      cost: "5 - greenery_adjacent (min 1)",
-      tags: ["Plant"],
-      requirements: ["temperature >= -10"],
-      effect: "Place 1 greenery cube. Reduce cost by 1 Credit per adjacent Greenery (min 1)."
+      name: "Windmills",
+      cost: { credits: 4, reducible: true },
+      tagRequirements: { ...emptyReq, Energy: 2 },
+      parameterRequirements: {...emptyParams},
+      effect: "Gain 1 Heat Cube",
+      effectType: "heat",
+      costReductionRule: "Reduce cost by 1 Credit per unoccupied hex adjacent to your cities (minimum cost 1)",
+      automaticTags: { ...emptyReq, Nature: 2 },
     }
   },
   sideB: {
     slot1: {
       id: "1-B1",
-      name: "Asteroid Mining",
-      cost: 7,
-      tags: ["Production", "Space"],
-      effect: "Increase titanium production by 2."
+      name: "Subterranean Reservoir",
+      cost: { credits: 3, reducible: true },
+      tagRequirements: { ...emptyReq, Nature: 1, Science: 1 },
+      parameterRequirements: {...emptyParams},
+      effect: "Place 1 Water Cube",
+      effectType: "water",
+      costReductionRule: "Reduce the cost by 1 Credit for each additional Nature Tag (minimum cost of 1)",
+      automaticTags: { ...emptyReq, Energy: 2 },
     },
     slot2: {
       id: "1-B2",
-      name: "Orbital Recycling (placeholder)",
-      cost: 6,
-      tags: ["Production"],
-      effect: "Dummy effect"
+      name: "Insects",
+      cost: { credits: 2, reducible: false },
+      tagRequirements: { ...emptyReq, Nature: 1, Science: 1 },
+      parameterRequirements: { ...emptyParams, Heat: 6 },
+      parameterReductionRule: "Reduce the Heat Parameter requirement by 2 for each additional Science Tag you have",
+      effect: "Place 1 Greenery Cube",
+      effectType: "greenery",
+      automaticTags: { ...emptyReq, Production: 1, Space: 1 },
     }
   }
 };
@@ -188,7 +215,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   
   const { activeCards, remainingDeck } = drawInitialCards(PROJECT_CARDS);
   
-  const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
+  const initialTags: Requirements<Record<Tag, number>> = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
   const initialBonusTags = { Production: 0, Science: 0, Nature: 0, Space: 0 };
   const initialResourceTokens = { Nature: 0, Production: 0, Science: 0 };
 
@@ -199,7 +226,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     id: humanPlayerId,
     isAI: false,
     credits: 5,
-    tags: {...initialTags},
+    permanentTags: {...initialTags},
     bonusTagsFromCities: {...initialBonusTags},
     resourceTokens: {...initialResourceTokens},
     cities: [],
@@ -216,7 +243,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     id: aiPlayerId,
     isAI: true,
     credits: 5,
-    tags: {...initialTags},
+    permanentTags: {...initialTags},
     bonusTagsFromCities: {...initialBonusTags},
     resourceTokens: {...initialResourceTokens},
     cities: [],
@@ -261,5 +288,3 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     passCount: 0,
   };
 };
-
-    
