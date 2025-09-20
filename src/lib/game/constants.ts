@@ -1,5 +1,5 @@
 
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, Requirements, Tag } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, Requirements, Tag, ParameterType } from './types';
 import { drawInitialCards } from './state';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
@@ -205,6 +205,42 @@ PROJECT_CARDS[3].sideB.slot2 = {
   automaticTags: { ...emptyReq, Energy: 2 },
 };
 
+// Card 5 - SideB Slot2
+PROJECT_CARDS[4].sideB.slot2 = {
+  id: "5-B2",
+  name: "Lichen",
+  cost: { credits: 2, reducible: false },
+  tagRequirements: { ...emptyReq, Nature: 2 },
+  parameterRequirements: { ...emptyParams, Heat: 2 },
+  effect: "Place 1 Greenery Cube. It cannot be placed adjacent to a city.",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Production: 2 },
+};
+
+// Card 6 - SideB Slot2
+PROJECT_CARDS[5].sideB.slot2 = {
+  id: "6-B2",
+  name: "Trees",
+  cost: { credits: 2, reducible: false },
+  tagRequirements: { ...emptyReq, Nature: 1, Science: 1 },
+  parameterRequirements: { ...emptyParams, Heat: 5 },
+  effect: "Place 1 Greenery Cube. It must be placed adjacent to two other Greenery Cubes.",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Space: 2 },
+};
+
+// Card 7 - SideB Slot2
+PROJECT_CARDS[6].sideB.slot2 = {
+  id: "7-B2",
+  name: "Algae",
+  cost: { credits: 2, reducible: false },
+  tagRequirements: { ...emptyReq, Energy: 1, Nature: 1 },
+  parameterRequirements: { ...emptyParams, Water: 2 },
+  effect: "Place 1 Greenery Cube. It must be placed adjacent to at least one Water Cube.",
+  effectType: "greenery",
+  automaticTags: { ...emptyReq, Science: 2 },
+};
+
 
 export const STANDARD_PROJECTS: StandardProject[] = [
     {
@@ -325,5 +361,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     passCount: 0,
   };
 };
+
+    
 
     
