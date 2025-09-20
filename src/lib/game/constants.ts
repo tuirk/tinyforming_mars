@@ -12,12 +12,12 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
   .map(hex => {
     switch (hex.id) {
         case 1: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
-        case 3: hex.type = 'water'; hex.bonusTag = 'Science'; hex.isWaterReserved = true; break;
+        case 3: hex.type = 'water'; hex.bonusTag = 'Science'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
-        case 10: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
+        case 10: hex.type = 'water'; hex.bonusTag = 'Production'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
-        case 15: hex.type = 'water'; hex.bonusTag = 'Nature'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
+        case 15: hex.type = 'water'; hex.bonusTag = 'Science'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
         case 16: hex.type = 'water'; hex.isWaterReserved = true; break;
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
         case 19: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
