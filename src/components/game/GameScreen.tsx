@@ -69,7 +69,7 @@ export function GameScreen() {
     });
   }
 
-  const handlePlayerAction = (action: (p: Player) => Player) => {
+  const handlePlayerAction = (action: (p: Player) => Player, postActionCallback?: () => void) => {
     if (!gameState) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer.isAI) return;
@@ -80,28 +80,40 @@ export function GameScreen() {
       if (playerIndex !== -1) {
         draft.players[playerIndex] = action(draft.players[playerIndex]);
       }
+      draft.passCount = 0;
+      draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
     }));
-
-    advanceTurn();
   };
   
+  const endGeneration = () => {
+    setGameState(produce(draft => {
+        if (!draft) return;
+        
+        // Income Phase Placeholder
+        draft.players.forEach(p => {
+            // Actual income logic to be implemented
+            p.credits = 5; // Reset to 5 as per spec for now
+        });
+        toast({ title: "Income Phase", description: "Players collect income. (Placeholder: all credits reset to 5)"});
+
+        // New Generation
+        draft.generation += 1;
+        draft.passCount = 0;
+        draft.players.forEach(p => {
+            p.standardProjectUsed = false;
+            p.projectCards.forEach(c => c.usedThisGeneration = false);
+        });
+        draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
+        draft.currentPlayerIndex = draft.startingPlayerIndex;
+    }));
+  }
+
   const handlePass = () => {
     if (!gameState) return;
     const newPassCount = gameState.passCount + 1;
 
     if (newPassCount >= gameState.players.length) {
-        // End of generation
-        setGameState(produce(draft => {
-            if (!draft) return;
-            draft.generation += 1;
-            draft.passCount = 0;
-            draft.players.forEach(p => {
-                p.standardProjectUsed = false;
-                p.projectCards.forEach(c => c.usedThisGeneration = false);
-            });
-            draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
-            draft.currentPlayerIndex = draft.startingPlayerIndex;
-        }));
+        endGeneration();
     } else {
         setGameState(produce(draft => {
             if (!draft) return;
@@ -116,6 +128,7 @@ export function GameScreen() {
       const cost = typeof card.effect.cost === 'string' ? parseInt(card.effect.cost.split(' ')[0], 10) : card.effect.cost || 0;
       
       if (player.credits < cost) {
+        // This should not happen if button is disabled, but as a safeguard
         toast({ title: "Not enough credits!", variant: 'destructive' });
         return player;
       }
@@ -126,25 +139,32 @@ export function GameScreen() {
         description: `Activated card: ${card.effect.name}.`,
       });
 
-      const newPlayer = produce(player, draft => {
+      return produce(player, draft => {
           draft.credits -= cost;
           const cardInHand = draft.projectCards.find(c => c.effect.id === card.effect.id);
           if (cardInHand) {
               cardInHand.usedThisGeneration = true;
           }
       });
-      return newPlayer;
     });
   };
 
   const handleStandardProject = (project: StandardProject) => {
     handlePlayerAction((player) => {
+        if(player.standardProjectUsed) {
+          toast({ title: "Standard Project already used this generation.", variant: 'destructive' });
+          return player;
+        }
+
         console.log('Completing project:', project.title);
         toast({
-        title: 'Action',
-        description: `Completed project: ${project.title}. Effect logic to be implemented.`,
+          title: 'Action',
+          description: `Completed project: ${project.title}. Effect logic to be implemented.`,
         });
-        return {...player, standardProjectUsed: true };
+
+        return produce(player, draft => {
+          draft.standardProjectUsed = true;
+        });
     });
   };
   
@@ -153,59 +173,52 @@ export function GameScreen() {
     const aiPlayer = currentState.players.find(p => p.isAI);
     if (!aiPlayer) return;
     
-    // Simulate AI passing if it has no actions
-    const shouldPass = Math.random() > 0.2; // AI will pass 20% of the time for now
+    const shouldPass = Math.random() > 0.2; 
+    
     if (shouldPass) {
         toast({ title: "AI passes."});
-        setGameState(produce(draft => {
-            if (!draft) return;
-            const newPassCount = draft.passCount + 1;
-            if (newPassCount >= draft.players.length) {
-                 // End of generation
-                draft.generation += 1;
-                draft.passCount = 0;
-                draft.players.forEach(p => {
-                    p.standardProjectUsed = false;
-                    p.projectCards.forEach(c => c.usedThisGeneration = false);
-                });
-                draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
-                draft.currentPlayerIndex = draft.startingPlayerIndex;
-            } else {
-                draft.passCount = newPassCount;
-                draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
-            }
-        }));
+        handlePass();
         setIsAIThinking(false);
         return;
     }
 
+    try {
+        const suggestion = await getAISuggestion({
+          projectCards: aiPlayer.projectCards.map(c => c.effect.name),
+          gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
+        });
 
-    const suggestion = await getAISuggestion({
-      projectCards: aiPlayer.projectCards.map(c => c.effect.name),
-      gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
-    });
-
-    const explanationInput = {
-      move: `Action: ${suggestion.suggestedCard}. Reason: ${suggestion.reason}`,
-      gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits and is deciding its move.`,
+        const explanationInput = {
+          move: `Action: ${suggestion.suggestedCard}. Reason: ${suggestion.reason}`,
+          gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits and is deciding its move.`,
+        }
+        const explanation = await getAIExplanation(explanationInput);
+        
+        toast({
+            title: `AI Move: ${suggestion.suggestedCard}`,
+            description: explanation.explanation,
+        });
+        
+        setGameState(produce(draft => {
+            if (!draft) return;
+            // Here you would update the game state based on the AI's move.
+            // For now, we just pass the turn back to the player.
+            const aiPlayerIndex = draft.players.findIndex(p => p.isAI);
+            if (aiPlayerIndex !== -1) {
+              // Placeholder for AI action logic (e.g. deduct cost)
+            }
+            draft.passCount = 0;
+            draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+        }));
+    } catch(error) {
+        console.error("AI Action failed:", error);
+        toast({ title: "AI action failed. Passing.", variant: 'destructive' });
+        handlePass();
     }
-    const explanation = await getAIExplanation(explanationInput);
-    
-    toast({
-        title: `AI Move: ${suggestion.suggestedCard}`,
-        description: explanation.explanation,
-    });
-    
-    setGameState(produce(draft => {
-        if (!draft) return;
-        // Here you would update the game state based on the AI's move.
-        // For now, we just pass the turn back to the player.
-        draft.passCount = 0;
-        draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
-    }));
+
 
     setIsAIThinking(false);
-  }, [toast]);
+  }, [toast]); // handlePass is not a stable function, so we call it but don't depend on it to avoid re-renders. A better solution might be to wrap it in useCallback if needed.
 
 
   useEffect(() => {
@@ -285,5 +298,3 @@ export function GameScreen() {
     </div>
   );
 }
-
-    
