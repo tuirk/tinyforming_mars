@@ -21,8 +21,8 @@ const SuggestProjectCardInputSchema = z.object({
 export type SuggestProjectCardInput = z.infer<typeof SuggestProjectCardInputSchema>;
 
 const SuggestProjectCardOutputSchema = z.object({
-  suggestedCard: z.string().describe('The project card that the AI suggests to activate.'),
-  reason: z.string().describe('The reason why the AI suggests this card.'),
+  suggestedCard: z.string().describe('The project card that the AI suggests to activate. Can be "Pass".'),
+  reason: z.string().describe('The reason why the AI suggests this card or to pass.'),
 });
 export type SuggestProjectCardOutput = z.infer<typeof SuggestProjectCardOutputSchema>;
 
@@ -34,7 +34,20 @@ const prompt = ai.definePrompt({
   name: 'suggestProjectCardPrompt',
   input: {schema: SuggestProjectCardInputSchema},
   output: {schema: SuggestProjectCardOutputSchema},
-  prompt: `You are an expert Tinyformers player. Given the current game state and the available project cards, suggest the best project card to activate and explain why.\n\nCurrent Game State: {{{gameState}}}\n\nAvailable Project Cards: {{#each projectCards}}- {{{this}}}\n{{/each}}\n\nSuggest the best card to activate and explain your reasoning. Return the name of the card in suggestedCard field and the explanation in reason field.
+  prompt: `You are an expert Tinyformers player. Given the current game state and the available project cards, suggest the best project card to activate and explain why.
+
+If no cards are affordable or strategically valuable at this moment, you can suggest to "Pass".
+
+Current Game State: {{{gameState}}}
+
+Available Project Cards:
+{{#each projectCards}}- {{{this}}}
+{{/each}}
+{{#if (eq projectCards.length 0)}}
+No project cards available.
+{{/if}}
+
+Suggest the best card to activate (or "Pass") and explain your reasoning. Return the name of the card in suggestedCard field and the explanation in reason field.
 `,
 });
 
