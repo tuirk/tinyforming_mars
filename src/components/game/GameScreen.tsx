@@ -147,7 +147,7 @@ export function GameScreen() {
         toast({ title: "AI passes."});
         handlePass();
         setIsAIThinking(false);
-        return;
+        return; // Return early to prevent double turn advancement
     }
 
 
