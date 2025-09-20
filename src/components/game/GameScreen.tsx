@@ -145,7 +145,24 @@ export function GameScreen() {
     const shouldPass = Math.random() > 0.2; // AI will pass 20% of the time for now
     if (shouldPass) {
         toast({ title: "AI passes."});
-        handlePass();
+        setGameState(produce(draft => {
+            if (!draft) return;
+            const newPassCount = draft.passCount + 1;
+            if (newPassCount >= draft.players.length) {
+                 // End of generation
+                draft.generation += 1;
+                draft.passCount = 0;
+                draft.players.forEach(p => {
+                    p.standardProjectUsed = false;
+                    p.projectCards.forEach(c => c.usedThisGeneration = false);
+                });
+                draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
+                draft.currentPlayerIndex = draft.startingPlayerIndex;
+            } else {
+                draft.passCount = newPassCount;
+                draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+            }
+        }));
         setIsAIThinking(false);
         return; // Return early to prevent double turn advancement
     }
