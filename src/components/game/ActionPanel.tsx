@@ -6,6 +6,8 @@ import { ProjectCardView } from './ProjectCardView';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { STANDARD_PROJECTS } from '@/lib/game/constants';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 interface ActionPanelProps {
   player: Player;
@@ -22,6 +24,45 @@ export function ActionPanel({
   onStandardProject,
   onPass,
 }: ActionPanelProps) {
+
+  const canPerformStandardProject = isCurrentPlayer && !player.standardProjectUsed;
+
+  const renderStandardProjectButton = (project: StandardProject) => {
+    const disabled = !canPerformStandardProject;
+    const button = (
+       <Button
+          key={project.id}
+          variant="secondary"
+          className="w-full justify-start text-left h-auto py-2"
+          disabled={disabled}
+          onClick={() => onStandardProject(project)}
+        >
+          <div className="flex flex-col">
+            <span className="font-semibold">{project.title}</span>
+            <span className="text-xs text-muted-foreground">{project.description} ({project.cost}C)</span>
+          </div>
+        </Button>
+    );
+
+    if (disabled && isCurrentPlayer) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-full cursor-not-allowed">{button}</div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>You have already used a standard project this generation.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )
+    }
+    
+    return button;
+  }
+
+
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-xl font-headline mb-4">Actions</h2>
@@ -51,20 +92,7 @@ export function ActionPanel({
         </TabsContent>
         <TabsContent value="standard" className="flex-grow mt-4">
           <div className="space-y-2">
-            {STANDARD_PROJECTS.map((project) => (
-              <Button
-                key={project.id}
-                variant="secondary"
-                className="w-full justify-start text-left h-auto py-2"
-                disabled={!isCurrentPlayer}
-                onClick={() => onStandardProject(project)}
-              >
-                <div className="flex flex-col">
-                  <span className="font-semibold">{project.title}</span>
-                  <span className="text-xs text-muted-foreground">{project.description} ({project.cost}C)</span>
-                </div>
-              </Button>
-            ))}
+            {STANDARD_PROJECTS.map(renderStandardProjectButton)}
           </div>
         </TabsContent>
       </Tabs>

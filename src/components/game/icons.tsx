@@ -55,6 +55,13 @@ export const SpecialProjectToken = (props: SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+export const BuildingTagIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <path d="M3 9h18"></path>
+    <path d="M9 21V9"></path>
+  </svg>
+);
 
 export const TagIcon = ({ tag, ...props }: {tag: Tag} & SVGProps<SVGSVGElement>) => {
     switch (tag) {
@@ -84,6 +91,8 @@ export const TagIcon = ({ tag, ...props }: {tag: Tag} & SVGProps<SVGSVGElement>)
                 <path d="M4 17a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3H4v-3z"/>
             </svg>
         );
+      case 'Building':
+        return <BuildingTagIcon {...props} />
       default:
         return null;
     }

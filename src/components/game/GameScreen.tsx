@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { MapSelection } from './MapSelection';
 import { Supply } from './Supply';
+import { produce } from 'immer';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -50,42 +51,76 @@ export function GameScreen() {
     });
   };
 
-  const handlePlayerAction = (action: () => void) => {
+  const advanceTurn = () => {
+    setGameState(prev => {
+        if (!prev) return null;
+        return { ...prev, passCount: 0, currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length };
+    });
+  }
+
+  const handlePlayerAction = (action: (p: Player) => Player) => {
     if (!gameState) return;
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer.isAI) return;
 
-    action();
+    setGameState(produce(draft => {
+      if (!draft) return;
+      const playerIndex = draft.players.findIndex(p => p.id === currentPlayer.id);
+      if (playerIndex !== -1) {
+        draft.players[playerIndex] = action(draft.players[playerIndex]);
+      }
+    }));
 
-    setGameState(prev => {
-        if (!prev) return null;
-        return { ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length };
-    });
+    advanceTurn();
   };
   
   const handlePass = () => {
-    handlePlayerAction(() => {
-        toast({ title: 'Player passes turn.' });
-    });
+    if (!gameState) return;
+    const newPassCount = gameState.passCount + 1;
+
+    if (newPassCount >= gameState.players.length) {
+        // End of generation
+        setGameState(produce(draft => {
+            if (!draft) return;
+            draft.generation += 1;
+            draft.passCount = 0;
+            draft.players.forEach(p => {
+                p.standardProjectUsed = false;
+                // Add income, reset cards, etc. here in the future
+            });
+            draft.startingPlayerIndex = (draft.startingPlayerIndex + 1) % draft.players.length;
+            draft.currentPlayerIndex = draft.startingPlayerIndex;
+            toast({ title: `Generation ${draft.generation} starting!`});
+        }));
+    } else {
+        setGameState(produce(draft => {
+            if (!draft) return;
+            draft.passCount = newPassCount;
+            draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+        }));
+    }
   }
 
   const handleActivateCard = (playerCard: PlayerProjectCard) => {
-    handlePlayerAction(() => {
+    handlePlayerAction((player) => {
         console.log('Activating card:', playerCard.effect.name);
         toast({
         title: 'Action',
         description: `Activated card: ${playerCard.effect.name}. Effect logic to be implemented.`,
         });
+        // This is where you'd implement the card's effect on the player state
+        return player;
     });
   };
 
   const handleStandardProject = (project: StandardProject) => {
-    handlePlayerAction(() => {
+    handlePlayerAction((player) => {
         console.log('Completing project:', project.title);
         toast({
         title: 'Action',
         description: `Completed project: ${project.title}. Effect logic to be implemented.`,
         });
+        return {...player, standardProjectUsed: true };
     });
   };
   
@@ -94,6 +129,16 @@ export function GameScreen() {
     const aiPlayer = currentState.players.find(p => p.isAI);
     if (!aiPlayer) return;
     
+    // Simulate AI passing if it has no actions
+    const shouldPass = Math.random() > 0.2; // AI will pass 20% of the time for now
+    if (shouldPass) {
+        toast({ title: "AI passes."});
+        handlePass();
+        setIsAIThinking(false);
+        return;
+    }
+
+
     const suggestion = await getAISuggestion({
       projectCards: aiPlayer.projectCards.map(c => c.effect.name),
       gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
@@ -110,12 +155,13 @@ export function GameScreen() {
         description: explanation.explanation,
     });
     
-    setGameState(prev => {
-        if (!prev) return null;
+    setGameState(produce(draft => {
+        if (!draft) return;
         // Here you would update the game state based on the AI's move.
         // For now, we just pass the turn back to the player.
-        return { ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length, passCount: 0 };
-    });
+        draft.passCount = 0;
+        draft.currentPlayerIndex = (draft.currentPlayerIndex + 1) % draft.players.length;
+    }));
 
     setIsAIThinking(false);
   }, [toast]);
@@ -124,12 +170,12 @@ export function GameScreen() {
   useEffect(() => {
     if (gameState) {
       const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-      if (currentPlayer.isAI) {
+      if (currentPlayer.isAI && !isAIThinking) {
         const timer = setTimeout(() => processAIMove(gameState), 1000);
         return () => clearTimeout(timer);
       }
     }
-  }, [gameState, processAIMove]);
+  }, [gameState, processAIMove, isAIThinking]);
 
   if (!isClient) {
     return (
