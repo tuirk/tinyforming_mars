@@ -1,6 +1,6 @@
 
 import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player } from './types';
-import { drawSharedCardRound } from './state';
+import { drawInitialCards } from './state';
 
 const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
     id: i + 1,
@@ -25,7 +25,7 @@ const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
         case 8: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 10: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
-        case 11: break; 
+        case 11: break;
         case 12: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         
         // Row 4
@@ -57,31 +57,22 @@ const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) =>
   }))
   .map(hex => {
     switch (hex.id) {
-        // Row 1
         case 1: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Science'; break;
         case 2: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Production'; break;
         case 3: break;
-
-        // Row 2
         case 4: hex.bonusTag = 'Space'; hex.frameColor = 'gray'; break;
         case 5: break;
         case 6: hex.type = 'water'; hex.isWaterReserved = true; break;
         case 7: hex.bonusTag = 'Science'; hex.frameColor = 'white'; break;
-
-        // Row 3
         case 8: break;
         case 9: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 10: hex.bonusTag = 'Nature'; hex.frameColor = 'green'; break;
         case 11: hex.type = 'water'; hex.isWaterReserved = true; hex.resourceTokenIcon = 'Nature'; break;
         case 12: break;
-        
-        // Row 4 - ALL EMPTY
         case 13: break;
         case 14: break;
         case 15: break;
         case 16: break;
-
-        // Row 5
         case 17: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
         case 18: break;
         case 19: hex.bonusTag = 'Production'; hex.frameColor = 'orange'; break;
@@ -222,10 +213,14 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
   const humanPlayerId = isHumanWhite ? 'White' : 'Black';
   const aiPlayerId = isHumanWhite ? 'Black' : 'White';
   
-  const { humanProject, aiProject, remainingDeck } = drawSharedCardRound(PROJECT_CARDS);
+  const { activeCards, remainingDeck } = drawInitialCards(PROJECT_CARDS);
   
   const initialTags = { Energy: 0, Production: 0, Nature: 0, Science: 0, Space: 0, Plant: 0, Building: 0, Heat: 0, Water: 0 };
   const initialBonusTags = { Production: 0, Science: 0, Nature: 0, Space: 0 };
+
+  // For now, statically assign player1 to human and player2 to AI
+  const humanPlayerCards = activeCards.map(c => c.player1Side);
+  const aiPlayerCards = activeCards.map(c => c.player2Side);
 
   const humanPlayer: Player = {
     id: humanPlayerId,
@@ -237,7 +232,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: [humanProject],
+    projectCards: humanPlayerCards,
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[playerMapId])),
     standardProjectUsed: false,
@@ -253,7 +248,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     personalSupply: { heat: 0 },
     parameterCubes: { Water: 0, Greenery: 0, Heat: 0 },
     tokens: { city: 2, specialProject: 1 },
-    projectCards: [aiProject],
+    projectCards: aiPlayerCards,
     victoryPoints: 0,
     map: JSON.parse(JSON.stringify(MAPS[aiMapId])),
     standardProjectUsed: false,
@@ -284,6 +279,7 @@ export const getInitialGameState = (playerMapId: MapId, aiMapId: MapId): GameSta
     projectCards: {
       drawDeck: remainingDeck,
       discardPile: [],
+      activeCards: activeCards,
     },
     isGameOver: false,
     gameEndTriggered: false,

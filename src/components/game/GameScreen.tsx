@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getInitialGameState, MAPS } from '@/lib/game/constants';
-import type { GameState, Player, Hex, PlayerProjectCard, StandardProject, MapId } from '@/lib/game/types';
+import type { GameState, Player, Hex, ProjectEffect, StandardProject, MapId } from '@/lib/game/types';
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
 import { ActionPanel } from './ActionPanel';
@@ -107,12 +107,12 @@ export function GameScreen() {
     }
   }
 
-  const handleActivateCard = (playerCard: PlayerProjectCard) => {
+  const handleActivateCard = (card: ProjectEffect) => {
     handlePlayerAction((player) => {
-        console.log('Activating card:', playerCard.effect.name);
+        console.log('Activating card:', card.name);
         toast({
         title: 'Action',
-        description: `Activated card: ${playerCard.effect.name}. Effect logic to be implemented.`,
+        description: `Activated card: ${card.name}. Effect logic to be implemented.`,
         });
         // This is where you'd implement the card's effect on the player state
         return player;
@@ -146,7 +146,7 @@ export function GameScreen() {
 
 
     const suggestion = await getAISuggestion({
-      projectCards: aiPlayer.projectCards.map(c => c.effect.name),
+      projectCards: aiPlayer.projectCards.map(c => c.name),
       gameState: `Generation ${currentState.generation}. AI has ${aiPlayer.credits} credits.`,
     });
 

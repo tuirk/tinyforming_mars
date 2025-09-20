@@ -1,6 +1,6 @@
 'use client';
 
-import type { Player, PlayerProjectCard, StandardProject } from '@/lib/game/types';
+import type { Player, ProjectEffect, StandardProject } from '@/lib/game/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectCardView } from './ProjectCardView';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ActionPanelProps {
   player: Player;
   isCurrentPlayer: boolean;
-  onActivateCard: (card: PlayerProjectCard) => void;
+  onActivateCard: (card: ProjectEffect) => void;
   onStandardProject: (project: StandardProject) => void;
   onPass: () => void;
 }
@@ -75,12 +75,12 @@ export function ActionPanel({
           <ScrollArea className="h-[calc(100vh-320px)] pr-4">
             <div className="space-y-4">
               {player.projectCards.length > 0 ? (
-                player.projectCards.map((pCard) => (
+                player.projectCards.map((card) => (
                   <ProjectCardView
-                    key={pCard.effect.id}
-                    playerCard={pCard}
-                    onActivate={() => onActivateCard(pCard)}
-                    canActivate={isCurrentPlayer && !pCard.usedThisGeneration}
+                    key={card.id}
+                    cardEffect={card}
+                    onActivate={() => onActivateCard(card)}
+                    canActivate={isCurrentPlayer}
                     playerId={player.id}
                   />
                 ))

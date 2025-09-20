@@ -1,6 +1,6 @@
 'use client';
 
-import type { PlayerProjectCard, PlayerColor } from '@/lib/game/types';
+import type { ProjectEffect, PlayerColor } from '@/lib/game/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,17 @@ import { cn } from '@/lib/utils';
 import { TagIcon } from './icons';
 
 interface ProjectCardViewProps {
-  playerCard: PlayerProjectCard;
+  cardEffect: ProjectEffect;
   playerId: PlayerColor;
   canActivate: boolean;
   onActivate: () => void;
 }
 
-export function ProjectCardView({ playerCard, playerId, canActivate, onActivate }: ProjectCardViewProps) {
-  const { effect, usedThisGeneration } = playerCard;
-
-  const cardType = effect.tags?.includes('Heat') ? 'Heat' :
-                   effect.tags?.includes('Plant') ? 'Greenery' :
-                   effect.tags?.includes('Water') ? 'Water' : 'Grey';
+export function ProjectCardView({ cardEffect, playerId, canActivate, onActivate }: ProjectCardViewProps) {
+  
+  const cardType = cardEffect.tags?.includes('Heat') ? 'Heat' :
+                   cardEffect.tags?.includes('Plant') ? 'Greenery' :
+                   cardEffect.tags?.includes('Water') ? 'Water' : 'Grey';
 
   const cardTypeStyles: Record<string, string> = {
       Heat: 'bg-red-950/30 border-red-500/30',
@@ -37,19 +36,19 @@ export function ProjectCardView({ playerCard, playerId, canActivate, onActivate 
   }
 
   return (
-    <Card className={cn("w-full h-[220px] flex flex-col", playerCard.usedThisGeneration && "opacity-50", cardTypeStyles[cardType])}>
+    <Card className={cn("w-full h-[220px] flex flex-col", cardTypeStyles[cardType])}>
         <CardHeader className="pb-2">
             <div className="flex justify-between items-start gap-2">
-                <CardTitle className="font-headline text-lg">{effect.name}</CardTitle>
-                {effect.cost && (
+                <CardTitle className="font-headline text-lg">{cardEffect.name}</CardTitle>
+                {cardEffect.cost && (
                   <div className="flex items-center gap-1 text-yellow-400 font-bold shrink-0">
-                      {effect.cost} <Coins className="h-4 w-4" />
+                      {cardEffect.cost} <Coins className="h-4 w-4" />
                   </div>
                 )}
             </div>
              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
                 <div className="flex gap-2 items-center">
-                    {effect.tags?.map(tag => (
+                    {cardEffect.tags?.map(tag => (
                          <Badge key={tag} variant="secondary" className="gap-1 text-xs px-2 py-0.5">
                             <TagIcon tag={tag as any} className="w-3 h-3" />
                             {tag}
@@ -62,26 +61,17 @@ export function ProjectCardView({ playerCard, playerId, canActivate, onActivate 
             </div>
         </CardHeader>
         <CardContent className="py-2 flex-grow">
-            <p className="text-sm text-foreground/90">{effect.effect}</p>
-             {effect.requirements && (
+            <p className="text-sm text-foreground/90">{cardEffect.effect}</p>
+             {cardEffect.requirements && (
                 <CardDescription className="text-xs mt-2 italic">
-                    Requires: {effect.requirements.join(', ')}
+                    Requires: {cardEffect.requirements.join(', ')}
                 </CardDescription>
              )}
         </CardContent>
         <CardFooter className="p-2 flex gap-2">
             <Button size="sm" className="w-full" disabled={!canActivate} onClick={onActivate}>
-                {usedThisGeneration ? (
-                    <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Used
-                    </>
-                ) : (
-                    <>
-                        <Zap className="mr-2 h-4 w-4" />
-                        Activate
-                    </>
-                )}
+                <Zap className="mr-2 h-4 w-4" />
+                Activate
             </Button>
         </CardFooter>
     </Card>

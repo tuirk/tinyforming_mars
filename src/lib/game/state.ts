@@ -1,5 +1,5 @@
 // src/lib/game/state.ts
-import type { ProjectCardData, PlayerProjectCard, CardSide } from "./types";
+import type { ProjectCardData, PlayerProjectCard, CardSide, ActiveProjectCard } from "./types";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
@@ -15,34 +15,29 @@ function pickRandomSide(card: ProjectCardData): CardSide {
 }
 
 /**
- * Draws one shared card for the round:
- * - Shuffle deck
- * - Reveal top card (side A or B at random)
- * - Slot1 -> Human, Slot2 -> AI
+ * Draws the initial 3 cards for the game setup.
+ * The choosing player for each card is not determined here.
  */
-export function drawSharedCardRound(initialDeck: ProjectCardData[]) {
+export function drawInitialCards(initialDeck: ProjectCardData[]) {
   const deck = shuffle(initialDeck);
-  if (deck.length === 0) throw new Error("Deck is empty!");
+  if (deck.length < 3) throw new Error("Deck needs at least 3 cards for setup!");
 
-  const card = deck[0]; // top card
-  const side = pickRandomSide(card);
+  const drawnCardsData = deck.slice(0, 3);
+  const remainingDeck = deck.slice(3);
 
-  const humanProject: PlayerProjectCard = {
-    cardId: card.cardId,
-    effect: side.slot1,
-    usedThisGeneration: false,
-  };
-
-  const aiProject: PlayerProjectCard = {
-    cardId: card.cardId,
-    effect: side.slot2,
-    usedThisGeneration: false,
-  };
+  const activeCards: ActiveProjectCard[] = drawnCardsData.map(cardData => {
+    // For now, randomly assign sides. The UI will later allow players to choose.
+    const side = pickRandomSide(cardData);
+    // Let's assume Player 1 is the human for now for simplicity.
+    return {
+      cardId: cardData.cardId,
+      player1Side: side.slot1,
+      player2Side: side.slot2,
+    };
+  });
 
   return {
-    card,
-    humanProject,
-    aiProject,
-    remainingDeck: deck.slice(1)
+    activeCards,
+    remainingDeck,
   };
 }

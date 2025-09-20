@@ -58,6 +58,12 @@ export type PlayerProjectCard = {
   usedThisGeneration: boolean;
 };
 
+export type ActiveProjectCard = {
+  cardId: number;
+  player1Side: ProjectEffect;
+  player2Side: ProjectEffect;
+};
+
 export interface Player {
   id: PlayerColor;
   isAI: boolean;
@@ -92,7 +98,7 @@ export interface Player {
     city: number;
     specialProject: number;
   };
-  projectCards: PlayerProjectCard[];
+  projectCards: ProjectEffect[];
   victoryPoints: number;
   map: MapData;
   standardProjectUsed: boolean;
@@ -128,6 +134,7 @@ export interface GameState {
   projectCards: {
     drawDeck: ProjectCardData[];
     discardPile: ProjectCardData[];
+    activeCards: ActiveProjectCard[];
   };
   isGameOver: boolean;
   gameEndTriggered: boolean;
