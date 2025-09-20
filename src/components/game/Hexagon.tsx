@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -124,7 +125,7 @@ export function Hexagon({ hex, size }: HexagonProps) {
           {occupiedBy.type === 'Greenery' && <GreeneryCube x={size/2} y={size/2} width={size} height={size} />}
           {occupiedBy.type === 'Heat' && <HeatCube x={size/2} y={size/2} width={size} height={size} />}
           {occupiedBy.type === 'city' && (
-            <g transform={`translate(${size/2}, ${size/2}) scale(0.5)`}>
+            <g transform={`translate(${size/2}, ${size/2}) scale(0.8)`}>
               <Building2 className={cn(
                 'stroke-2 w-full h-full',
                 occupiedBy.playerId === 'White' ? 'fill-gray-100 stroke-gray-300' : 'fill-gray-800 stroke-gray-600'
