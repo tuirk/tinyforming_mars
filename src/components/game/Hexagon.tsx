@@ -1,10 +1,12 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import type { Hex } from '@/lib/game/types';
-import { WaterCube, GreeneryCube, HeatCube, ScienceTagIcon, EnergyTagIcon, ProductionTagIcon, NatureTagIcon, SpaceTagIcon } from './icons';
+import { WaterCube, GreeneryCube, HeatCube, ScienceResource, ProductionResource, NatureResource } from './icons';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Building2 } from 'lucide-react';
 
 
 interface HexagonProps {
@@ -39,10 +41,10 @@ export function Hexagon({ hex, size }: HexagonProps) {
     return hexPoints.join(' ');
 }, [size]);
 
-  const cube = hex.cubes[0];
+  const occupiedBy = hex.occupiedBy;
 
   const renderBonus = () => {
-    if (!hex.bonusTag) return null;
+    if (!hex.resourceTokenIcon) return null;
 
     const iconProps = {
         x: size - (size / 4),
@@ -50,16 +52,14 @@ export function Hexagon({ hex, size }: HexagonProps) {
         width: size / 2,
         height: size / 2,
         className: 'fill-background/50 stroke-foreground/50',
-        strokeWidth: 4,
+        strokeWidth: 1,
     };
 
     let icon = null;
-    switch(hex.bonusTag) {
-        case 'Science': icon = <ScienceTagIcon {...iconProps} />; break;
-        case 'Energy': icon = <EnergyTagIcon {...iconProps} />; break;
-        case 'Production': icon = <ProductionTagIcon {...iconProps} />; break;
-        case 'Nature': icon = <NatureTagIcon {...iconProps} />; break;
-        case 'Space': icon = <SpaceTagIcon {...iconProps} />; break;
+    switch(hex.resourceTokenIcon) {
+        case 'Science': icon = <ScienceResource {...iconProps} />; break;
+        case 'Production': icon = <ProductionResource {...iconProps} />; break;
+        case 'Nature': icon = <NatureResource {...iconProps} />; break;
     }
 
     return (
@@ -69,21 +69,14 @@ export function Hexagon({ hex, size }: HexagonProps) {
                     <g>{icon}</g>
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Bonus: {hex.bonusTag} tag placement</p>
+                    <p>Resource Bonus: Gain 1 {hex.resourceTokenIcon} token when placing water here.</p>
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>
     )
   }
 
-  const frameColorClass = {
-      gray: "stroke-gray-400/80",
-      white: "stroke-gray-200/90",
-      green: "stroke-green-500/90",
-      orange: "stroke-orange-500/90",
-  }[hex.frameColor || ''];
-
-  const hexFillClass = (hex.type === 'water' ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30");
+  const hexFillClass = (hex.isWaterReserved ? "fill-blue-900/50 stroke-blue-400/80" : "fill-orange-900/30 stroke-orange-300/30");
 
 
   return (
@@ -110,29 +103,22 @@ export function Hexagon({ hex, size }: HexagonProps) {
         strokeWidth="2"
       />
       
-      {hex.frameColor && (
-          <polygon
-              points={innerPoints}
-              className={cn("fill-transparent", frameColorClass)}
-              strokeWidth="4"
-          />
-      )}
-      
       {renderBonus()}
       
-      {cube && (
+      {occupiedBy.type && (
         <g className="cube-animation">
-          {cube === 'Water' && <WaterCube x={size/2} y={size/2} width={size} height={size} />}
-          {cube === 'Greenery' && <GreeneryCube x={size/2} y={size/2} width={size} height={size} />}
-          {cube === 'Heat' && <HeatCube x={size/2} y={size/2} width={size} height={size} />}
+          {occupiedBy.type === 'Water' && <WaterCube x={size/2} y={size/2} width={size} height={size} />}
+          {occupiedBy.type === 'Greenery' && <GreeneryCube x={size/2} y={size/2} width={size} height={size} />}
+          {occupiedBy.type === 'Heat' && <HeatCube x={size/2} y={size/2} width={size} height={size} />}
+          {occupiedBy.type === 'city' && (
+            <g transform={`translate(${size/2}, ${size/2}) scale(0.5)`}>
+              <Building2 className={cn(
+                'stroke-2 w-full h-full',
+                occupiedBy.playerId === 'White' ? 'fill-gray-100 stroke-gray-300' : 'fill-gray-800 stroke-gray-600'
+              )} />
+            </g>
+          )}
         </g>
-      )}
-
-      {hex.owner && (
-        <circle cx={size} cy={size} r={size/4} className={cn(
-          'stroke-2',
-          hex.owner === 'White' ? 'fill-gray-100 stroke-gray-300' : 'fill-gray-800 stroke-gray-600'
-        )} />
       )}
       
       <text x={size} y={size * 1.8} textAnchor="middle" className="fill-muted-foreground text-[10px] font-mono">{hex.id}</text>

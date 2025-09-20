@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Player } from '@/lib/game/types';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube } from './icons';
 import { cn } from '@/lib/utils';
-import { Coins, Star, Building2 } from 'lucide-react';
+import { Coins, Star, Building2, Flame } from 'lucide-react';
 
 interface PlayerDashboardProps {
   player: Player;
@@ -57,13 +58,18 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
         <div className="flex justify-around gap-2 text-center">
           <div className="flex flex-col items-center gap-1">
             <Building2 className="h-8 w-8" />
-            <span className="font-bold text-md">{player.tokens.city}</span>
+            <span className="font-bold text-md">{player.tokens.city - player.cities.length}</span>
             <span className="text-xs text-muted-foreground">Cities</span>
           </div>
           <div className="flex flex-col items-center gap-1">
             <SpecialProjectToken className="h-8 w-8" />
             <span className="font-bold text-md">{player.tokens.specialProject}</span>
             <span className="text-xs text-muted-foreground">Projects</span>
+          </div>
+           <div className="flex flex-col items-center gap-1">
+            <Flame className="h-8 w-8 text-red-500" />
+            <span className="font-bold text-md">{player.personalSupply.heat}</span>
+            <span className="text-xs text-muted-foreground">Heat</span>
           </div>
         </div>
       </CardContent>
