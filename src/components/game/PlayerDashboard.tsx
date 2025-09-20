@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Player } from '@/lib/game/types';
@@ -7,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { SpecialProjectToken, WaterCube, GreeneryCube, HeatCube } from './icons';
 import { cn } from '@/lib/utils';
 import { Coins, Star, Building2, Flame } from 'lucide-react';
+import { TagIcon } from './icons';
 
 interface PlayerDashboardProps {
   player: Player;
@@ -14,6 +16,14 @@ interface PlayerDashboardProps {
 }
 
 export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProps) {
+  const allTags = {
+    ...player.tags,
+    Production: player.tags.Production + player.bonusTagsFromCities.Production,
+    Science: player.tags.Science + player.bonusTagsFromCities.Science,
+    Nature: player.tags.Nature + player.bonusTagsFromCities.Nature,
+    Space: player.tags.Space + player.bonusTagsFromCities.Space,
+  };
+
   return (
     <Card className={cn(
       'transition-all duration-300',
@@ -51,6 +61,19 @@ export function PlayerDashboard({ player, isCurrentPlayer }: PlayerDashboardProp
                 <HeatCube className="h-8 w-8 mx-auto" />
                 <span className="font-bold text-sm">{player.parameterCubes.Heat}</span>
             </div>
+        </div>
+
+        <Separator className="my-2" />
+
+        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs">
+          {Object.entries(allTags).map(([tag, count]) => (
+              count > 0 && (
+              <div key={tag} className="flex items-center justify-center gap-1">
+                <TagIcon tag={tag as any} className="w-4 h-4" />
+                <span>{count}</span>
+              </div>
+              )
+          ))}
         </div>
 
         <Separator className="my-2" />

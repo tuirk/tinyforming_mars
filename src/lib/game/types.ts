@@ -1,9 +1,14 @@
 
+
 export type PlayerColor = 'White' | 'Black';
 export type ResourceType = 'Nature' | 'Production' | 'Science';
 export type ParameterType = 'Water' | 'Greenery' | 'Heat';
 export type TileType = 'city' | ParameterType;
-export type Tag = 'Science' | 'Nature' | 'Energy' | 'Production' | 'Space' | 'Plant' | 'Building';
+
+export type Tag = 'Energy' | 'Production' | 'Nature' | 'Science' | 'Space' | 'Plant' | 'Building';
+export type BonusTag = 'Production' | 'Science' | 'Nature' | 'Space';
+
+
 export type HexType = 'land' | 'water';
 export type MapId = 'Tharsis' | 'Elysium';
 export type TokenType = 'city' | 'specialProject';
@@ -12,12 +17,8 @@ export type CardType = 'Heat' | 'Greenery' | 'Water' | 'Grey';
 export interface Hex {
   id: number;
   type: HexType;
-  bonusTag?: Tag;
-  owner?: PlayerColor;
-  cubes: ParameterType[]; // Legacy, can be phased out
+  bonusTag?: BonusTag;
   frameColor?: 'gray' | 'white' | 'green' | 'orange';
-  
-  // New properties from requirements
   isWaterReserved: boolean;
   resourceTokenIcon?: ResourceType;
   occupiedBy: {
@@ -36,7 +37,7 @@ export type ProjectEffect = {
   id: string;    
   name: string;
   cost?: number | string;
-  tags?: string[];
+  tags?: Tag[];
   requirements?: string[];
   effect: string;
 };
@@ -70,11 +71,17 @@ export interface Player {
     Space: number;
     Building: number;
     Plant: number;
-  },
+  };
+  bonusTagsFromCities: {
+    Production: number;
+    Science: number;
+    Nature: number;
+    Space: number;
+  };
   cities: number[]; // hex IDs
   personalSupply: {
     heat: number;
-  },
+  };
   parameterCubes: {
     Water: number;
     Greenery: number;
