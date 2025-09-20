@@ -15,6 +15,7 @@ import { MapSelection } from './MapSelection';
 import { Supply } from './Supply';
 import { produce } from 'immer';
 import { ResourceTokenSupply } from './ResourceTokenSupply';
+import { SetupPhase } from './SetupPhase';
 
 export function GameScreen() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -236,11 +237,11 @@ export function GameScreen() {
     } finally {
       setIsAIThinking(false);
     }
-  }, [toast, endGeneration]);
+  }, [toast, endGeneration, handlePass]);
 
 
   useEffect(() => {
-    if (gameState && !isPaused) {
+    if (gameState && gameState.phase === 'Action' && !isPaused) {
       const currentPlayer = gameState.players[gameState.currentPlayerIndex];
       if (currentPlayer.isAI && !isAIThinking) {
         const timer = setTimeout(() => processAIMove(gameState), 1000);
@@ -257,9 +258,13 @@ export function GameScreen() {
       </div>
     );
   }
-
+  
   if (!gameState) {
     return <MapSelection onMapSelect={handleStartGame} maps={Object.values(MAPS)} />;
+  }
+
+  if (gameState.phase === 'Setup') {
+    return <SetupPhase gameState={gameState} setGameState={setGameState} />;
   }
 
   const humanPlayer = gameState.players.find(p => !p.isAI)!;
