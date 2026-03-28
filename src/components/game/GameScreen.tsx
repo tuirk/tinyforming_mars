@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type {
   GameState,
   CardId,
@@ -149,6 +149,7 @@ export function GameScreen() {
   const [drawnCardIds, setDrawnCardIds] = useState<CardId[]>([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showIncome, setShowIncome] = useState(false);
+  const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const placement = usePlacementMode(gameState);
 
@@ -357,34 +358,30 @@ export function GameScreen() {
       const cardSide = humanPlayer.projectCardsFacing[index];
       if (!cardSide) return;
 
+      const executeCardAction = (hexId?: HexId) => {
+        const action = {
+          type: 'activate_project' as const,
+          cardId: cardSide.cardId,
+          side: cardSide.side,
+          targetHexId: hexId,
+        };
+        setGameState((prev) => {
+          if (!prev) return prev;
+          const after = executeAction(prev, action, 'human');
+          const aiPassed = after.players.ai.hasPassed;
+          return { ...after, turnOrder: aiPassed ? ['human', 'ai'] : ['ai', 'human'] };
+        });
+      };
+
       if (needsPlacement(cardSide.effect)) {
         placement.startPlacement({
           type: getPlacementTileType(cardSide.effect),
           playerId: 'human',
           constraint: getPlacementConstraint(cardSide.effect),
-          onComplete: (hexId: HexId) => {
-            const action = {
-              type: 'activate_project' as const,
-              cardId: cardSide.cardId,
-              side: cardSide.side,
-              targetHexId: hexId,
-            };
-            setGameState((prev) => {
-              if (!prev) return prev;
-              return processActionPhaseStep(prev, action, 'human');
-            });
-          },
+          onComplete: (hexId: HexId) => executeCardAction(hexId),
         });
       } else {
-        const action = {
-          type: 'activate_project' as const,
-          cardId: cardSide.cardId,
-          side: cardSide.side,
-        };
-        setGameState((prev) => {
-          if (!prev) return prev;
-          return processActionPhaseStep(prev, action, 'human');
-        });
+        executeCardAction();
       }
     },
     [gameState, humanPlayer, placement],
@@ -399,28 +396,28 @@ export function GameScreen() {
       const project = STANDARD_PROJECTS.find((p) => p.id === projectId);
       if (!project) return;
 
+      const executeStdAction = (hexId?: HexId) => {
+        const action = {
+          type: 'standard_project' as const,
+          projectId,
+          targetHexId: hexId,
+        };
+        setGameState((prev) => {
+          if (!prev) return prev;
+          const after = executeAction(prev, action, 'human');
+          const aiPassed = after.players.ai.hasPassed;
+          return { ...after, turnOrder: aiPassed ? ['human', 'ai'] : ['ai', 'human'] };
+        });
+      };
+
       if (stdProjectNeedsPlacement(project.effectType)) {
         placement.startPlacement({
           type: stdProjectPlacementType(project.effectType),
           playerId: 'human',
-          onComplete: (hexId: HexId) => {
-            const action = {
-              type: 'standard_project' as const,
-              projectId,
-              targetHexId: hexId,
-            };
-            setGameState((prev) => {
-              if (!prev) return prev;
-              return processActionPhaseStep(prev, action, 'human');
-            });
-          },
+          onComplete: (hexId: HexId) => executeStdAction(hexId),
         });
       } else {
-        const action = { type: 'standard_project' as const, projectId };
-        setGameState((prev) => {
-          if (!prev) return prev;
-          return processActionPhaseStep(prev, action, 'human');
-        });
+        executeStdAction();
       }
     },
     [gameState, placement],
@@ -439,10 +436,12 @@ export function GameScreen() {
       // Both will be passed after this — show income visualization
       const passedState = executeAction(gameState, { type: 'pass' }, 'human');
       setGameState({ ...passedState, phase: 'income' as const });
+      setIsAIThinking(false);
       setShowIncome(true);
     } else {
-      const newState = processActionPhaseStep(gameState, { type: 'pass' }, 'human');
-      setGameState(newState);
+      const passedState = executeAction(gameState, { type: 'pass' }, 'human');
+      // AI hasn't passed, so it goes next
+      setGameState({ ...passedState, turnOrder: ['ai', 'human'] });
     }
   }, [gameState]);
 
@@ -451,29 +450,76 @@ export function GameScreen() {
   // ----------------------------------------------------------
   useEffect(() => {
     if (!gameState || gameState.phase !== 'action') return;
+    if (aiTimerRef.current !== null) return; // timer already pending
+
     const actor = getNextActor(gameState);
-    if (actor !== 'ai' || isAIThinking) return;
+    if (actor !== 'ai') return;
 
     setIsAIThinking(true);
-    const timer = setTimeout(() => {
-      setGameState((prev) => {
-        if (!prev) return prev;
-        const action = pickRandomAction(prev);
+    const currentState = gameState;
 
-        // Check if both will be passed after AI passes
-        if (action.type === 'pass' && prev.players.human.hasPassed) {
-          const passedState = executeAction(prev, action, 'ai');
+    aiTimerRef.current = setTimeout(() => {
+      aiTimerRef.current = null;
+      try {
+        const action = pickRandomAction(currentState);
+
+        // Will both be passed after this action?
+        const willBothPass =
+          (action.type === 'pass' && currentState.players.human.hasPassed);
+
+        if (willBothPass) {
+          // Intercept: execute pass only, show income visualization, don't let
+          // processActionPhaseStep auto-transition through postIncomePhase
+          const passedState = executeAction(currentState, action, 'ai');
+          setGameState({ ...passedState, phase: 'income' as const });
+          setIsAIThinking(false);
           setShowIncome(true);
-          return { ...passedState, phase: 'income' as const };
-        }
+        } else {
+          // Use executeAction + manual turn rotation to avoid processActionPhaseStep
+          // auto-calling postIncomePhase if this action somehow causes both to pass
+          const afterAction = executeAction(currentState, action, 'ai');
 
-        return processActionPhaseStep(prev, action, 'ai');
-      });
-      setIsAIThinking(false);
+          // Check if both passed after this action (shouldn't happen for non-pass, but safety)
+          if (afterAction.players.human.hasPassed && afterAction.players.ai.hasPassed) {
+            setGameState({ ...afterAction, phase: 'income' as const });
+            setIsAIThinking(false);
+            setShowIncome(true);
+          } else {
+            // Rotate turn order manually
+            const otherPlayer = 'human';
+            const humanPassed = afterAction.players.human.hasPassed;
+            const turnOrder = humanPassed
+              ? ['ai', 'human']
+              : ['human', 'ai'];
+            setGameState({ ...afterAction, turnOrder });
+            setIsAIThinking(false);
+          }
+        }
+      } catch (err) {
+        console.error('[AI] Error executing action:', err);
+        try {
+          const passedState = executeAction(currentState, { type: 'pass' }, 'ai');
+          if (currentState.players.human.hasPassed) {
+            setGameState({ ...passedState, phase: 'income' as const });
+            setShowIncome(true);
+          } else {
+            setGameState({ ...passedState, turnOrder: ['human', 'ai'] });
+          }
+        } catch (e2) {
+          console.error('[AI] Fallback pass also failed:', e2);
+        }
+        setIsAIThinking(false);
+      }
     }, 1500);
 
-    return () => clearTimeout(timer);
-  }, [gameState, isAIThinking]);
+    return () => {
+      if (aiTimerRef.current !== null) {
+        clearTimeout(aiTimerRef.current);
+        aiTimerRef.current = null;
+        setIsAIThinking(false); // reset on cleanup so it retries on remount
+      }
+    };
+  }, [gameState]);
 
   // ----------------------------------------------------------
   // Income phase complete handler
