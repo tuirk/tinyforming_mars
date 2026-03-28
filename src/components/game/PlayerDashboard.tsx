@@ -1,131 +1,121 @@
 
 'use client';
 
-import type { Player, PlayerColor, Tag } from '@/lib/game/types';
+import type { PlayerState, TagType, ResourceType, Phase } from '@/engine/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { SpecialProjectToken } from './icons';
 import { cn } from '@/lib/utils';
-import { Coins, Star, Building2, Flame } from 'lucide-react';
-import { TagIcon } from './icons';
-import { TokenDisplay } from './TokenDisplay';
-import { useToast } from '@/hooks/use-toast';
-import { NatureResource, ProductionResource, ScienceResource } from './icons';
+import { Coins, Flame, Building2 } from 'lucide-react';
+import { TagIcon, NatureResource, ProductionResource, ScienceResource } from './icons';
 
 interface PlayerDashboardProps {
-  player: Player;
-  currentPlayerId: PlayerColor;
+  player: PlayerState;
+  tagCounts: Record<TagType, number>;
+  isCurrentTurn: boolean;
+  generation: number;
+  phase: Phase;
 }
 
-export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProps) {
-  const isCurrentPlayer = player.id === currentPlayerId;
-  const { toast } = useToast();
+const TAG_ORDER: TagType[] = ['energy', 'production', 'nature', 'science', 'space'];
 
-  const allTags = {
-    ...player.permanentTags,
+const RESOURCE_ICONS: Record<ResourceType, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  nature: NatureResource,
+  production: ProductionResource,
+  science: ScienceResource,
+};
+
+export function PlayerDashboard({ player, tagCounts, isCurrentTurn, generation, phase }: PlayerDashboardProps) {
+  const hasTags = Object.values(tagCounts).some(count => count > 0);
+
+  // Count resource tokens from the array
+  const resourceCounts: Record<ResourceType, number> = {
+    nature: player.resourceTokens.filter(t => t === 'nature').length,
+    production: player.resourceTokens.filter(t => t === 'production').length,
+    science: player.resourceTokens.filter(t => t === 'science').length,
   };
-  
-  // This logic to sum up tags from different sources will be more complex later
-  // For now, we just combine permanent and bonus tags
-  for (const key in player.bonusTagsFromCities) {
-    const tag = key as keyof typeof player.bonusTagsFromCities;
-    allTags[tag] = (allTags[tag] || 0) + (player.bonusTagsFromCities[tag] || 0);
-  }
-  
-  const hasTags = Object.values(allTags).some(count => count > 0);
-  const hasResourceTokens = Object.values(player.resourceTokens).some(count => count > 0);
-  
-  const handleTokenClick = (tokenType: string) => {
-    toast({
-      title: `${tokenType} Token Clicked`,
-      description: `Logic to use this token will be implemented soon.`,
-    });
-  };
+  const hasResourceTokens = Object.values(resourceCounts).some(count => count > 0);
+
+  const playerLabel = player.id === 'human' ? 'Human' : 'AI';
+  const colorLabel = player.color === 'white' ? 'White' : 'Black';
 
   return (
     <Card className={cn(
       'transition-all duration-300 w-full',
-      isCurrentPlayer ? 'border-primary shadow-primary/20 shadow-lg' : ''
+      isCurrentTurn ? 'border-primary shadow-lg shadow-primary/20' : ''
     )}>
       <CardHeader className="flex-row items-center justify-between pb-2 pt-4 px-4">
         <CardTitle className="font-headline text-xl flex items-center gap-2">
-          <div className={cn("w-3 h-3 rounded-full", player.id === 'White' ? 'bg-gray-200' : 'bg-gray-700')} />
-          {player.id} {player.isAI && '(AI)'}
+          <div className={cn(
+            "w-3 h-3 rounded-full",
+            player.color === 'white' ? 'bg-gray-200' : 'bg-gray-700'
+          )} />
+          {playerLabel} ({colorLabel})
         </CardTitle>
-        <div className="flex items-center gap-2 text-md font-bold text-yellow-400">
-           <Star className="h-4 w-4" />
-           {player.victoryPoints}
+        <div className="text-sm text-muted-foreground font-medium">
+          Gen {generation}
         </div>
       </CardHeader>
       <CardContent className="p-4">
         <div className="flex justify-between items-center text-md mb-2">
-            <div className="flex items-center gap-2 text-green-400">
-                <Coins className="h-4 w-4" />
-                <span className="font-bold">{player.credits} Credits</span>
-            </div>
+          <div className="flex items-center gap-2 text-green-400">
+            <Coins className="h-4 w-4" />
+            <span className="font-bold">Credits: {player.credits}</span>
+          </div>
+          <div className="flex items-center gap-2 text-red-400">
+            <Flame className="h-4 w-4" />
+            <span className="font-bold">Heat: {player.heatTilesPersonal}</span>
+          </div>
         </div>
+
         <Separator className="my-2" />
 
-        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[40px] items-start">
+        <div className="text-xs text-muted-foreground mb-1">Tags:</div>
+        <div className="grid grid-cols-3 gap-2 text-center my-2 text-xs min-h-[40px] items-start">
           {hasTags ? (
-            Object.entries(allTags).map(([tag, count]) => (
-                (count ?? 0) > 0 && (
+            TAG_ORDER.map(tag => (
+              tagCounts[tag] > 0 && (
                 <div key={tag} className="flex items-center justify-center gap-1">
-                  <TagIcon tag={tag as any} className="w-4 h-4" />
-                  <span>{count}</span>
+                  <TagIcon tag={tag} className="w-4 h-4" />
+                  <span>{tagCounts[tag]}</span>
                 </div>
-                )
+              )
             ))
           ) : (
             <div className="col-span-3 text-center text-muted-foreground italic">No tags</div>
           )}
         </div>
-        
+
         <Separator className="my-2" />
-        
-        <div className="grid grid-cols-3 gap-2 text-center my-3 text-xs min-h-[20px]">
+
+        <div className="flex items-center gap-2 text-xs my-2 min-h-[20px]">
+          <span className="text-muted-foreground">Tokens:</span>
           {hasResourceTokens ? (
-              <>
-                {(player.resourceTokens.Nature ?? 0) > 0 && <div className="flex items-center justify-center gap-1"><NatureResource className="w-4 h-4" /><span>{player.resourceTokens.Nature}</span></div>}
-                {(player.resourceTokens.Production ?? 0) > 0 && <div className="flex items-center justify-center gap-1"><ProductionResource className="w-4 h-4" /><span>{player.resourceTokens.Production}</span></div>}
-                {(player.resourceTokens.Science ?? 0) > 0 && <div className="flex items-center justify-center gap-1"><ScienceResource className="w-4 h-4" /><span>{player.resourceTokens.Science}</span></div>}
-              </>
+            <div className="flex gap-3">
+              {(Object.entries(resourceCounts) as [ResourceType, number][]).map(([type, count]) => {
+                if (count === 0) return null;
+                const Icon = RESOURCE_ICONS[type];
+                return (
+                  <div key={type} className="flex items-center gap-1">
+                    <Icon className="w-4 h-4" />
+                    <span>x{count}</span>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
-            <div className="col-span-3 text-center text-muted-foreground italic">No resource tokens</div>
+            <span className="text-muted-foreground italic">None</span>
           )}
         </div>
 
+        <div className="flex items-center gap-2 text-xs my-2">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Cities: {player.cities.length}</span>
+        </div>
 
         <Separator className="my-2" />
-        
-        <div className="flex justify-around gap-2 text-center">
-           <TokenDisplay
-            label="Cities"
-            value={player.tokens.city - player.cities.length}
-            tooltip="Available cities to build."
-            onClick={() => handleTokenClick('City')}
-            isClickable={isCurrentPlayer && player.tokens.city - player.cities.length > 0}
-          >
-            <Building2 className="h-8 w-8" />
-          </TokenDisplay>
-          <TokenDisplay
-            label="Projects"
-            value={player.tokens.specialProject}
-            tooltip="Available special projects."
-            onClick={() => handleTokenClick('Special Project')}
-            isClickable={isCurrentPlayer && player.tokens.specialProject > 0}
-          >
-            <SpecialProjectToken className="h-8 w-8" />
-          </TokenDisplay>
-          <TokenDisplay
-            label="Heat"
-            value={player.personalSupply.heat}
-            tooltip="Heat accumulated for terraforming."
-            onClick={() => handleTokenClick('Heat')}
-            isClickable={isCurrentPlayer && player.personalSupply.heat > 0}
-          >
-            <Flame className="h-8 w-8 text-red-500" />
-          </TokenDisplay>
+
+        <div className="text-xs text-muted-foreground text-center">
+          Phase: <span className="font-medium capitalize">{phase}</span>
         </div>
       </CardContent>
     </Card>

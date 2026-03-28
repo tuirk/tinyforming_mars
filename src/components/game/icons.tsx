@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
-import { Tag } from '@/lib/game/types';
-import { Leaf, Zap, Building, Orbit, Beaker, Factory, Wind, Atom } from 'lucide-react';
+import type { TagType } from '@/engine/types';
+import { Zap, Orbit, Beaker, Factory } from 'lucide-react';
 
 export const NatureResource = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="hsl(120, 50%, 50%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -64,26 +64,18 @@ export const BuildingTagIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export const TagIcon = ({ tag, ...props }: {tag: Tag} & SVGProps<SVGSVGElement>) => {
+export const TagIcon = ({ tag, ...props }: {tag: TagType} & SVGProps<SVGSVGElement>) => {
     switch (tag) {
-      case 'Energy':
+      case 'energy':
         return <Zap {...props} />;
-      case 'Production':
+      case 'production':
         return <Factory {...props} />;
-      case 'Nature':
+      case 'nature':
         return <NatureResource {...props} />;
-      case 'Science':
+      case 'science':
         return <Beaker {...props} />;
-      case 'Space':
+      case 'space':
         return <Orbit {...props} />;
-      case 'Plant':
-        return <Leaf {...props} />;
-      case 'Building':
-        return <Building {...props} />
-      case 'Heat':
-        return <Wind {...props} />;
-      case 'Water':
-        return <Atom {...props} />; // Placeholder, needs better icon
       default:
         return null;
     }

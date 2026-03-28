@@ -1,23 +1,16 @@
-
 'use client';
 
 import type { CardSide, TagType } from '@/engine/types';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Coins, Zap, CheckCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { TagIcon } from './icons';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { describeCardEffect, describeCostReduction, describeParameterReduction } from '@/lib/cardDescriptions';
+import { TagIcon } from './icons';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Coins } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface ProjectCardViewProps {
+interface CardSideViewProps {
   cardSide: CardSide;
-  effectiveCost: number;
-  canActivate: boolean;
-  isUsedThisGen: boolean;
-  isHumanTurn: boolean;
-  onActivate: () => void;
+  label?: string; // e.g., "Your side" or "AI's side"
 }
 
 const cardColorStyles: Record<string, string> = {
@@ -35,65 +28,45 @@ const TAG_COLORS: Record<TagType, string> = {
   space: 'text-purple-400',
 };
 
-export function ProjectCardView({
-  cardSide,
-  effectiveCost,
-  canActivate,
-  isUsedThisGen,
-  isHumanTurn,
-  onActivate,
-}: ProjectCardViewProps) {
+export function CardSideView({ cardSide, label }: CardSideViewProps) {
   const hasTagReqs = cardSide.tagRequirements.length > 0;
   const hasParamReqs = cardSide.parameterRequirements.length > 0;
   const hasRequirements = hasTagReqs || hasParamReqs;
   const hasCostReduction = cardSide.costReduction !== null;
   const hasParamReduction = cardSide.parameterReduction !== null;
-  const isReducible = hasCostReduction;
 
   return (
     <Card
       className={cn(
-        'w-full h-auto flex flex-col relative overflow-hidden',
+        'w-full h-auto flex flex-col overflow-hidden',
         cardColorStyles[cardSide.color] ?? cardColorStyles.grey,
-        !canActivate && !isUsedThisGen && 'opacity-50',
       )}
     >
-      {/* Used-this-generation overlay */}
-      {isUsedThisGen && (
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-10 flex items-center justify-center">
-          <CheckCircle className="w-12 h-12 text-green-500" />
-        </div>
-      )}
-
-      {/* Header: name + cost */}
+      {/* Header: optional label, name + cost */}
       <CardHeader className="pb-2 pt-3 px-3">
+        {label && (
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+            {label}
+          </p>
+        )}
         <div className="flex justify-between items-start gap-2">
-          <CardTitle className="font-headline text-sm leading-tight">
+          <span className="font-headline text-sm leading-tight font-semibold">
             {cardSide.name}
-          </CardTitle>
+          </span>
           <div className="flex items-center gap-1 text-yellow-400 font-bold shrink-0 text-sm">
-            {effectiveCost}
-            {isReducible ? '*' : ''}
+            {cardSide.cost}
+            {hasCostReduction ? '*' : ''}
             <Coins className="h-3.5 w-3.5" />
           </div>
         </div>
 
-        {/* Bottom tags (always 2) */}
+        {/* Tags (always 2) */}
         <div className="flex gap-1.5 items-center pt-1">
           {cardSide.tags.map((tag, i) => (
-            <TooltipProvider key={`${tag}-${i}`}>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Badge variant="secondary" className="gap-1 text-xs px-1.5 py-0.5">
-                    <TagIcon tag={tag} className={cn('w-3 h-3', TAG_COLORS[tag])} />
-                    <span className="capitalize">{tag}</span>
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Bottom tag: {tag}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Badge key={`${tag}-${i}`} variant="secondary" className="gap-1 text-xs px-1.5 py-0.5">
+              <TagIcon tag={tag} className={cn('w-3 h-3', TAG_COLORS[tag])} />
+              <span className="capitalize">{tag}</span>
+            </Badge>
           ))}
         </div>
       </CardHeader>
@@ -109,14 +82,10 @@ export function ProjectCardView({
               {cardSide.tagRequirements.map((req) => (
                 <div
                   key={req.tag}
-                  className={cn(
-                    'flex items-center gap-0.5 text-xs',
-                    canActivate ? 'text-green-400' : 'text-muted-foreground',
-                  )}
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground"
                 >
                   <TagIcon tag={req.tag} className={cn('w-3 h-3', TAG_COLORS[req.tag])} />
                   <span>x{req.count}</span>
-                  {canActivate && <CheckCircle className="w-2.5 h-2.5 text-green-500" />}
                 </div>
               ))}
             </div>
@@ -124,13 +93,7 @@ export function ProjectCardView({
           {hasParamReqs && (
             <div className="space-y-0.5">
               {cardSide.parameterRequirements.map((req) => (
-                <p
-                  key={req.type}
-                  className={cn(
-                    'text-xs',
-                    canActivate ? 'text-green-400' : 'text-muted-foreground',
-                  )}
-                >
+                <p key={req.type} className="text-xs text-muted-foreground">
                   {req.count} {req.type.charAt(0).toUpperCase() + req.type.slice(1)} tiles
                 </p>
               ))}
@@ -157,19 +120,6 @@ export function ProjectCardView({
           </p>
         </div>
       )}
-
-      {/* Activate button */}
-      <CardFooter className="p-2">
-        <Button
-          size="sm"
-          className="w-full"
-          disabled={!canActivate || isUsedThisGen || !isHumanTurn}
-          onClick={onActivate}
-        >
-          <Zap className="mr-1.5 h-3.5 w-3.5" />
-          Activate
-        </Button>
-      </CardFooter>
     </Card>
   );
 }
