@@ -1,9 +1,11 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { signOut } from '@/lib/firebase/auth';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { GameScreen } from '@/components/game/GameScreen';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, LogOut } from 'lucide-react';
 
 export default function Home() {
   const { firebaseUser, userProfile, loading } = useAuth();
@@ -22,6 +24,15 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <span className="text-sm text-muted-foreground">
+          {userProfile.displayName || userProfile.email}
+        </span>
+        <Button variant="ghost" size="sm" onClick={() => signOut()}>
+          <LogOut className="mr-1 h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
       <GameScreen />
     </main>
   );
