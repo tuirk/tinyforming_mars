@@ -1,10 +1,10 @@
 
-import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, Requirements, Tag, ParameterType } from './types';
+import type { GameState, MapData, ProjectCardData, StandardProject, MapId, Player, Requirements, Tag, ParameterType, Hex } from './types';
 import { drawInitialCards } from './state';
 
-const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
+const THARSIS_MAP_HEXES: MapData['hexes'] = Array.from<unknown, Hex>({ length: 19 }, (_, i) => ({
     id: i + 1,
-    type: 'land' as 'land',
+    type: 'land',
     occupiedBy: { type: null, playerId: null },
     isWaterReserved: false,
   }))
@@ -31,9 +31,9 @@ export const THARSIS_MAP: MapData = {
   hexes: THARSIS_MAP_HEXES,
 };
 
-const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from({ length: 19 }, (_, i) => ({
+const ELYSIUM_MAP_HEXES: MapData['hexes'] = Array.from<unknown, Hex>({ length: 19 }, (_, i) => ({
     id: i + 1,
-    type: 'land' as 'land',
+    type: 'land',
     occupiedBy: { type: null, playerId: null },
     isWaterReserved: false,
   }))

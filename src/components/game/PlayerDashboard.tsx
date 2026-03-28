@@ -29,7 +29,7 @@ export function PlayerDashboard({ player, currentPlayerId }: PlayerDashboardProp
   // For now, we just combine permanent and bonus tags
   for (const key in player.bonusTagsFromCities) {
     const tag = key as keyof typeof player.bonusTagsFromCities;
-    allTags[tag] = (allTags[tag] || 0) + player.bonusTagsFromCities[tag];
+    allTags[tag] = (allTags[tag] || 0) + (player.bonusTagsFromCities[tag] || 0);
   }
   
   const hasTags = Object.values(allTags).some(count => count > 0);
