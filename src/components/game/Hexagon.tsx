@@ -12,6 +12,7 @@ import {
 } from './icons';
 import { cn } from '@/lib/utils';
 import { Building2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HexagonProps {
   hexState: HexState;
@@ -161,70 +162,105 @@ export function Hexagon({
     );
   };
 
+  // Build tooltip description lines
+  const tooltipLines: string[] = [];
+  tooltipLines.push(`Hex ${hexState.id}`);
+  tooltipLines.push(hexState.type === 'water' ? 'Water hex' : 'Land hex');
+  if (hexState.bonusTag) {
+    tooltipLines.push(`Bonus: ${hexState.bonusTag} tag`);
+  }
+  if (hexState.resourceTokenIcon && !hexState.tile) {
+    tooltipLines.push(`Water placement grants ${hexState.resourceTokenIcon} token`);
+  }
+  if (hexState.tile) {
+    tooltipLines.push(`${hexState.tile} tile placed by ${hexState.tilePlacedBy ?? 'unknown'}`);
+  }
+  if (hexState.city) {
+    tooltipLines.push(`${hexState.city.playerId}'s city`);
+  }
+  if (!hexState.tile && !hexState.city) {
+    tooltipLines.push('Available for placement');
+  }
+
   return (
-    <svg
-      viewBox={`0 0 ${size * 2} ${size * 2}`}
-      className={cn(
-        'w-full h-full drop-shadow-lg transition-opacity duration-300',
-        placementCursor,
-        placementOpacity,
-      )}
-      onClick={onClick}
-    >
-      <defs>
-        <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <svg
+            viewBox={`0 0 ${size * 2} ${size * 2}`}
+            className={cn(
+              'w-full h-full drop-shadow-lg transition-opacity duration-300',
+              placementCursor,
+              placementOpacity,
+            )}
+            onClick={onClick}
+          >
+            <defs>
+              <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
 
-      {/* Outer polygon — frame/border */}
-      <polygon
-        points={points}
-        className={cn(
-          'transition-colors duration-300',
-          frameStrokeClass,
-          'hover:fill-accent/30',
-        )}
-        fill={hexFill}
-        strokeWidth={frameStrokeWidth}
-        filter={isPlacementActive && isValid ? `url(#${glowId})` : undefined}
-      />
+            {/* Outer polygon — frame/border */}
+            <polygon
+              points={points}
+              className={cn(
+                'transition-colors duration-300',
+                frameStrokeClass,
+                'hover:fill-accent/30',
+              )}
+              fill={hexFill}
+              strokeWidth={frameStrokeWidth}
+              filter={isPlacementActive && isValid ? `url(#${glowId})` : undefined}
+            />
 
-      {/* Inner polygon — visible inner border */}
-      <polygon
-        points={innerPoints}
-        fill="transparent"
-        className={cn(
-          'transition-colors duration-300',
-          isPlacementActive && isValid
-            ? 'stroke-green-400 animate-pulse'
-            : 'stroke-transparent',
-        )}
-        strokeWidth={isPlacementActive && isValid ? 2 : 0}
-      />
+            {/* Inner polygon — visible inner border */}
+            <polygon
+              points={innerPoints}
+              fill="transparent"
+              className={cn(
+                'transition-colors duration-300',
+                isPlacementActive && isValid
+                  ? 'stroke-green-400 animate-pulse'
+                  : 'stroke-transparent',
+              )}
+              strokeWidth={isPlacementActive && isValid ? 2 : 0}
+            />
 
-      {/* Resource token icon on empty water hexes */}
-      {renderResourceToken()}
+            {/* Resource token icon on empty water hexes */}
+            {renderResourceToken()}
 
-      {/* Tile (water cube, greenery cube, heat cube) */}
-      {hexState.tile && <g>{renderTile()}</g>}
+            {/* Tile (water cube, greenery cube, heat cube) */}
+            {hexState.tile && <g>{renderTile()}</g>}
 
-      {/* City */}
-      {hexState.city && <g>{renderCity()}</g>}
+            {/* City */}
+            {hexState.city && <g>{renderCity()}</g>}
 
-      {/* Hex ID label (debug) */}
-      <text
-        x={size}
-        y={size * 1.8}
-        textAnchor="middle"
-        className="fill-muted-foreground text-[10px] font-mono"
-      >
-        {hexState.id}
-      </text>
-    </svg>
+            {/* Hex ID label (debug) */}
+            <text
+              x={size}
+              y={size * 1.8}
+              textAnchor="middle"
+              className="fill-muted-foreground text-[10px] font-mono"
+            >
+              {hexState.id}
+            </text>
+          </svg>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[220px]">
+          <div className="space-y-0.5">
+            {tooltipLines.map((line, i) => (
+              <p key={i} className={i === 0 ? 'font-semibold text-xs' : 'text-xs'}>
+                {line}
+              </p>
+            ))}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

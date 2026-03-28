@@ -19,6 +19,7 @@ interface BottomPanelProps {
   onActivateCard: (index: number) => void;
   onStandardProject: (projectId: StandardProjectId) => void;
   onPass: () => void;
+  onPassMouseEnter?: () => void;
 }
 
 export function BottomPanel({
@@ -33,6 +34,7 @@ export function BottomPanel({
   onActivateCard,
   onStandardProject,
   onPass,
+  onPassMouseEnter,
 }: BottomPanelProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur border-t border-border z-30">
@@ -51,17 +53,21 @@ export function BottomPanel({
 
         {/* Standard projects + pass — takes ~35% */}
         <div className="flex-[35] flex flex-col items-center gap-2 pb-2">
-          <StandardProjects
-            canActivate={standardProjectCanActivate}
-            alreadyUsedThisGen={alreadyUsedStdProject}
-            isHumanTurn={isHumanTurn}
-            onStandardProject={onStandardProject}
-          />
+          <div data-tutorial="standard-projects">
+            <StandardProjects
+              canActivate={standardProjectCanActivate}
+              alreadyUsedThisGen={alreadyUsedStdProject}
+              isHumanTurn={isHumanTurn}
+              onStandardProject={onStandardProject}
+            />
+          </div>
           <Button
             variant="outline"
             className="w-full max-w-[200px]"
             disabled={!isHumanTurn || hasPassed}
             onClick={onPass}
+            onMouseEnter={onPassMouseEnter}
+            data-tutorial="pass-button"
           >
             <Flag className="mr-2 h-4 w-4" />
             {hasPassed ? 'Passed' : 'Pass'}

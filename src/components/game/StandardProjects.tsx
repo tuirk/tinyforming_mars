@@ -31,15 +31,30 @@ const PROJECT_CONFIG: Record<
   energy_farms: { icon: Flame, label: 'Heat' },
 };
 
+const EFFECT_DESCRIPTIONS: Record<StandardProjectId, string> = {
+  sell_patent: 'Gain credits from the supply.',
+  build_city: 'Place or relocate a city on an unoccupied land hex (max 2 cities, not adjacent to any city).',
+  import_water: 'Place a water tile on a water hex.',
+  greenhouses: 'Place a greenery tile on an unoccupied land hex.',
+  energy_farms: 'Gain a heat tile to your personal supply.',
+};
+
 export function StandardProjects({
   canActivate,
   alreadyUsedThisGen,
   isHumanTurn,
   onStandardProject,
 }: StandardProjectsProps) {
+  const getUnavailableReason = (projectId: StandardProjectId): string | null => {
+    if (alreadyUsedThisGen) return 'No: already used this generation';
+    if (!isHumanTurn) return 'No: not your turn';
+    if (!canActivate[projectId]) return 'No: not enough credits or requirements not met';
+    return null;
+  };
+
   return (
-    <TooltipProvider>
-      <div className="flex flex-col gap-1.5">
+    <TooltipProvider delayDuration={300}>
+      <div className="flex flex-col gap-1.5" data-tutorial="standard-projects">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold text-center">
           Standard Projects
         </p>
@@ -49,6 +64,7 @@ export function StandardProjects({
             const Icon = config.icon;
             const disabled =
               !canActivate[project.id] || alreadyUsedThisGen || !isHumanTurn;
+            const unavailableReason = getUnavailableReason(project.id);
 
             return (
               <Tooltip key={project.id}>
@@ -72,7 +88,7 @@ export function StandardProjects({
                     </Button>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px]">
+                <TooltipContent side="top" className="max-w-[250px]">
                   <div className="space-y-1">
                     <p className="font-semibold">{project.name}</p>
                     <p className="text-xs">Cost: {project.cost} credits</p>
@@ -84,11 +100,15 @@ export function StandardProjects({
                           .join(', ')}
                       </p>
                     )}
-                    {alreadyUsedThisGen && (
-                      <p className="text-xs text-amber-400">
-                        Already used a standard project this generation.
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {EFFECT_DESCRIPTIONS[project.id]}
+                    </p>
+                    <p className={cn(
+                      'text-xs font-medium',
+                      unavailableReason ? 'text-amber-400' : 'text-green-400',
+                    )}>
+                      Available: {unavailableReason ?? 'Yes'}
+                    </p>
                   </div>
                 </TooltipContent>
               </Tooltip>
