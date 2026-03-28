@@ -11,6 +11,7 @@ import type {
   ParameterTileType,
   PlacementConstraint,
   PlayerColor,
+  AILogEntry,
 } from '@/engine/types';
 import {
   createInitialState,
@@ -37,7 +38,7 @@ import { processIncomePhase } from '@/engine/income';
 import { checkEndCondition, calculateGameResult } from '@/engine/scoring';
 import { STANDARD_PROJECTS } from '@/engine/standardProjects';
 import { usePlacementMode } from '@/hooks/usePlacementMode';
-import { pickRandomAction, pickRandomCityHex } from '@/ai/placeholderAI';
+import { pickBestAction, pickBestDraftSide, pickBestCityHex } from '@/ai/aiController';
 
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
@@ -50,6 +51,8 @@ import { GameOverScreen } from './GameOverScreen';
 import { TopBar } from './TopBar';
 import { MapRevealScreen } from './setup/MapRevealScreen';
 import { ColorAssignmentScreen } from './setup/ColorAssignmentScreen';
+
+import { AILogDrawer } from './AILogDrawer';
 
 import { Loader2 } from 'lucide-react';
 
@@ -149,6 +152,8 @@ export function GameScreen() {
   const [drawnCardIds, setDrawnCardIds] = useState<CardId[]>([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showIncome, setShowIncome] = useState(false);
+  const [aiLogEntries, setAiLogEntries] = useState<AILogEntry[]>([]);
+  const [isLogOpen, setIsLogOpen] = useState(false);
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const placement = usePlacementMode(gameState);
@@ -236,7 +241,7 @@ export function GameScreen() {
     // AI places city with delay
     setIsAIThinking(true);
     const timer = setTimeout(() => {
-      const hexId = pickRandomCityHex(gameState);
+      const hexId = pickBestCityHex(gameState);
       if (hexId !== null) {
         setGameState((prev) => {
           if (!prev) return prev;
@@ -461,7 +466,17 @@ export function GameScreen() {
     aiTimerRef.current = setTimeout(() => {
       aiTimerRef.current = null;
       try {
-        const action = pickRandomAction(currentState);
+        const result = pickBestAction(currentState);
+        const action = result.action;
+
+        // Log the AI decision
+        setAiLogEntries(prev => [...prev, {
+          generation: currentState.generation,
+          phase: currentState.phase,
+          decision: action,
+          decisionSource: 'heuristic',
+          timestamp: Date.now(),
+        }]);
 
         // Will both be passed after this action?
         const willBothPass =
@@ -593,6 +608,8 @@ export function GameScreen() {
     setDrawnCardIds([]);
     setShowIncome(false);
     setIsAIThinking(false);
+    setAiLogEntries([]);
+    setIsLogOpen(false);
   }, []);
 
   // ----------------------------------------------------------
@@ -739,52 +756,60 @@ export function GameScreen() {
           isAIThinking={isAIThinking}
         />
 
-        <div className="flex-1 p-4 grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
-          {/* Main area: supplies + board */}
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} />
-              <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} />
+        <div className="flex flex-1">
+          <div className="flex-1 p-4 grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
+            {/* Main area: supplies + board */}
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} />
+                <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} />
+              </div>
+
+              <HexGrid
+                board={gameState.board}
+                mapId={gameState.map}
+                validHexIds={placement.validHexIds}
+                isPlacementActive={placement.isActive}
+                onHexClick={handleHexClick}
+                playerColorMap={playerColorMap}
+              />
+
+              {placement.isActive && (
+                <div className="text-center">
+                  <button
+                    className="text-sm text-muted-foreground underline hover:text-foreground"
+                    onClick={placement.cancelPlacement}
+                  >
+                    Cancel placement
+                  </button>
+                </div>
+              )}
             </div>
 
-            <HexGrid
-              board={gameState.board}
-              mapId={gameState.map}
-              validHexIds={placement.validHexIds}
-              isPlacementActive={placement.isActive}
-              onHexClick={handleHexClick}
-              playerColorMap={playerColorMap}
-            />
-
-            {placement.isActive && (
-              <div className="text-center">
-                <button
-                  className="text-sm text-muted-foreground underline hover:text-foreground"
-                  onClick={placement.cancelPlacement}
-                >
-                  Cancel placement
-                </button>
-              </div>
-            )}
+            {/* Sidebar: player dashboards */}
+            <div className="flex flex-col gap-4">
+              <PlayerDashboard
+                player={humanPlayer}
+                tagCounts={humanTags}
+                isCurrentTurn={isHumanTurn}
+                generation={gameState.generation}
+                phase={gameState.phase}
+              />
+              <PlayerDashboard
+                player={aiPlayer}
+                tagCounts={aiTags}
+                isCurrentTurn={!isHumanTurn && !aiPlayer.hasPassed}
+                generation={gameState.generation}
+                phase={gameState.phase}
+              />
+            </div>
           </div>
 
-          {/* Sidebar: player dashboards */}
-          <div className="flex flex-col gap-4">
-            <PlayerDashboard
-              player={humanPlayer}
-              tagCounts={humanTags}
-              isCurrentTurn={isHumanTurn}
-              generation={gameState.generation}
-              phase={gameState.phase}
-            />
-            <PlayerDashboard
-              player={aiPlayer}
-              tagCounts={aiTags}
-              isCurrentTurn={!isHumanTurn && !aiPlayer.hasPassed}
-              generation={gameState.generation}
-              phase={gameState.phase}
-            />
-          </div>
+          <AILogDrawer
+            entries={aiLogEntries}
+            isOpen={isLogOpen}
+            onToggle={() => setIsLogOpen(!isLogOpen)}
+          />
         </div>
 
         <BottomPanel
