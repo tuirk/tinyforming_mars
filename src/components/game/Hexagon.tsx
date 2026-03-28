@@ -211,10 +211,10 @@ export function Hexagon({
       {renderResourceToken()}
 
       {/* Tile (water cube, greenery cube, heat cube) */}
-      {hexState.tile && <g className="cube-animation">{renderTile()}</g>}
+      {hexState.tile && <g>{renderTile()}</g>}
 
       {/* City */}
-      {hexState.city && <g className="cube-animation">{renderCity()}</g>}
+      {hexState.city && <g>{renderCity()}</g>}
 
       {/* Hex ID label (debug) */}
       <text

@@ -10,6 +10,7 @@ import { executeAction } from '../engine/actions';
 import { getCard } from '../engine/cards';
 import { draftCard } from '../engine/gameState';
 import { evaluate } from './heuristic';
+import { pickRandomAction, pickRandomDraftSide, pickRandomCityHex } from './placeholderAI';
 
 // ============================================================
 // Scored action interface
@@ -32,22 +33,27 @@ export interface ScoredAction {
  * structuredClone before calling it.
  */
 export function pickBestAction(state: GameState): ScoredAction {
-  const actions = getLegalActions(state, 'ai');
+  try {
+    const actions = getLegalActions(state, 'ai');
 
-  if (actions.length === 0) {
-    return { action: { type: 'pass' }, score: 0 };
+    if (actions.length === 0) {
+      return { action: { type: 'pass' }, score: 0 };
+    }
+
+    const scored: ScoredAction[] = actions.map((action) => {
+      const newState = executeAction(state, action, 'ai');
+      const score = evaluate(newState, 'ai') - evaluate(newState, 'human');
+      return { action, score };
+    });
+
+    // Sort descending by score
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored[0];
+  } catch (err) {
+    console.error('[AI] pickBestAction failed, falling back to random:', err);
+    return { action: pickRandomAction(state), score: 0 };
   }
-
-  const scored: ScoredAction[] = actions.map((action) => {
-    const newState = executeAction(state, action, 'ai');
-    const score = evaluate(newState, 'ai');
-    return { action, score };
-  });
-
-  // Sort descending by score
-  scored.sort((a, b) => b.score - a.score);
-
-  return scored[0];
 }
 
 // ============================================================
@@ -69,22 +75,27 @@ export function pickBestDraftSide(
   state: GameState,
   cardId: CardId,
 ): { side: CardSideId; score: number } {
-  // Orientation 1: Side A faces human → AI gets Side B
-  const stateA = draftCard(state, cardId, 'A');
-  const aiScoreA = evaluate(stateA, 'ai');
-  const humanScoreA = evaluate(stateA, 'human');
-  const gapA = aiScoreA - humanScoreA;
+  try {
+    // Orientation 1: Side A faces human → AI gets Side B
+    const stateA = draftCard(state, cardId, 'A');
+    const aiScoreA = evaluate(stateA, 'ai');
+    const humanScoreA = evaluate(stateA, 'human');
+    const gapA = aiScoreA - humanScoreA;
 
-  // Orientation 2: Side B faces human → AI gets Side A
-  const stateB = draftCard(state, cardId, 'B');
-  const aiScoreB = evaluate(stateB, 'ai');
-  const humanScoreB = evaluate(stateB, 'human');
-  const gapB = aiScoreB - humanScoreB;
+    // Orientation 2: Side B faces human → AI gets Side A
+    const stateB = draftCard(state, cardId, 'B');
+    const aiScoreB = evaluate(stateB, 'ai');
+    const humanScoreB = evaluate(stateB, 'human');
+    const gapB = aiScoreB - humanScoreB;
 
-  if (gapA >= gapB) {
-    return { side: 'A', score: gapA };
+    if (gapA >= gapB) {
+      return { side: 'A', score: gapA };
+    }
+    return { side: 'B', score: gapB };
+  } catch (err) {
+    console.error('[AI] pickBestDraftSide failed, falling back to random:', err);
+    return { side: pickRandomDraftSide(), score: 0 };
   }
-  return { side: 'B', score: gapB };
 }
 
 // ============================================================
@@ -103,26 +114,31 @@ export function pickBestDraftSide(
  * if no valid placement exists.
  */
 export function pickBestCityHex(state: GameState): number | null {
-  const validHexes = getValidHexesForPlacement(state, 'city', 'ai');
+  try {
+    const validHexes = getValidHexesForPlacement(state, 'city', 'ai');
 
-  if (validHexes.length === 0) return null;
+    if (validHexes.length === 0) return null;
 
-  let bestHex = validHexes[0];
-  let bestScore = -Infinity;
+    let bestHex = validHexes[0];
+    let bestScore = -Infinity;
 
-  for (const hexId of validHexes) {
-    // Simulate placing city on a cloned state
-    const newState = structuredClone(state);
-    const hex = newState.board.find((h) => h.id === hexId)!;
-    hex.city = { playerId: 'ai' };
-    newState.players.ai.cities.push(hexId);
+    for (const hexId of validHexes) {
+      // Simulate placing city on a cloned state
+      const newState = structuredClone(state);
+      const hex = newState.board.find((h) => h.id === hexId)!;
+      hex.city = { playerId: 'ai' };
+      newState.players.ai.cities.push(hexId);
 
-    const score = evaluate(newState, 'ai');
-    if (score > bestScore) {
-      bestScore = score;
-      bestHex = hexId;
+      const score = evaluate(newState, 'ai');
+      if (score > bestScore) {
+        bestScore = score;
+        bestHex = hexId;
+      }
     }
-  }
 
-  return bestHex;
+    return bestHex;
+  } catch (err) {
+    console.error('[AI] pickBestCityHex failed, falling back to random:', err);
+    return pickRandomCityHex(state);
+  }
 }

@@ -49,10 +49,8 @@ export function DraftingView({ state, drawnCardIds, onDraftComplete }: DraftingV
     setIsAIThinking(true);
 
     const timer = setTimeout(() => {
-      // AI uses heuristic to decide which side to keep (returned side is the AI's preferred side)
-      const aiSide = pickBestDraftSide(localState, currentCard.id).side;
-      // The human gets the opposite side
-      const humanSide: CardSideId = aiSide === 'A' ? 'B' : 'A';
+      // pickBestDraftSide returns the human-facing side
+      const humanSide = pickBestDraftSide(localState, currentCard.id).side;
       const newState = draftCard(localState, currentCard.id, humanSide);
       const nextIndex = draftIndex + 1;
 

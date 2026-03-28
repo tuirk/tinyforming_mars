@@ -18,6 +18,7 @@ interface ProjectCardViewProps {
   isUsedThisGen: boolean;
   isHumanTurn: boolean;
   onActivate: () => void;
+  disabledReason?: string;
 }
 
 const cardColorStyles: Record<string, string> = {
@@ -42,6 +43,7 @@ export function ProjectCardView({
   isUsedThisGen,
   isHumanTurn,
   onActivate,
+  disabledReason,
 }: ProjectCardViewProps) {
   const hasTagReqs = cardSide.tagRequirements.length > 0;
   const hasParamReqs = cardSide.parameterRequirements.length > 0;
@@ -159,7 +161,7 @@ export function ProjectCardView({
       )}
 
       {/* Activate button */}
-      <CardFooter className="p-2">
+      <CardFooter className="p-2 flex-col items-stretch gap-0">
         <Button
           size="sm"
           className="w-full"
@@ -169,6 +171,20 @@ export function ProjectCardView({
           <Zap className="mr-1.5 h-3.5 w-3.5" />
           Activate
         </Button>
+        {(() => {
+          const reason = isUsedThisGen
+            ? 'Used this generation'
+            : !isHumanTurn
+              ? 'Not your turn'
+              : !canActivate && disabledReason
+                ? disabledReason
+                : !canActivate
+                  ? 'Requirements not met'
+                  : null;
+          return reason ? (
+            <p className="text-xs text-red-400/70 mt-1 text-center">{reason}</p>
+          ) : null;
+        })()}
       </CardFooter>
     </Card>
   );

@@ -153,14 +153,15 @@ export function drawCardsForResearch(
   let deck = [...state.deck];
   let discard = [...state.discard];
 
-  // If deck is empty, shuffle discard into deck
-  if (deck.length === 0) {
-    deck = defaultShuffle(discard);
+  // If deck has fewer than 3 cards, shuffle discard into deck
+  if (deck.length < 3) {
+    deck = [...deck, ...defaultShuffle(discard)];
     discard = [];
   }
 
-  // Draw 3 cards from the top of the deck
-  const drawnCardIds = deck.splice(0, 3) as [CardId, CardId, CardId];
+  // Draw up to 3 cards from the top of the deck
+  const count = Math.min(3, deck.length);
+  const drawnCardIds = deck.splice(0, count) as [CardId, CardId, CardId];
 
   const newState: GameState = {
     ...state,

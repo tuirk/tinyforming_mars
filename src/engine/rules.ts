@@ -7,6 +7,7 @@ import type {
   GameState,
   PlayerState,
   CardSide,
+  CardEffect,
   TagType,
   TagRequirement,
   ParameterRequirement,
@@ -288,7 +289,7 @@ function hasSupplyForEffect(
     case 'place_heat_on_map':
       return state.parameterSupply.heat > 0;
     case 'gain_heat':
-      return state.parameterSupply.heat > 0;
+      return true; // gainHeatToPersonal handles supply=0 gracefully with Math.min
     case 'gain_resource_token':
       return (
         state.resourceTokenSupply.nature > 0 ||
@@ -539,6 +540,25 @@ function effectPlacesTile(
 }
 
 /**
+ * Check if an effect (or composite sub-effect) requires a resource token choice.
+ */
+function effectNeedsResourceTokenChoice(effect: CardEffect): boolean {
+  if (effect.type === 'gain_resource_token' && effect.choice) return true;
+  if (effect.type === 'composite') return effect.effects.some(effectNeedsResourceTokenChoice);
+  if (effect.type === 'place_or_relocate_city' && effect.bonusCondition?.bonus.type === 'gain_resource_token') return true;
+  return false;
+}
+
+/**
+ * Check if an effect (or composite sub-effect) contains a return_greenery effect.
+ */
+function effectHasReturnGreenery(effect: CardEffect): boolean {
+  if (effect.type === 'return_greenery') return true;
+  if (effect.type === 'composite') return effect.effects.some(effectHasReturnGreenery);
+  return false;
+}
+
+/**
  * Get all legal actions for a player in the current game state.
  * This is the main entry point for both UI and AI.
  */
@@ -559,6 +579,27 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
     const result = checkRequirements(player, state, cardSide);
     if (!result.canActivate) continue;
 
+    // Determine action variants based on effect properties
+    const needsResourceToken = effectNeedsResourceTokenChoice(cardSide.effect);
+    const hasReturnGreenery = effectHasReturnGreenery(cardSide.effect);
+    const isMethaneFromTitan = drafted.cardId === 12 && side === 'B';
+
+    // Collect available resource token types if needed
+    const tokenTypes: ResourceType[] = [];
+    if (needsResourceToken) {
+      if (state.resourceTokenSupply.nature > 0) tokenTypes.push('nature');
+      if (state.resourceTokenSupply.production > 0) tokenTypes.push('production');
+      if (state.resourceTokenSupply.science > 0) tokenTypes.push('science');
+    }
+
+    // Collect greenery hex IDs on the board for return_greenery cards
+    const greeneryHexIds: HexId[] = [];
+    if (hasReturnGreenery) {
+      for (const hex of state.board) {
+        if (hex.tile === 'greenery') greeneryHexIds.push(hex.id);
+      }
+    }
+
     // Check if effect requires tile placement
     const placement = effectPlacesTile(cardSide.effect);
     if (placement) {
@@ -572,20 +613,63 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
       if (validHexes.length === 0) continue;
 
       for (const hexId of validHexes) {
-        actions.push({
+        const baseAction: GameAction = {
           type: 'activate_project',
           cardId: drafted.cardId,
           side,
           targetHexId: hexId,
-        });
+        };
+
+        if (needsResourceToken && tokenTypes.length > 0) {
+          for (const tokenType of tokenTypes) {
+            actions.push({ ...baseAction, chosenResourceToken: tokenType });
+          }
+        } else if (hasReturnGreenery) {
+          // Ice Asteroid (4A): for each placed water hex, generate actions
+          // with secondaryTargetHexId for each adjacent greenery, plus one without
+          const placedHex = state.board.find((h) => h.id === hexId);
+          if (placedHex) {
+            for (const adjId of placedHex.adjacentHexIds) {
+              const adjHex = state.board.find((h) => h.id === adjId);
+              if (adjHex && adjHex.tile === 'greenery') {
+                actions.push({ ...baseAction, secondaryTargetHexId: adjId });
+              }
+            }
+          }
+          // Also allow placing water without returning greenery (it's optional)
+          actions.push(baseAction);
+        } else if (isMethaneFromTitan) {
+          actions.push(baseAction);
+          actions.push({ ...baseAction, optionalSpend: true });
+        } else {
+          actions.push(baseAction);
+        }
       }
     } else {
-      // No placement needed — single action
-      actions.push({
+      // No placement needed
+      const baseAction: GameAction = {
         type: 'activate_project',
         cardId: drafted.cardId,
         side,
-      });
+      };
+
+      if (needsResourceToken && tokenTypes.length > 0) {
+        for (const tokenType of tokenTypes) {
+          actions.push({ ...baseAction, chosenResourceToken: tokenType });
+        }
+      } else if (isMethaneFromTitan) {
+        actions.push(baseAction);
+        actions.push({ ...baseAction, optionalSpend: true });
+      } else if (hasReturnGreenery) {
+        // Asteroid (13B): no tile placement, optional return greenery from anywhere
+        for (const gHexId of greeneryHexIds) {
+          actions.push({ ...baseAction, secondaryTargetHexId: gHexId });
+        }
+        // Also allow activating without returning greenery (it's optional)
+        actions.push(baseAction);
+      } else {
+        actions.push(baseAction);
+      }
     }
   }
 

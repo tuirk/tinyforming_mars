@@ -75,22 +75,20 @@ describe('checkEndCondition', () => {
     expect(checkEndCondition(state)).toBe('hexes_full');
   });
 
-  it('returns "generation_12" when generation is 12', () => {
+  it('does NOT end at generation 12 (no gen cap per rulebook)', () => {
     const state = makeGameState({ generation: 12 });
-    expect(checkEndCondition(state)).toBe('generation_12');
+    expect(checkEndCondition(state)).toBeNull();
   });
 
-  it('returns "generation_12" when generation exceeds 12', () => {
+  it('does NOT end at generation 15 (no gen cap per rulebook)', () => {
     const state = makeGameState({ generation: 15 });
-    expect(checkEndCondition(state)).toBe('generation_12');
+    expect(checkEndCondition(state)).toBeNull();
   });
 
-  it('checks conditions in priority order: parameters > hexes_full > generation', () => {
-    let state = makeGameState({
-      generation: 12,
+  it('checks conditions in priority order: parameters > hexes_full', () => {
+    const state = makeGameState({
       parameterSupply: { heat: 0, greenery: 0, water: 0 },
     });
-    // parameters triggers first
     expect(checkEndCondition(state)).toBe('parameters');
   });
 });
@@ -338,25 +336,19 @@ describe('calculateGameResult', () => {
     };
     // Human: city=1, AI: city=1, both total=1. Tied on city too. Full tie again.
 
-    // OK, different approach: use heat scoring differently
-    // Human has 2 heat personal (2 points) and -1 city point
-    // AI has 1 heat personal
-    // Total both = 1, but human cityPoints=-1 < AI cityPoints=0 => AI wins on cityPoints tiebreaker
+    // Tiebreaker per rulebook: most credits remaining
+    // Both players have same score but AI has more credits
     let tb = makeGameState({
       players: {
-        human: makePlayerState({ heatTilesPersonal: 2 }),
-        ai: makePlayerState({ id: 'ai', color: 'black', heatTilesPersonal: 1 }),
+        human: makePlayerState({ credits: 2 }),
+        ai: makePlayerState({ id: 'ai', color: 'black', credits: 4 }),
       },
     });
-    tb = withCity(tb, 5, 'human');
-    tb = withTile(tb, 4, 'heat', 'ai'); // heat adj to city => -1 city point for human
-    // Human: cityPoints=-1, heat=2, total=1
-    // AI: cityPoints=0, heat=1, total=1
-    // Tiebreaker: cityPoints: AI(0) > human(-1) => AI wins
+    // Both have total=0 (empty board, no heat) but AI has more credits
     const tbResult = calculateGameResult(tb);
     expect(tbResult.human.total).toBe(tbResult.ai.total);
     expect(tbResult.winner).toBe('ai');
-    expect(tbResult.tiebreaker).toBe('cityPoints');
+    expect(tbResult.tiebreaker).toBe('credits');
   });
 
   it('returns null winner on complete tie', () => {
