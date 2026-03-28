@@ -38,6 +38,7 @@ import { processIncomePhase } from '@/engine/income';
 import { checkEndCondition, calculateGameResult } from '@/engine/scoring';
 import { STANDARD_PROJECTS } from '@/engine/standardProjects';
 import { usePlacementMode } from '@/hooks/usePlacementMode';
+import { useTutorial } from '@/hooks/useTutorial';
 import { pickBestAction, pickBestDraftSide, pickBestCityHex } from '@/ai/aiController';
 
 import { HexGrid } from './HexGrid';
@@ -53,6 +54,9 @@ import { MapRevealScreen } from './setup/MapRevealScreen';
 import { ColorAssignmentScreen } from './setup/ColorAssignmentScreen';
 
 import { AILogDrawer } from './AILogDrawer';
+import { TutorialProvider } from '@/components/tutorial/TutorialProvider';
+import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
+import { getStepById, getStepIndex, TUTORIAL_STEPS } from '@/components/tutorial/tutorialSteps';
 
 import { Loader2 } from 'lucide-react';
 
@@ -143,10 +147,22 @@ function stdProjectPlacementType(effectType: string): ParameterTileType | 'city'
 }
 
 // ============================================================
-// Main component
+// Main component (outer wrapper with TutorialProvider)
 // ============================================================
 
 export function GameScreen() {
+  return (
+    <TutorialProvider>
+      <GameScreenInner />
+    </TutorialProvider>
+  );
+}
+
+// ============================================================
+// Inner component (has access to TutorialContext)
+// ============================================================
+
+function GameScreenInner() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [setupStep, setSetupStep] = useState<SetupStep>('loading');
   const [drawnCardIds, setDrawnCardIds] = useState<CardId[]>([]);
@@ -154,9 +170,11 @@ export function GameScreen() {
   const [showIncome, setShowIncome] = useState(false);
   const [aiLogEntries, setAiLogEntries] = useState<AILogEntry[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
+  const [drawerDefaultTab, setDrawerDefaultTab] = useState<'ai' | 'rules'>('ai');
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const placement = usePlacementMode(gameState);
+  const tutorial = useTutorial();
 
   // ----------------------------------------------------------
   // Derived values
@@ -211,6 +229,42 @@ export function GameScreen() {
       ]),
     ) as Record<StandardProjectId, boolean>;
   }, [humanPlayer, gameState]);
+
+  // ----------------------------------------------------------
+  // Tutorial triggers — setup steps
+  // ----------------------------------------------------------
+  useEffect(() => {
+    if (setupStep === 'loading') tutorial.triggerStep('welcome');
+    if (setupStep === 'map-reveal') tutorial.triggerStep('map_reveal');
+    if (setupStep === 'color-reveal') tutorial.triggerStep('color_assignment');
+    if (setupStep === 'city-black' || setupStep === 'city-white') tutorial.triggerStep('first_city');
+  }, [setupStep, tutorial]);
+
+  // ----------------------------------------------------------
+  // Tutorial triggers — phase transitions
+  // ----------------------------------------------------------
+  useEffect(() => {
+    if (!gameState) return;
+    if (gameState.phase === 'research' && gameState.generation === 1) {
+      tutorial.triggerStep('card_draft_intro');
+    }
+    if (gameState.phase === 'action') {
+      tutorial.triggerStep('action_phase_start');
+    }
+    if (gameState.phase === 'income') {
+      tutorial.triggerStep('income_phase');
+    }
+    if (gameState.phase === 'game_over') {
+      tutorial.triggerStep('end_game_trigger');
+    }
+  }, [gameState?.phase, gameState?.generation, tutorial]);
+
+  // ----------------------------------------------------------
+  // Tutorial triggers — AI thinking
+  // ----------------------------------------------------------
+  useEffect(() => {
+    if (isAIThinking) tutorial.triggerStep('ai_turn');
+  }, [isAIThinking, tutorial]);
 
   // ----------------------------------------------------------
   // Setup Flow: Step 1 — Loading
@@ -363,6 +417,8 @@ export function GameScreen() {
       const cardSide = humanPlayer.projectCardsFacing[index];
       if (!cardSide) return;
 
+      tutorial.triggerStep('activating_project');
+
       const executeCardAction = (hexId?: HexId) => {
         const action = {
           type: 'activate_project' as const,
@@ -389,7 +445,7 @@ export function GameScreen() {
         executeCardAction();
       }
     },
-    [gameState, humanPlayer, placement],
+    [gameState, humanPlayer, placement, tutorial],
   );
 
   // ----------------------------------------------------------
@@ -400,6 +456,8 @@ export function GameScreen() {
       if (!gameState) return;
       const project = STANDARD_PROJECTS.find((p) => p.id === projectId);
       if (!project) return;
+
+      tutorial.triggerStep('standard_projects');
 
       const executeStdAction = (hexId?: HexId) => {
         const action = {
@@ -425,7 +483,7 @@ export function GameScreen() {
         executeStdAction();
       }
     },
-    [gameState, placement],
+    [gameState, placement, tutorial],
   );
 
   // ----------------------------------------------------------
@@ -625,6 +683,33 @@ export function GameScreen() {
   );
 
   // ============================================================
+  // Tutorial overlay helper (shared across render paths)
+  // ============================================================
+  const renderTutorialOverlay = () => {
+    if (!tutorial.isActive || !tutorial.state.currentStepId) return null;
+    const step = getStepById(tutorial.state.currentStepId);
+    if (!step) return null;
+    return (
+      <TutorialOverlay
+        stepId={step.id}
+        title={step.title}
+        content={step.content}
+        stepNumber={getStepIndex(step.id) + 1}
+        totalSteps={TUTORIAL_STEPS.length}
+        position={step.position}
+        highlightSelector={step.highlightSelector}
+        learnMoreSection={step.learnMoreSection}
+        onDismiss={() => tutorial.dismissStep()}
+        onSkipAll={() => tutorial.skipAll()}
+        onLearnMore={(section) => {
+          setDrawerDefaultTab('rules');
+          setIsLogOpen(true);
+        }}
+      />
+    );
+  };
+
+  // ============================================================
   // RENDER
   // ============================================================
 
@@ -634,6 +719,7 @@ export function GameScreen() {
       <div className="w-full h-screen flex flex-col items-center justify-center bg-background text-foreground">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
         <p className="mt-4 text-2xl font-bold">Preparing Mars...</p>
+        {renderTutorialOverlay()}
       </div>
     );
   }
@@ -641,20 +727,26 @@ export function GameScreen() {
   // --- Map reveal ---
   if (setupStep === 'map-reveal') {
     return (
-      <MapRevealScreen
-        state={gameState}
-        onContinue={() => setSetupStep('color-reveal')}
-      />
+      <>
+        <MapRevealScreen
+          state={gameState}
+          onContinue={() => setSetupStep('color-reveal')}
+        />
+        {renderTutorialOverlay()}
+      </>
     );
   }
 
   // --- Color assignment ---
   if (setupStep === 'color-reveal') {
     return (
-      <ColorAssignmentScreen
-        humanColor={gameState.players.human.color}
-        onContinue={() => setSetupStep('city-black')}
-      />
+      <>
+        <ColorAssignmentScreen
+          humanColor={gameState.players.human.color}
+          onContinue={() => setSetupStep('city-black')}
+        />
+        {renderTutorialOverlay()}
+      </>
     );
   }
 
@@ -687,6 +779,7 @@ export function GameScreen() {
             playerColorMap={playerColorMap}
           />
         </div>
+        {renderTutorialOverlay()}
       </div>
     );
   }
@@ -720,6 +813,7 @@ export function GameScreen() {
             playerColorMap={playerColorMap}
           />
         </div>
+        {renderTutorialOverlay()}
       </div>
     );
   }
@@ -754,6 +848,10 @@ export function GameScreen() {
           phase={gameState.phase}
           humanPlayer={humanPlayer}
           isAIThinking={isAIThinking}
+          onHelpClick={() => {
+            setDrawerDefaultTab('rules');
+            setIsLogOpen(true);
+          }}
         />
 
         <div className="flex flex-1">
@@ -805,26 +903,39 @@ export function GameScreen() {
             </div>
           </div>
 
-          <AILogDrawer
-            entries={aiLogEntries}
-            isOpen={isLogOpen}
-            onToggle={() => setIsLogOpen(!isLogOpen)}
+          <div data-tutorial="ai-log">
+            <AILogDrawer
+              entries={aiLogEntries}
+              isOpen={isLogOpen}
+              onToggle={() => {
+                setDrawerDefaultTab('ai');
+                setIsLogOpen(!isLogOpen);
+              }}
+              defaultTab={drawerDefaultTab}
+              currentPhase={gameState.phase}
+            />
+          </div>
+        </div>
+
+        <div data-tutorial="bottom-panel">
+          <BottomPanel
+            cardSides={humanPlayer.projectCardsFacing}
+            effectiveCosts={effectiveCosts}
+            canActivateCards={canActivateCards}
+            usedCardIds={humanPlayer.usedProjectThisGen}
+            standardProjectCanActivate={stdProjectCanActivate}
+            alreadyUsedStdProject={humanPlayer.usedStandardProjectThisGen}
+            isHumanTurn={isHumanTurn}
+            hasPassed={humanPlayer.hasPassed}
+            onActivateCard={handleActivateCard}
+            onStandardProject={handleStandardProject}
+            onPass={handlePass}
+            onPassMouseEnter={() => tutorial.triggerStep('passing')}
           />
         </div>
 
-        <BottomPanel
-          cardSides={humanPlayer.projectCardsFacing}
-          effectiveCosts={effectiveCosts}
-          canActivateCards={canActivateCards}
-          usedCardIds={humanPlayer.usedProjectThisGen}
-          standardProjectCanActivate={stdProjectCanActivate}
-          alreadyUsedStdProject={humanPlayer.usedStandardProjectThisGen}
-          isHumanTurn={isHumanTurn}
-          hasPassed={humanPlayer.hasPassed}
-          onActivateCard={handleActivateCard}
-          onStandardProject={handleStandardProject}
-          onPass={handlePass}
-        />
+        {/* Tutorial overlay */}
+        {renderTutorialOverlay()}
       </div>
     );
   }
