@@ -86,7 +86,10 @@ function executeProjectCard(
   // 2. Calculate effective cost
   const cost = calculateEffectiveCost(cardSide, player, state);
 
-  // 3. Deduct credits
+  // 3. Deduct credits (guard against overspend)
+  if (player.credits < cost) {
+    throw new Error(`Player ${playerId} has ${player.credits} credits but needs ${cost} for card ${action.cardId}${action.side}`);
+  }
   player.credits -= cost;
   player.creditsOnCards += cost;
 
@@ -125,7 +128,10 @@ function executeStandardProject(
   const project = getStandardProject(action.projectId);
   if (!project) throw new Error(`Standard project ${action.projectId} not found`);
 
-  // 2. Deduct credits
+  // 2. Deduct credits (guard against overspend)
+  if (player.credits < project.cost) {
+    throw new Error(`Player ${playerId} has ${player.credits} credits but needs ${project.cost} for ${action.projectId}`);
+  }
   player.credits -= project.cost;
   player.creditsOnCards += project.cost;
 

@@ -468,6 +468,7 @@ export function GameScreen() {
       try {
         const result = pickBestAction(currentState);
         const action = result.action;
+        console.log('[AI] Picked action:', action.type, 'score:', result.score, action.type === 'activate_project' ? `card ${action.cardId}${action.side}` : action.type === 'standard_project' ? action.projectId : '');
 
         // Log the AI decision
         setAiLogEntries(prev => [...prev, {

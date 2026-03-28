@@ -396,18 +396,18 @@ describe('integration — resource conservation', () => {
     const afterWater = countResources(state);
     expect(afterWater.totalWater).toBe(4); // conserved
 
-    // Place greenery
+    // Place greenery (give enough credits)
     state = executeAction(
-      { ...state, players: { ...state.players, human: { ...state.players.human, usedStandardProjectThisGen: false } } },
+      { ...state, players: { ...state.players, human: { ...state.players.human, usedStandardProjectThisGen: false, credits: 5 } } },
       { type: 'standard_project', projectId: 'greenhouses', targetHexId: 1 },
       'human',
     );
     const afterGreenery = countResources(state);
     expect(afterGreenery.totalGreenery).toBe(7); // conserved
 
-    // Gain heat personal
+    // Gain heat personal (give enough credits)
     state = executeAction(
-      { ...state, players: { ...state.players, human: { ...state.players.human, usedStandardProjectThisGen: false } } },
+      { ...state, players: { ...state.players, human: { ...state.players.human, usedStandardProjectThisGen: false, credits: 5 } } },
       { type: 'standard_project', projectId: 'energy_farms' },
       'human',
     );
