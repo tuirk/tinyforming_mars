@@ -33,9 +33,6 @@ export function checkEndCondition(state: GameState): EndCondition | null {
   const allOccupied = state.board.every((hex) => hex.tile !== null || hex.city !== null);
   if (allOccupied) return 'hexes_full';
 
-  // 3. Generation cap
-  if (state.generation >= 12) return 'generation_12';
-
   return null;
 }
 
@@ -106,23 +103,16 @@ export function calculateGameResult(state: GameState): GameResult {
     };
   }
 
-  // Tiebreaker sequence
-  const tiebreakers: { key: keyof Omit<ScoreBreakdown, 'total'>; label: string }[] = [
-    { key: 'cityPoints', label: 'cityPoints' },
-    { key: 'greeneryPoints', label: 'greeneryPoints' },
-    { key: 'waterPoints', label: 'waterPoints' },
-    { key: 'heatPoints', label: 'heatPoints' },
-  ];
-
-  for (const { key, label } of tiebreakers) {
-    if (human[key] !== ai[key]) {
-      return {
-        human,
-        ai,
-        winner: human[key] > ai[key] ? 'human' : 'ai',
-        tiebreaker: label,
-      };
-    }
+  // Tiebreaker: most credits remaining (per rulebook)
+  const humanCredits = state.players.human.credits;
+  const aiCredits = state.players.ai.credits;
+  if (humanCredits !== aiCredits) {
+    return {
+      human,
+      ai,
+      winner: humanCredits > aiCredits ? 'human' : 'ai',
+      tiebreaker: 'credits',
+    };
   }
 
   // Complete tie

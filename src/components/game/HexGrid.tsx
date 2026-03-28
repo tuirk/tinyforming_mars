@@ -41,7 +41,7 @@ export function HexGrid({
   const hexPositions = useMemo(() => {
     const positions: Record<number, { x: number; y: number }> = {};
     const gridWidth = 5 * HEX_WIDTH;
-    const gridHeight = 5 * (HEX_HEIGHT * 0.75);
+    const gridHeight = 5 * (HEX_HEIGHT * 0.75) + HEX_HEIGHT * 0.25;
 
     for (const def of hexDefs) {
       positions[def.id] = {
@@ -79,9 +79,6 @@ export function HexGrid({
                 width: HEX_WIDTH,
                 height: HEX_HEIGHT,
                 transform: 'translate(-50%, -50%)',
-              }}
-              onClick={() => {
-                if (!disabled && onHexClick) onHexClick(hexDef.id);
               }}
             >
               <Hexagon

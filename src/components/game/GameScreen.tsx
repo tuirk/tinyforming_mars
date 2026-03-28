@@ -371,7 +371,7 @@ export function GameScreen() {
           targetHexId: hexId,
         };
         setGameState((prev) => {
-          if (!prev) return prev;
+          if (!prev || getNextActor(prev) !== 'human') return prev; // turn guard
           const after = executeAction(prev, action, 'human');
           const aiPassed = after.players.ai.hasPassed;
           return { ...after, turnOrder: aiPassed ? ['human', 'ai'] : ['ai', 'human'] };
@@ -408,7 +408,7 @@ export function GameScreen() {
           targetHexId: hexId,
         };
         setGameState((prev) => {
-          if (!prev) return prev;
+          if (!prev || getNextActor(prev) !== 'human') return prev; // turn guard
           const after = executeAction(prev, action, 'human');
           const aiPassed = after.players.ai.hasPassed;
           return { ...after, turnOrder: aiPassed ? ['human', 'ai'] : ['ai', 'human'] };
@@ -432,23 +432,22 @@ export function GameScreen() {
   // Action phase: pass
   // ----------------------------------------------------------
   const handlePass = useCallback(() => {
-    if (!gameState) return;
+    setGameState((prev) => {
+      if (!prev || getNextActor(prev) !== 'human') return prev; // turn guard
 
-    // processActionPhaseStep handles the "both passed" transition internally
-    // (it auto-triggers postIncomePhase). But we need to intercept to show the
-    // income visualization instead.
-    if (gameState.players.ai.hasPassed) {
-      // Both will be passed after this — show income visualization
-      const passedState = executeAction(gameState, { type: 'pass' }, 'human');
-      setGameState({ ...passedState, phase: 'income' as const });
-      setIsAIThinking(false);
-      setShowIncome(true);
-    } else {
-      const passedState = executeAction(gameState, { type: 'pass' }, 'human');
-      // AI hasn't passed, so it goes next
-      setGameState({ ...passedState, turnOrder: ['ai', 'human'] });
-    }
-  }, [gameState]);
+      const aiPassed = prev.players.ai.hasPassed;
+      if (aiPassed) {
+        // Both will be passed — show income
+        const passedState = executeAction(prev, { type: 'pass' }, 'human');
+        setIsAIThinking(false);
+        setShowIncome(true);
+        return { ...passedState, phase: 'income' as const };
+      } else {
+        const passedState = executeAction(prev, { type: 'pass' }, 'human');
+        return { ...passedState, turnOrder: ['ai', 'human'] };
+      }
+    });
+  }, []); // no dependencies needed with functional updater
 
   // ----------------------------------------------------------
   // AI turn during action phase

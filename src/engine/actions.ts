@@ -88,7 +88,8 @@ function executeProjectCard(
 
   // 3. Deduct credits (guard against overspend)
   if (player.credits < cost) {
-    throw new Error(`Player ${playerId} has ${player.credits} credits but needs ${cost} for card ${action.cardId}${action.side}`);
+    console.warn(`[Engine] Player ${playerId} has ${player.credits} credits but needs ${cost} for card ${action.cardId}${action.side}`);
+    return state; // return unmodified clone
   }
   player.credits -= cost;
   player.creditsOnCards += cost;
@@ -104,10 +105,13 @@ function executeProjectCard(
     }
   }
 
-  // 5. Execute card effect
+  // 5. Duplicate-use guard
+  if (player.usedProjectThisGen.includes(action.cardId)) return state; // already used
+
+  // 6. Execute card effect
   executeCardEffect(state, cardSide.effect, playerId, action);
 
-  // 6. Mark card as used
+  // 7. Mark card as used
   player.usedProjectThisGen.push(action.cardId);
 
   return state;
@@ -124,13 +128,17 @@ function executeStandardProject(
 ): GameState {
   const player = getPlayerById(state, playerId);
 
+  // 0. Duplicate-use guard
+  if (player.usedStandardProjectThisGen) return state; // already used this gen
+
   // 1. Look up project
   const project = getStandardProject(action.projectId);
   if (!project) throw new Error(`Standard project ${action.projectId} not found`);
 
   // 2. Deduct credits (guard against overspend)
   if (player.credits < project.cost) {
-    throw new Error(`Player ${playerId} has ${player.credits} credits but needs ${project.cost} for ${action.projectId}`);
+    console.warn(`[Engine] Player ${playerId} has ${player.credits} credits but needs ${project.cost} for ${action.projectId}`);
+    return state; // return unmodified clone
   }
   player.credits -= project.cost;
   player.creditsOnCards += project.cost;
@@ -398,6 +406,7 @@ function placeWaterTile(
   hexId: HexId,
   playerId: string,
 ): void {
+  if (state.parameterSupply.water <= 0) return; // supply exhausted
   const hex = getHex(state, hexId);
   hex.tile = 'water';
   hex.tilePlacedBy = playerId;
@@ -429,6 +438,7 @@ function placeGreeneryTile(
   hexId: HexId,
   playerId: string,
 ): void {
+  if (state.parameterSupply.greenery <= 0) return; // supply exhausted
   const hex = getHex(state, hexId);
   hex.tile = 'greenery';
   hex.tilePlacedBy = playerId;
@@ -442,6 +452,7 @@ function placeHeatTileOnMap(
   hexId: HexId,
   playerId: string,
 ): void {
+  if (state.parameterSupply.heat <= 0) return; // supply exhausted
   const hex = getHex(state, hexId);
   hex.tile = 'heat';
   hex.tilePlacedBy = playerId;
