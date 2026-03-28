@@ -330,6 +330,53 @@ function executeCompositeEffect(
     return;
   }
 
+  // --- Ice Asteroid (Card 4A): place water + conditional return greenery ---
+  if (cardId === 4 && side === 'A') {
+    // Place water first
+    if ('targetHexId' in action && action.targetHexId !== undefined) {
+      placeWaterTile(state, action.targetHexId, playerId);
+    }
+    // Conditionally return 1 adjacent greenery to supply (player's choice via secondaryTargetHexId)
+    if ('secondaryTargetHexId' in action && action.secondaryTargetHexId !== undefined) {
+      const targetHex = getHex(state, action.targetHexId!);
+      const adjHex = getHex(state, action.secondaryTargetHexId);
+      // Only return if the secondary hex has greenery AND is adjacent to placed water
+      if (adjHex.tile === 'greenery' && targetHex.adjacentHexIds.includes(action.secondaryTargetHexId)) {
+        returnGreeneryToSupply(state, action.secondaryTargetHexId);
+      }
+    }
+    return;
+  }
+
+  // --- Asteroid (Card 13B): gain heat + optional return greenery ---
+  if (cardId === 13 && side === 'B') {
+    gainHeatToPersonal(state, playerId, 1);
+    // Optionally return 1 greenery from anywhere (player's choice via secondaryTargetHexId)
+    if ('secondaryTargetHexId' in action && action.secondaryTargetHexId !== undefined) {
+      const targetHex = getHex(state, action.secondaryTargetHexId);
+      if (targetHex.tile === 'greenery') {
+        returnGreeneryToSupply(state, action.secondaryTargetHexId);
+      }
+    }
+    return;
+  }
+
+  // --- Moss (Card 11A): place greenery + credits per adjacent water ---
+  if (cardId === 11 && side === 'A') {
+    if ('targetHexId' in action && action.targetHexId !== undefined) {
+      placeGreeneryTile(state, action.targetHexId, playerId);
+      // Calculate credits AFTER placement based on adjacent water to the placed greenery
+      const hex = getHex(state, action.targetHexId);
+      const adjacentWaterCount = hex.adjacentHexIds
+        .map((id) => getHex(state, id))
+        .filter((adj) => adj.tile === 'water').length;
+      if (adjacentWaterCount > 0) {
+        gainCreditsFromSupply(state, playerId, adjacentWaterCount);
+      }
+    }
+    return;
+  }
+
   // --- Generic composite: execute effects in sequence ---
   for (const effect of effects) {
     executeCardEffect(state, effect, playerId, action);

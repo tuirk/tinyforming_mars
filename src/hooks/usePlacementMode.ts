@@ -26,7 +26,8 @@ export function usePlacementMode(gameState: GameState | null) {
   const selectHex = useCallback((hexId: HexId) => {
     if (request && validHexIds.includes(hexId)) {
       request.onComplete(hexId);
-      setRequest(null);
+      // Clear on next tick so gameState updates first
+      setTimeout(() => setRequest(null), 0);
     }
   }, [request, validHexIds]);
 
