@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { GameState, CardId, CardSideId } from '@/engine/types';
 import { getCard } from '@/engine/cards';
 import { draftCard, getDraftingPlayerId } from '@/engine/gameState';
+import { pickBestDraftSide } from '@/ai/aiController';
 import { CardSideView } from './CardSideView';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,8 +49,10 @@ export function DraftingView({ state, drawnCardIds, onDraftComplete }: DraftingV
     setIsAIThinking(true);
 
     const timer = setTimeout(() => {
-      // AI picks randomly for now: randomly decide which side the human gets
-      const humanSide: CardSideId = Math.random() < 0.5 ? 'A' : 'B';
+      // AI uses heuristic to decide which side to keep (returned side is the AI's preferred side)
+      const aiSide = pickBestDraftSide(localState, currentCard.id).side;
+      // The human gets the opposite side
+      const humanSide: CardSideId = aiSide === 'A' ? 'B' : 'A';
       const newState = draftCard(localState, currentCard.id, humanSide);
       const nextIndex = draftIndex + 1;
 
