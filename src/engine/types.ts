@@ -153,6 +153,7 @@ export interface PlayerState {
   usedProjectThisGen: CardId[];       // card IDs activated this Generation
   usedStandardProjectThisGen: boolean;
   hasPassed: boolean;
+  creditsOnCards: number;            // credits locked on project cards/standard projects this generation
 }
 
 // --- Game State ---
@@ -198,7 +199,7 @@ export interface GameState {
 // --- Actions ---
 
 export type GameAction =
-  | { type: 'activate_project'; cardId: CardId; side: CardSideId; targetHexId?: HexId; spentTokens?: ResourceType[] }
+  | { type: 'activate_project'; cardId: CardId; side: CardSideId; targetHexId?: HexId; secondaryTargetHexId?: HexId; spentTokens?: ResourceType[]; chosenResourceToken?: ResourceType; optionalSpend?: boolean }
   | { type: 'standard_project'; projectId: StandardProjectId; targetHexId?: HexId; spentTokens?: ResourceType[] }
   | { type: 'pass' };
 
