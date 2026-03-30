@@ -12,6 +12,7 @@ import type {
   PlacementConstraint,
   PlayerColor,
   AILogEntry,
+  AIMode,
 } from '@/engine/types';
 import {
   createInitialState,
@@ -39,7 +40,7 @@ import { checkEndCondition, calculateGameResult } from '@/engine/scoring';
 import { STANDARD_PROJECTS } from '@/engine/standardProjects';
 import { usePlacementMode } from '@/hooks/usePlacementMode';
 import { useTutorial } from '@/hooks/useTutorial';
-import { pickBestAction, pickBestDraftSide, pickBestCityHex } from '@/ai/aiController';
+import { pickActionByMode, pickDraftByMode, pickCityByMode } from '@/ai/aiController';
 
 import { HexGrid } from './HexGrid';
 import { PlayerDashboard } from './PlayerDashboard';
@@ -171,10 +172,22 @@ function GameScreenInner() {
   const [aiLogEntries, setAiLogEntries] = useState<AILogEntry[]>([]);
   const [isLogOpen, setIsLogOpen] = useState(false);
   const [drawerDefaultTab, setDrawerDefaultTab] = useState<'ai' | 'rules'>('ai');
+  const [aiMode, setAIMode] = useState<AIMode>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('aiMode') as AIMode) || 'heuristic';
+    }
+    return 'heuristic';
+  });
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const placement = usePlacementMode(gameState);
   const tutorial = useTutorial();
+
+  // Persist AI mode on change
+  const handleAIModeChange = useCallback((mode: AIMode) => {
+    setAIMode(mode);
+    if (typeof window !== 'undefined') localStorage.setItem('aiMode', mode);
+  }, []);
 
   // ----------------------------------------------------------
   // Derived values
@@ -295,7 +308,7 @@ function GameScreenInner() {
     // AI places city with delay
     setIsAIThinking(true);
     const timer = setTimeout(() => {
-      const hexId = pickBestCityHex(gameState);
+      const hexId = pickCityByMode(gameState, aiMode);
       if (hexId !== null) {
         setGameState((prev) => {
           if (!prev) return prev;
@@ -523,17 +536,26 @@ function GameScreenInner() {
     aiTimerRef.current = setTimeout(() => {
       aiTimerRef.current = null;
       try {
-        const result = pickBestAction(currentState);
+        const result = pickActionByMode(currentState, aiMode);
         const action = result.action;
-        console.log('[AI] Picked action:', action.type, 'score:', result.score, action.type === 'activate_project' ? `card ${action.cardId}${action.side}` : action.type === 'standard_project' ? action.projectId : '');
+        console.log('[AI] Picked action:', action.type, 'score:', result.score, 'mode:', result.decisionSource, action.type === 'activate_project' ? `card ${action.cardId}${action.side}` : action.type === 'standard_project' ? action.projectId : '');
 
-        // Log the AI decision
+        // Log the AI decision with enriched data
         setAiLogEntries(prev => [...prev, {
           generation: currentState.generation,
           phase: currentState.phase,
-          decision: action,
-          decisionSource: 'heuristic',
+          decision: result.action,
+          decisionSource: result.decisionSource,
           timestamp: Date.now(),
+          thinkingTimeMs: result.thinkingTimeMs,
+          actionsEvaluated: result.actionsEvaluated,
+          searchDepth: result.searchDepth,
+          evaluatedActions: result.topActions,
+          minimaxAdjustment: result.minimaxAdjustments?.map(adj => ({
+            action: adj.action,
+            originalScore: adj.heuristicScore,
+            adjustedScore: adj.minimaxScore,
+          })),
         }]);
 
         // Will both be passed after this action?
@@ -592,7 +614,7 @@ function GameScreenInner() {
         setIsAIThinking(false); // reset on cleanup so it retries on remount
       }
     };
-  }, [gameState]);
+  }, [gameState, aiMode]);
 
   // ----------------------------------------------------------
   // Income phase complete handler
@@ -848,6 +870,8 @@ function GameScreenInner() {
           phase={gameState.phase}
           humanPlayer={humanPlayer}
           isAIThinking={isAIThinking}
+          aiMode={aiMode}
+          onAIModeChange={handleAIModeChange}
           onHelpClick={() => {
             setDrawerDefaultTab('rules');
             setIsLogOpen(true);

@@ -235,6 +235,8 @@ export interface ActionLogEntry {
   timestamp: number;
 }
 
+export type AIMode = 'random' | 'heuristic' | 'minimax';
+
 export interface AILogEntry {
   generation: number;
   phase: Phase;
@@ -250,8 +252,11 @@ export interface AILogEntry {
   }[];
   geminiReasoning?: string;
   decision: GameAction;
-  decisionSource: 'heuristic' | 'minimax' | 'gemini' | 'random';
+  decisionSource: AIMode;
   timestamp: number;
+  thinkingTimeMs?: number;
+  actionsEvaluated?: number;
+  searchDepth?: number;
 }
 
 // --- Scoring ---
