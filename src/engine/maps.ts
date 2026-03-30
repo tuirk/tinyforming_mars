@@ -86,15 +86,16 @@ function getMapRow(row: number): 'north' | 'center' | 'south' {
 //   Hex 17: bonusTag = 'production'
 //   Hex 19: bonusTag = 'space'
 //
-// Water hexes (from legacy code — TODO: VERIFY WITH PHYSICAL CARDS):
+// Water hexes (VERIFIED against physical cards):
 //   Hex 3:  water, resourceTokenIcon = 'science'
 //   Hex 9:  water, resourceTokenIcon = 'nature'
-//   Hex 10: water, resourceTokenIcon = 'production'
+//   Hex 10: water, resourceTokenIcon = 'nature'
 //   Hex 15: water, resourceTokenIcon = 'nature'
 //   Hex 16: water, no resource token icon
+// Water clustering: center-right L-shape (3,9,10,15,16)
 // ============================================================
 
-const THARSIS_WATER_HEXES = new Set([3, 9, 10, 15, 16]); // TODO: VERIFY WITH PHYSICAL CARDS
+const THARSIS_WATER_HEXES = new Set([3, 9, 10, 15, 16]);
 
 export const THARSIS_HEXES: HexDefinition[] = HEX_LAYOUT.map((layout): HexDefinition => {
   const { id, row, col } = layout;
@@ -108,13 +109,13 @@ export const THARSIS_HEXES: HexDefinition[] = HEX_LAYOUT.map((layout): HexDefini
   if (id === 17) bonusTag = 'production';
   if (id === 19) bonusTag = 'space';
 
-  // Resource token icons on water hexes — TODO: VERIFY WITH PHYSICAL CARDS
+  // Resource token icons on water hexes (verified)
   let resourceTokenIcon: HexDefinition['resourceTokenIcon'] = null;
-  if (id === 3)  resourceTokenIcon = 'science';    // TODO: VERIFY WITH PHYSICAL CARDS
-  if (id === 9)  resourceTokenIcon = 'nature';      // TODO: VERIFY WITH PHYSICAL CARDS
-  if (id === 10) resourceTokenIcon = 'production';  // TODO: VERIFY WITH PHYSICAL CARDS
-  if (id === 15) resourceTokenIcon = 'nature';      // TODO: VERIFY WITH PHYSICAL CARDS
-  // Hex 16: water with no resource token icon       // TODO: VERIFY WITH PHYSICAL CARDS
+  if (id === 3)  resourceTokenIcon = 'science';
+  if (id === 9)  resourceTokenIcon = 'nature';
+  if (id === 10) resourceTokenIcon = 'nature';   // was 'production' in legacy — corrected to 'nature'
+  if (id === 15) resourceTokenIcon = 'nature';
+  // Hex 16: water with no resource token icon
 
   return {
     id,
