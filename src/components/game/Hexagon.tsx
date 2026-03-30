@@ -9,6 +9,7 @@ import {
   ScienceResource,
   ProductionResource,
   NatureResource,
+  TagIcon,
 } from './icons';
 import { cn } from '@/lib/utils';
 import { Building2 } from 'lucide-react';
@@ -61,7 +62,7 @@ export function Hexagon({
 
   // --- Fill color based on hex type ---
   const hexFill =
-    hexState.type === 'water' ? 'hsl(210, 70%, 15%)' : 'hsl(30, 30%, 20%)';
+    hexState.type === 'water' ? 'hsl(210, 60%, 25%)' : 'hsl(30, 20%, 22%)';
 
   // --- Frame/border stroke from bonusTag ---
   const frameStrokeClass = (() => {
@@ -71,15 +72,15 @@ export function Hexagon({
       case 'nature':
         return 'stroke-green-400';
       case 'science':
-        return 'stroke-blue-200';
+        return 'stroke-blue-300';
       case 'space':
-        return 'stroke-gray-400';
+        return 'stroke-gray-300';
       default:
-        return 'stroke-orange-300/30';
+        return hexState.type === 'water' ? 'stroke-blue-400/40' : 'stroke-orange-300/20';
     }
   })();
 
-  const frameStrokeWidth = hexState.bonusTag ? 3 : 2;
+  const frameStrokeWidth = hexState.bonusTag ? 4 : 1.5;
 
   // --- Placement mode styling ---
   const placementCursor = (() => {
@@ -96,12 +97,13 @@ export function Hexagon({
   const renderResourceToken = () => {
     if (hexState.resourceTokenIcon === null || hexState.tile !== null) return null;
 
+    const iconSize = size * 0.6;
     const iconProps = {
-      x: size - size / 4,
-      y: size - size / 4,
-      width: size / 2,
-      height: size / 2,
-      className: 'fill-background/50 stroke-foreground/50',
+      x: size - iconSize / 2,
+      y: size - iconSize / 2,
+      width: iconSize,
+      height: iconSize,
+      className: 'opacity-70',
       strokeWidth: 1,
     };
 
@@ -115,6 +117,27 @@ export function Hexagon({
       default:
         return null;
     }
+  };
+
+  // --- Bonus tag icon inside bonus hexes (when no city placed) ---
+  const renderBonusTagIcon = () => {
+    if (!hexState.bonusTag || hexState.city) return null;
+
+    const iconSize = size * 0.5;
+    const iconX = size - iconSize / 2;
+    const iconY = size * 0.55 - iconSize / 2;
+
+    return (
+      <g opacity={0.6}>
+        <TagIcon
+          tag={hexState.bonusTag}
+          x={iconX}
+          y={iconY}
+          width={iconSize}
+          height={iconSize}
+        />
+      </g>
+    );
   };
 
   // --- Tile rendering ---
@@ -230,6 +253,9 @@ export function Hexagon({
               )}
               strokeWidth={isPlacementActive && isValid ? 2 : 0}
             />
+
+            {/* Bonus tag icon on empty bonus hexes */}
+            {renderBonusTagIcon()}
 
             {/* Resource token icon on empty water hexes */}
             {renderResourceToken()}

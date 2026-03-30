@@ -138,7 +138,7 @@ export const THARSIS_HEXES: HexDefinition[] = HEX_LAYOUT.map((layout): HexDefini
 //   Hex 17: bonusTag = 'production'
 //   Hex 19: bonusTag = 'production'
 //
-// Water hexes (from legacy code — TODO: VERIFY WITH PHYSICAL CARDS):
+// Water hexes (VERIFIED against physical cards):
 //   Hex 1:  water, resourceTokenIcon = 'science'
 //   Hex 2:  water, resourceTokenIcon = 'production'
 //   Hex 6:  water, no resource token icon
@@ -146,7 +146,7 @@ export const THARSIS_HEXES: HexDefinition[] = HEX_LAYOUT.map((layout): HexDefini
 //   Hex 11: water, resourceTokenIcon = 'nature'
 // ============================================================
 
-const ELYSIUM_WATER_HEXES = new Set([1, 2, 6, 9, 11]); // TODO: VERIFY WITH PHYSICAL CARDS
+const ELYSIUM_WATER_HEXES = new Set([1, 2, 6, 9, 11]);
 
 export const ELYSIUM_HEXES: HexDefinition[] = HEX_LAYOUT.map((layout): HexDefinition => {
   const { id, row, col } = layout;
@@ -160,13 +160,13 @@ export const ELYSIUM_HEXES: HexDefinition[] = HEX_LAYOUT.map((layout): HexDefini
   if (id === 17) bonusTag = 'production';
   if (id === 19) bonusTag = 'production';
 
-  // Resource token icons on water hexes — TODO: VERIFY WITH PHYSICAL CARDS
+  // Resource token icons on water hexes (verified)
   let resourceTokenIcon: HexDefinition['resourceTokenIcon'] = null;
-  if (id === 1)  resourceTokenIcon = 'science';     // TODO: VERIFY WITH PHYSICAL CARDS
-  if (id === 2)  resourceTokenIcon = 'production';  // TODO: VERIFY WITH PHYSICAL CARDS
-  // Hex 6: water with no resource token icon         // TODO: VERIFY WITH PHYSICAL CARDS
-  if (id === 9)  resourceTokenIcon = 'nature';       // TODO: VERIFY WITH PHYSICAL CARDS
-  if (id === 11) resourceTokenIcon = 'nature';       // TODO: VERIFY WITH PHYSICAL CARDS
+  if (id === 1)  resourceTokenIcon = 'science';
+  if (id === 2)  resourceTokenIcon = 'production';
+  // Hex 6: water with no resource token icon
+  if (id === 9)  resourceTokenIcon = 'nature';
+  if (id === 11) resourceTokenIcon = 'nature';
 
   return {
     id,
