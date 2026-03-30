@@ -1,7 +1,7 @@
 'use client';
 
 import type { GameState } from '@/engine/types';
-import { HexGrid } from '../HexGrid';
+import { MarsBoard } from '../MarsBoard';
 import { Button } from '@/components/ui/button';
 
 interface MapRevealScreenProps {
@@ -25,7 +25,7 @@ export function MapRevealScreen({ state, onContinue }: MapRevealScreenProps) {
       </p>
 
       <div className="w-full max-w-xl">
-        <HexGrid
+        <MarsBoard
           board={state.board}
           mapId={state.map}
           disabled

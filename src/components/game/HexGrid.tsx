@@ -1,3 +1,4 @@
+// @deprecated — replaced by MarsBoard.tsx. Kept for reference only.
 'use client';
 
 import { useMemo } from 'react';
