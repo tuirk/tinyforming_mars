@@ -42,11 +42,12 @@ import { usePlacementMode } from '@/hooks/usePlacementMode';
 import { useTutorial } from '@/hooks/useTutorial';
 import { pickActionByMode, pickDraftByMode, pickCityByMode } from '@/ai/aiController';
 
-import { HexGrid } from './HexGrid';
+import { MarsBoard } from './MarsBoard';
 import { PlayerDashboard } from './PlayerDashboard';
 import { Supply } from './Supply';
 import { ResourceTokenSupply } from './ResourceTokenSupply';
-import { BottomPanel } from './BottomPanel';
+import { StandardProjects } from './StandardProjects';
+import { CardPanel } from './CardPanel';
 import { DraftingView } from './DraftingView';
 import { IncomeVisualization } from './IncomeVisualization';
 import { GameOverScreen } from './GameOverScreen';
@@ -792,7 +793,7 @@ function GameScreenInner() {
           </div>
         )}
         <div className="w-full max-w-xl">
-          <HexGrid
+          <MarsBoard
             board={gameState.board}
             mapId={gameState.map}
             validHexIds={validCityHexes}
@@ -826,7 +827,7 @@ function GameScreenInner() {
           </div>
         )}
         <div className="w-full max-w-xl">
-          <HexGrid
+          <MarsBoard
             board={gameState.board}
             mapId={gameState.map}
             validHexIds={validCityHexes}
@@ -864,7 +865,7 @@ function GameScreenInner() {
   // --- Action Phase (main game view) ---
   if (gameState.phase === 'action' && humanPlayer && aiPlayer && humanTags && aiTags) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col pb-40">
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
         <TopBar
           generation={gameState.generation}
           phase={gameState.phase}
@@ -878,16 +879,11 @@ function GameScreenInner() {
           }}
         />
 
-        <div className="flex flex-1">
-          <div className="flex-1 p-4 grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-4">
-            {/* Main area: supplies + board */}
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} />
-                <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} />
-              </div>
-
-              <HexGrid
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 p-4 grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-4">
+            {/* Left 60%: Mars board centered */}
+            <div className="flex flex-col items-center justify-center gap-2">
+              <MarsBoard
                 board={gameState.board}
                 mapId={gameState.map}
                 validHexIds={placement.validHexIds}
@@ -895,35 +891,68 @@ function GameScreenInner() {
                 onHexClick={handleHexClick}
                 playerColorMap={playerColorMap}
               />
-
               {placement.isActive && (
-                <div className="text-center">
-                  <button
-                    className="text-sm text-muted-foreground underline hover:text-foreground"
-                    onClick={placement.cancelPlacement}
-                  >
-                    Cancel placement
-                  </button>
-                </div>
+                <button
+                  className="text-sm text-muted-foreground underline hover:text-foreground"
+                  onClick={placement.cancelPlacement}
+                >
+                  Cancel placement
+                </button>
               )}
             </div>
 
-            {/* Sidebar: player dashboards */}
-            <div className="flex flex-col gap-4">
-              <PlayerDashboard
-                player={humanPlayer}
-                tagCounts={humanTags}
-                isCurrentTurn={isHumanTurn}
-                generation={gameState.generation}
-                phase={gameState.phase}
-              />
-              <PlayerDashboard
-                player={aiPlayer}
-                tagCounts={aiTags}
-                isCurrentTurn={!isHumanTurn && !aiPlayer.hasPassed}
-                generation={gameState.generation}
-                phase={gameState.phase}
-              />
+            {/* Right 50%: supply + dashboards + standard projects + cards */}
+            <div className="flex flex-col gap-4 min-w-0 overflow-y-auto">
+              {/* Compact supply bar */}
+              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-lg bg-card/60 border border-border px-4 py-2.5">
+                <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} compact />
+                <div className="w-px h-5 bg-border" />
+                <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} compact />
+              </div>
+
+              {/* Scoreboard: side by side */}
+              <div className="rounded-lg border border-border bg-card/40 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Scoreboard</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <PlayerDashboard
+                    player={humanPlayer}
+                    tagCounts={humanTags}
+                    isCurrentTurn={isHumanTurn}
+                  />
+                  <PlayerDashboard
+                    player={aiPlayer}
+                    tagCounts={aiTags}
+                    isCurrentTurn={!isHumanTurn && !aiPlayer.hasPassed}
+                  />
+                </div>
+              </div>
+
+              {/* Actions: standard projects + pass */}
+              <div className="rounded-lg border border-border bg-card/40 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 text-center">Actions</p>
+                <StandardProjects
+                  canActivate={stdProjectCanActivate}
+                  alreadyUsedThisGen={humanPlayer.usedStandardProjectThisGen}
+                  isHumanTurn={isHumanTurn}
+                  hasPassed={humanPlayer.hasPassed}
+                  onStandardProject={handleStandardProject}
+                  onPass={handlePass}
+                  onPassMouseEnter={() => tutorial.triggerStep('passing')}
+                />
+              </div>
+
+              {/* Project cards */}
+              <div data-tutorial="bottom-panel" className="rounded-lg border border-border bg-card/40 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 text-center">Project Cards</p>
+                <CardPanel
+                  cardSides={humanPlayer.projectCardsFacing}
+                  effectiveCosts={effectiveCosts}
+                  canActivate={canActivateCards}
+                  usedCardIds={humanPlayer.usedProjectThisGen}
+                  isHumanTurn={isHumanTurn}
+                  onActivateCard={handleActivateCard}
+                />
+              </div>
             </div>
           </div>
 
@@ -939,23 +968,6 @@ function GameScreenInner() {
               currentPhase={gameState.phase}
             />
           </div>
-        </div>
-
-        <div data-tutorial="bottom-panel">
-          <BottomPanel
-            cardSides={humanPlayer.projectCardsFacing}
-            effectiveCosts={effectiveCosts}
-            canActivateCards={canActivateCards}
-            usedCardIds={humanPlayer.usedProjectThisGen}
-            standardProjectCanActivate={stdProjectCanActivate}
-            alreadyUsedStdProject={humanPlayer.usedStandardProjectThisGen}
-            isHumanTurn={isHumanTurn}
-            hasPassed={humanPlayer.hasPassed}
-            onActivateCard={handleActivateCard}
-            onStandardProject={handleStandardProject}
-            onPass={handlePass}
-            onPassMouseEnter={() => tutorial.triggerStep('passing')}
-          />
         </div>
 
         {/* Tutorial overlay */}
