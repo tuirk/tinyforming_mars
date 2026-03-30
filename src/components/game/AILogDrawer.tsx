@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { AILogEntry, GameAction, Phase } from '@/engine/types';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -27,29 +28,16 @@ function describeAction(action: GameAction): string {
   }
 }
 
-function sourceLabel(source: AILogEntry['decisionSource']): string {
+function modeBadge(source: AILogEntry['decisionSource']) {
   switch (source) {
-    case 'heuristic':
-      return 'Heuristic';
-    case 'minimax':
-      return 'Minimax';
-    case 'gemini':
-      return 'Gemini';
     case 'random':
-      return 'Random';
-  }
-}
-
-function sourceBadgeColor(source: AILogEntry['decisionSource']): string {
-  switch (source) {
+      return <Badge variant="secondary" className="bg-gray-600/50 text-gray-300 text-[10px]">Random</Badge>;
     case 'heuristic':
-      return 'bg-blue-600/20 text-blue-400 border-blue-600/30';
+      return <Badge variant="secondary" className="bg-blue-600/50 text-blue-300 text-[10px]">Heuristic</Badge>;
     case 'minimax':
-      return 'bg-purple-600/20 text-purple-400 border-purple-600/30';
-    case 'gemini':
-      return 'bg-emerald-600/20 text-emerald-400 border-emerald-600/30';
-    case 'random':
-      return 'bg-zinc-600/20 text-zinc-400 border-zinc-600/30';
+      return <Badge variant="secondary" className="bg-purple-600/50 text-purple-300 text-[10px]">Minimax</Badge>;
+    default:
+      return <Badge variant="secondary" className="text-[10px]">{source}</Badge>;
   }
 }
 
@@ -146,24 +134,36 @@ export function AILogDrawer({ entries, isOpen, onToggle, defaultTab, currentPhas
                           <span className="text-sm font-medium truncate">
                             {describeAction(entry.decision)}
                           </span>
-                          <span
-                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded border shrink-0 ${sourceBadgeColor(entry.decisionSource)}`}
-                          >
-                            {sourceLabel(entry.decisionSource)}
-                          </span>
+                          {modeBadge(entry.decisionSource)}
+                        </div>
+
+                        <div className="flex gap-2 text-[10px] text-muted-foreground mt-0.5">
+                          {entry.thinkingTimeMs !== undefined && <span>⏱ {entry.thinkingTimeMs.toFixed(0)}ms</span>}
+                          {entry.actionsEvaluated !== undefined && <span>🔍 {entry.actionsEvaluated} states</span>}
+                          {entry.searchDepth !== undefined && <span>📊 depth {entry.searchDepth}</span>}
                         </div>
 
                         {entry.evaluatedActions && entry.evaluatedActions.length > 0 && (
-                          <div className="text-[11px] text-muted-foreground">
-                            <span className="font-medium">Top scores:</span>{' '}
-                            {entry.evaluatedActions
-                              .slice(0, 3)
-                              .map((ea, i) => (
-                                <span key={i}>
-                                  {i > 0 && ', '}
-                                  {describeAction(ea.action)}: {ea.score.toFixed(1)}
-                                </span>
+                          <details className="mt-1">
+                            <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                              Top {entry.evaluatedActions.length} actions considered
+                            </summary>
+                            <div className="pl-2 mt-1 space-y-0.5">
+                              {entry.evaluatedActions.map((ea, i) => (
+                                <div key={i} className="text-[10px] flex justify-between">
+                                  <span className={i === 0 ? 'text-green-400' : 'text-muted-foreground'}>
+                                    {i === 0 ? '→ ' : '  '}{describeAction(ea.action)}
+                                  </span>
+                                  <span className="text-muted-foreground">{ea.score.toFixed(1)}</span>
+                                </div>
                               ))}
+                            </div>
+                          </details>
+                        )}
+
+                        {entry.minimaxAdjustment && entry.minimaxAdjustment.length > 0 && (
+                          <div className="text-[10px] text-purple-300/70 mt-0.5">
+                            Heuristic: {entry.minimaxAdjustment[0].originalScore.toFixed(1)} → Minimax: {entry.minimaxAdjustment[0].adjustedScore.toFixed(1)}
                           </div>
                         )}
 

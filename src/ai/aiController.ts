@@ -4,13 +4,14 @@
 // draft orientations, and setup city placements.
 // ============================================================
 
-import type { GameState, GameAction, CardId, CardSideId } from '../engine/types';
+import type { GameState, GameAction, CardId, CardSideId, AIMode } from '../engine/types';
 import { getLegalActions, getValidHexesForPlacement } from '../engine/rules';
 import { executeAction } from '../engine/actions';
 import { getCard } from '../engine/cards';
 import { draftCard } from '../engine/gameState';
 import { evaluate } from './heuristic';
 import { pickRandomAction, pickRandomDraftSide, pickRandomCityHex } from './placeholderAI';
+import { minimaxSearch } from './minimax';
 
 // ============================================================
 // Scored action interface
@@ -19,6 +20,21 @@ import { pickRandomAction, pickRandomDraftSide, pickRandomCityHex } from './plac
 export interface ScoredAction {
   action: GameAction;
   score: number;
+}
+
+// ============================================================
+// Enriched result interface for mode-dispatching functions
+// ============================================================
+
+export interface EnrichedResult {
+  action: GameAction;
+  score: number;
+  decisionSource: AIMode;
+  thinkingTimeMs: number;
+  actionsEvaluated: number;
+  searchDepth?: number;
+  topActions?: { action: GameAction; score: number }[]; // top 5 scored
+  minimaxAdjustments?: { action: GameAction; heuristicScore: number; minimaxScore: number }[];
 }
 
 // ============================================================
@@ -139,6 +155,148 @@ export function pickBestCityHex(state: GameState): number | null {
     return bestHex;
   } catch (err) {
     console.error('[AI] pickBestCityHex failed, falling back to random:', err);
+    return pickRandomCityHex(state);
+  }
+}
+
+// ============================================================
+// Helper: getAllScoredActions
+// Returns all legal actions with heuristic scores, sorted descending.
+// ============================================================
+
+export function getAllScoredActions(state: GameState): ScoredAction[] {
+  const actions = getLegalActions(state, 'ai');
+  const scored: ScoredAction[] = actions.map((action) => {
+    const newState = executeAction(state, action, 'ai');
+    const score = evaluate(newState, 'ai') - evaluate(newState, 'human');
+    return { action, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored;
+}
+
+// ============================================================
+// Mode-dispatching: pickActionByMode
+// ============================================================
+
+export function pickActionByMode(state: GameState, mode: AIMode): EnrichedResult {
+  const startTime = performance.now();
+
+  try {
+    switch (mode) {
+      case 'random': {
+        const action = pickRandomAction(state);
+        return {
+          action,
+          score: 0,
+          decisionSource: 'random',
+          thinkingTimeMs: performance.now() - startTime,
+          actionsEvaluated: 0,
+        };
+      }
+      case 'heuristic': {
+        const result = pickBestAction(state);
+        const allScored = getAllScoredActions(state);
+        return {
+          action: result.action,
+          score: result.score,
+          decisionSource: 'heuristic',
+          thinkingTimeMs: performance.now() - startTime,
+          actionsEvaluated: allScored.length,
+          topActions: allScored.slice(0, 5),
+        };
+      }
+      case 'minimax': {
+        const mmResult = minimaxSearch(state, 2, 'ai');
+        const heuristicResult = pickBestAction(state);
+        return {
+          action: mmResult.bestAction,
+          score: mmResult.score,
+          decisionSource: 'minimax',
+          thinkingTimeMs: performance.now() - startTime,
+          actionsEvaluated: mmResult.nodesEvaluated,
+          searchDepth: mmResult.depth,
+          minimaxAdjustments: [{
+            action: mmResult.bestAction,
+            heuristicScore: heuristicResult.score,
+            minimaxScore: mmResult.score,
+          }],
+        };
+      }
+    }
+  } catch (err) {
+    console.error('[AI] pickActionByMode failed, falling back to random:', err);
+    const action = pickRandomAction(state);
+    return {
+      action,
+      score: 0,
+      decisionSource: 'random',
+      thinkingTimeMs: performance.now() - startTime,
+      actionsEvaluated: 0,
+    };
+  }
+}
+
+// ============================================================
+// Mode-dispatching: pickDraftByMode
+// ============================================================
+
+export function pickDraftByMode(
+  state: GameState,
+  cardId: CardId,
+  mode: AIMode,
+): { side: CardSideId; score: number; decisionSource: AIMode; thinkingTimeMs: number } {
+  const startTime = performance.now();
+
+  try {
+    switch (mode) {
+      case 'random': {
+        const side = pickRandomDraftSide();
+        return {
+          side,
+          score: 0,
+          decisionSource: 'random',
+          thinkingTimeMs: performance.now() - startTime,
+        };
+      }
+      case 'heuristic':
+      case 'minimax': {
+        // Minimax draft would be too expensive — use heuristic for drafts
+        const result = pickBestDraftSide(state, cardId);
+        return {
+          side: result.side,
+          score: result.score,
+          decisionSource: mode,
+          thinkingTimeMs: performance.now() - startTime,
+        };
+      }
+    }
+  } catch (err) {
+    console.error('[AI] pickDraftByMode failed, falling back to random:', err);
+    return {
+      side: pickRandomDraftSide(),
+      score: 0,
+      decisionSource: 'random',
+      thinkingTimeMs: performance.now() - startTime,
+    };
+  }
+}
+
+// ============================================================
+// Mode-dispatching: pickCityByMode
+// ============================================================
+
+export function pickCityByMode(state: GameState, mode: AIMode): number | null {
+  try {
+    switch (mode) {
+      case 'random':
+        return pickRandomCityHex(state);
+      case 'heuristic':
+      case 'minimax':
+        return pickBestCityHex(state);
+    }
+  } catch (err) {
+    console.error('[AI] pickCityByMode failed, falling back to random:', err);
     return pickRandomCityHex(state);
   }
 }

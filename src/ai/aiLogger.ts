@@ -1,7 +1,7 @@
 // Structured AI reasoning logger
 // TODO: Implement in Phase 1C task 1C.6
 
-import type { AILogEntry, GameAction, Phase } from '../engine/types';
+import type { AILogEntry, AIMode, GameAction, Phase } from '../engine/types';
 
 /** Create a log entry for an AI decision */
 export function createLogEntry(params: {
@@ -11,7 +11,7 @@ export function createLogEntry(params: {
   minimaxAdjustment?: { action: GameAction; originalScore: number; adjustedScore: number }[];
   geminiReasoning?: string;
   decision: GameAction;
-  decisionSource: 'heuristic' | 'minimax' | 'gemini' | 'random';
+  decisionSource: AIMode;
 }): AILogEntry {
   return {
     ...params,
