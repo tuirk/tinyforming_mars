@@ -17,8 +17,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['var(--font-inter)', 'sans-serif'],
-        headline: ['var(--font-space-grotesk)', 'sans-serif'],
+        body: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        headline: ['var(--font-orbitron)', 'monospace'],
+        mono: ['"Courier New"', '"JetBrains Mono"', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

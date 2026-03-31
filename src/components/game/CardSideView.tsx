@@ -2,7 +2,7 @@
 
 import type { CardSide, TagType } from '@/engine/types';
 import { describeCardEffect, describeCostReduction, describeParameterReduction } from '@/lib/cardDescriptions';
-import { TagIcon } from './icons';
+import { TagBadge } from './GameIcons';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Coins } from 'lucide-react';
@@ -38,7 +38,7 @@ export function CardSideView({ cardSide, label }: CardSideViewProps) {
   return (
     <Card
       className={cn(
-        'w-full h-auto flex flex-col overflow-hidden',
+        'w-full h-full flex flex-col overflow-hidden',
         cardColorStyles[cardSide.color] ?? cardColorStyles.grey,
       )}
     >
@@ -64,7 +64,7 @@ export function CardSideView({ cardSide, label }: CardSideViewProps) {
         <div className="flex gap-1.5 items-center pt-1">
           {cardSide.tags.map((tag, i) => (
             <Badge key={`${tag}-${i}`} variant="secondary" className="gap-1 text-xs px-1.5 py-0.5">
-              <TagIcon tag={tag} className={cn('w-3 h-3', TAG_COLORS[tag])} />
+              <TagBadge tag={tag} size={14} />
               <span className="capitalize">{tag}</span>
             </Badge>
           ))}
@@ -84,7 +84,7 @@ export function CardSideView({ cardSide, label }: CardSideViewProps) {
                   key={req.tag}
                   className="flex items-center gap-0.5 text-xs text-muted-foreground"
                 >
-                  <TagIcon tag={req.tag} className={cn('w-3 h-3', TAG_COLORS[req.tag])} />
+                  <TagBadge tag={req.tag} size={14} />
                   <span>x{req.count}</span>
                 </div>
               ))}

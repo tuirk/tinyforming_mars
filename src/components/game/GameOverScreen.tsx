@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 interface GameOverScreenProps {
   state: GameState;
   onPlayAgain: () => void;
+  onBackToDashboard?: () => void;
 }
 
 const CATEGORY_LABELS: { key: keyof Omit<ScoreBreakdown, 'total'>; label: string }[] = [
@@ -25,7 +26,7 @@ const TIEBREAKER_LABELS: Record<string, string> = {
   heatPoints: 'Heat',
 };
 
-export function GameOverScreen({ state, onPlayAgain }: GameOverScreenProps) {
+export function GameOverScreen({ state, onPlayAgain, onBackToDashboard }: GameOverScreenProps) {
   const result = calculateGameResult(state);
 
   const bannerText =
@@ -145,11 +146,16 @@ export function GameOverScreen({ state, onPlayAgain }: GameOverScreenProps) {
           )}
         </CardContent>
 
-        <CardFooter className="justify-center pb-6">
+        <CardFooter className="justify-center pb-6 gap-3">
           <Button size="lg" onClick={onPlayAgain} className="gap-2">
             <RotateCcw className="h-4 w-4" />
             Play Again
           </Button>
+          {onBackToDashboard && (
+            <Button size="lg" variant="outline" onClick={onBackToDashboard}>
+              Dashboard
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

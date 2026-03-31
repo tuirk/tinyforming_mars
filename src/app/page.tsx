@@ -1,39 +1,49 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { signOut } from '@/lib/firebase/auth';
-import { AuthCard } from '@/components/auth/AuthCard';
+import type { MatchType } from '@/engine/types';
+import { LandingPage } from '@/components/landing/LandingPage';
+import { Dashboard } from '@/components/dashboard/Dashboard';
 import { GameScreen } from '@/components/game/GameScreen';
-import { Button } from '@/components/ui/button';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const { firebaseUser, userProfile, loading } = useAuth();
+  const [activeGame, setActiveGame] = useState<MatchType | null>(null);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#0d0d1a' }}>
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
+  // Not authenticated → landing page
   if (!firebaseUser || !userProfile) {
-    return <AuthCard />;
+    return <LandingPage />;
   }
 
+  // Authenticated + game active → game screen
+  if (activeGame) {
+    return (
+      <GameScreen
+        uid={firebaseUser.uid}
+        tutorialCompleted={userProfile.tutorialCompleted}
+        onBackToDashboard={() => setActiveGame(null)}
+      />
+    );
+  }
+
+  // Authenticated + no active game → dashboard
+  const isGuest = firebaseUser.isAnonymous;
+
   return (
-    <main className="min-h-screen">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2">
-        <span className="text-sm text-muted-foreground">
-          {userProfile.displayName || userProfile.email}
-        </span>
-        <Button variant="ghost" size="sm" onClick={() => signOut()}>
-          <LogOut className="mr-1 h-4 w-4" />
-          Sign Out
-        </Button>
-      </div>
-      <GameScreen />
-    </main>
+    <Dashboard
+      userProfile={userProfile}
+      isGuest={isGuest}
+      onStartGame={(matchType) => setActiveGame(matchType)}
+    />
   );
 }

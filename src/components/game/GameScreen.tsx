@@ -56,11 +56,13 @@ import { MapRevealScreen } from './setup/MapRevealScreen';
 import { ColorAssignmentScreen } from './setup/ColorAssignmentScreen';
 
 import { AILogDrawer } from './AILogDrawer';
+import { RulesDrawer } from './RulesDrawer';
+import { GameFooter } from '@/components/shared/GameFooter';
 import { TutorialProvider } from '@/components/tutorial/TutorialProvider';
 import { TutorialOverlay } from '@/components/tutorial/TutorialOverlay';
 import { getStepById, getStepIndex, TUTORIAL_STEPS } from '@/components/tutorial/tutorialSteps';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, Brain, HelpCircle, ChevronLeft } from 'lucide-react';
 
 // ============================================================
 // Setup step state machine
@@ -152,10 +154,10 @@ function stdProjectPlacementType(effectType: string): ParameterTileType | 'city'
 // Main component (outer wrapper with TutorialProvider)
 // ============================================================
 
-export function GameScreen() {
+export function GameScreen({ uid, tutorialCompleted, onBackToDashboard }: { uid?: string; tutorialCompleted?: boolean; onBackToDashboard?: () => void }) {
   return (
-    <TutorialProvider>
-      <GameScreenInner />
+    <TutorialProvider uid={uid} tutorialCompletedFromDB={tutorialCompleted}>
+      <GameScreenInner onBackToDashboard={onBackToDashboard} />
     </TutorialProvider>
   );
 }
@@ -164,15 +166,16 @@ export function GameScreen() {
 // Inner component (has access to TutorialContext)
 // ============================================================
 
-function GameScreenInner() {
+function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void }) {
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [setupStep, setSetupStep] = useState<SetupStep>('loading');
   const [drawnCardIds, setDrawnCardIds] = useState<CardId[]>([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [showIncome, setShowIncome] = useState(false);
   const [aiLogEntries, setAiLogEntries] = useState<AILogEntry[]>([]);
-  const [isLogOpen, setIsLogOpen] = useState(false);
-  const [drawerDefaultTab, setDrawerDefaultTab] = useState<'ai' | 'rules'>('ai');
+  const [isAILogOpen, setIsAILogOpen] = useState(false);
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [aiMode, setAIMode] = useState<AIMode>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('aiMode') as AIMode) || 'heuristic';
@@ -534,12 +537,12 @@ function GameScreenInner() {
     setIsAIThinking(true);
     const currentState = gameState;
 
-    aiTimerRef.current = setTimeout(() => {
+    aiTimerRef.current = setTimeout(async () => {
       aiTimerRef.current = null;
       try {
-        const result = pickActionByMode(currentState, aiMode);
+        const result = await pickActionByMode(currentState, aiMode);
         const action = result.action;
-        console.log('[AI] Picked action:', action.type, 'score:', result.score, 'mode:', result.decisionSource, action.type === 'activate_project' ? `card ${action.cardId}${action.side}` : action.type === 'standard_project' ? action.projectId : '');
+        console.log('[AI] Picked action:', action.type, 'score:', result.score, 'mode:', result.decisionSource, action.type === 'activate_project' ? `card ${action.cardId}${action.side}` : action.type === 'standard_project' ? action.projectId : '', result.geminiReasoning ? `reason: ${result.geminiReasoning}` : '');
 
         // Log the AI decision with enriched data
         setAiLogEntries(prev => [...prev, {
@@ -557,6 +560,7 @@ function GameScreenInner() {
             originalScore: adj.heuristicScore,
             adjustedScore: adj.minimaxScore,
           })),
+          geminiReasoning: result.geminiReasoning,
         }]);
 
         // Will both be passed after this action?
@@ -690,7 +694,8 @@ function GameScreenInner() {
     setShowIncome(false);
     setIsAIThinking(false);
     setAiLogEntries([]);
-    setIsLogOpen(false);
+    setIsAILogOpen(false);
+    setIsRulesOpen(false);
   }, []);
 
   // ----------------------------------------------------------
@@ -725,8 +730,7 @@ function GameScreenInner() {
         onDismiss={() => tutorial.dismissStep()}
         onSkipAll={() => tutorial.skipAll()}
         onLearnMore={(section) => {
-          setDrawerDefaultTab('rules');
-          setIsLogOpen(true);
+          setIsRulesOpen(true);
         }}
       />
     );
@@ -843,7 +847,7 @@ function GameScreenInner() {
 
   // --- Game Over ---
   if (gameState.phase === 'game_over') {
-    return <GameOverScreen state={gameState} onPlayAgain={handlePlayAgain} />;
+    return <GameOverScreen state={gameState} onPlayAgain={handlePlayAgain} onBackToDashboard={onBackToDashboard} />;
   }
 
   // --- Income visualization ---
@@ -871,16 +875,30 @@ function GameScreenInner() {
           phase={gameState.phase}
           humanPlayer={humanPlayer}
           isAIThinking={isAIThinking}
-          aiMode={aiMode}
-          onAIModeChange={handleAIModeChange}
-          onHelpClick={() => {
-            setDrawerDefaultTab('rules');
-            setIsLogOpen(true);
-          }}
+          onBack={onBackToDashboard ? () => setShowLeaveConfirm(true) : undefined}
         />
 
+        {/* Leave confirmation dialog */}
+        {showLeaveConfirm && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+               onClick={() => setShowLeaveConfirm(false)}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: '#151525', border: '1px solid #2a2a3e', borderRadius: '12px', padding: '24px', maxWidth: '360px', textAlign: 'center' }}>
+              <p style={{ fontFamily: "'Orbitron', monospace", fontSize: '14px', fontWeight: 600, color: '#e0e0e0', marginBottom: '8px' }}>Leave Game?</p>
+              <p style={{ fontSize: '12px', color: '#5a5a7a', marginBottom: '20px', fontFamily: "'Inter', system-ui, sans-serif" }}>Your game progress will be lost. This cannot be undone.</p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button onClick={() => setShowLeaveConfirm(false)} style={{ padding: '8px 20px', background: '#1a1a2e', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#8a8aaa', fontSize: '12px', cursor: 'pointer', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  Stay
+                </button>
+                <button onClick={onBackToDashboard} style={{ padding: '8px 20px', background: '#E8872D', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '12px', cursor: 'pointer', fontFamily: "'Orbitron', monospace", fontWeight: 500, letterSpacing: '1px' }}>
+                  LEAVE
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 p-4 grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-4">
+          <div className="flex-1 p-2 md:p-3 xl:p-4 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2 md:gap-3 xl:gap-4">
             {/* Left 60%: Mars board centered */}
             <div className="flex flex-col items-center justify-center gap-2">
               <MarsBoard
@@ -901,19 +919,19 @@ function GameScreenInner() {
               )}
             </div>
 
-            {/* Right 50%: supply + dashboards + standard projects + cards */}
-            <div className="flex flex-col gap-4 min-w-0 overflow-y-auto">
+            {/* Right 40%: supply + dashboards + standard projects + cards */}
+            <div className="flex flex-col gap-2 md:gap-3 xl:gap-4 min-w-0 overflow-y-auto justify-center">
               {/* Compact supply bar */}
-              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-lg bg-card/60 border border-border px-4 py-2.5">
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-lg bg-card/60 border border-border px-2 py-1.5 md:px-4 md:py-2.5 md:gap-x-5">
                 <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} compact />
                 <div className="w-px h-5 bg-border" />
                 <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} compact />
               </div>
 
               {/* Scoreboard: side by side */}
-              <div className="rounded-lg border border-border bg-card/40 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Scoreboard</p>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-border bg-card/40 p-2 md:p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 md:mb-2">Scoreboard</p>
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
                   <PlayerDashboard
                     player={humanPlayer}
                     tagCounts={humanTags}
@@ -928,8 +946,8 @@ function GameScreenInner() {
               </div>
 
               {/* Actions: standard projects + pass */}
-              <div className="rounded-lg border border-border bg-card/40 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 text-center">Actions</p>
+              <div className="rounded-lg border border-border bg-card/40 p-2 md:p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 md:mb-2 text-center">Actions</p>
                 <StandardProjects
                   canActivate={stdProjectCanActivate}
                   alreadyUsedThisGen={humanPlayer.usedStandardProjectThisGen}
@@ -942,8 +960,8 @@ function GameScreenInner() {
               </div>
 
               {/* Project cards */}
-              <div data-tutorial="bottom-panel" className="rounded-lg border border-border bg-card/40 p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 text-center">Project Cards</p>
+              <div data-tutorial="bottom-panel" className="rounded-lg border border-border bg-card/40 p-2 md:p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 md:mb-2 text-center">Project Cards</p>
                 <CardPanel
                   cardSides={humanPlayer.projectCardsFacing}
                   effectiveCosts={effectiveCosts}
@@ -956,22 +974,61 @@ function GameScreenInner() {
             </div>
           </div>
 
-          <div data-tutorial="ai-log">
-            <AILogDrawer
-              entries={aiLogEntries}
-              isOpen={isLogOpen}
-              onToggle={() => {
-                setDrawerDefaultTab('ai');
-                setIsLogOpen(!isLogOpen);
-              }}
-              defaultTab={drawerDefaultTab}
-              currentPhase={gameState.phase}
-            />
+          <div data-tutorial="ai-log" className="flex shrink-0 h-full">
+            {/* Expanded drawers */}
+            {isAILogOpen && (
+              <AILogDrawer
+                entries={aiLogEntries}
+                isOpen
+                onToggle={() => setIsAILogOpen(false)}
+                aiMode={aiMode}
+                onAIModeChange={handleAIModeChange}
+              />
+            )}
+            {isRulesOpen && (
+              <RulesDrawer
+                isOpen
+                onToggle={() => setIsRulesOpen(false)}
+                currentPhase={gameState.phase}
+              />
+            )}
+            {/* Collapsed tab strip — always visible */}
+            <div className="flex flex-col border-l border-border bg-card/50">
+              {!isAILogOpen && (
+                <button
+                  onClick={() => setIsAILogOpen(true)}
+                  className="flex flex-col items-center gap-2 px-2 py-4 hover:bg-card transition-colors cursor-pointer flex-1"
+                  title="Open AI Log"
+                >
+                  <Brain className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground font-medium" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+                    AI Log
+                  </span>
+                  <ChevronLeft className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
+              {!isRulesOpen && (
+                <button
+                  onClick={() => setIsRulesOpen(true)}
+                  className="flex flex-col items-center gap-2 px-2 py-4 hover:bg-card transition-colors cursor-pointer flex-1 border-t border-border"
+                  title="Open Rules"
+                >
+                  <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground font-medium" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}>
+                    Rules
+                  </span>
+                  <ChevronLeft className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Tutorial overlay */}
         {renderTutorialOverlay()}
+
+        {/* Footer */}
+        <GameFooter />
       </div>
     );
   }
@@ -983,3 +1040,4 @@ function GameScreenInner() {
     </div>
   );
 }
+
