@@ -24,7 +24,7 @@ export function MapRevealScreen({ state, onContinue }: MapRevealScreenProps) {
         Map: <span className="font-semibold text-foreground">{mapName}</span>
       </p>
 
-      <div className="w-full max-w-xl">
+      <div className="w-full max-w-3xl">
         <MarsBoard
           board={state.board}
           mapId={state.map}

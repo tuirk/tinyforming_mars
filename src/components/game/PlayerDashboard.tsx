@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { TagIcon } from './icons';
+import { TagBadge } from './GameIcons';
 import {
   CreditsStamp,
   HeatStamp,
@@ -96,7 +96,7 @@ export function PlayerDashboard({ player, tagCounts, isCurrentTurn }: PlayerDash
                     <Tooltip key={tag}>
                       <TooltipTrigger asChild>
                         <div className="flex items-center gap-1">
-                          <TagIcon tag={tag} className="w-4 h-4" />
+                          <TagBadge tag={tag} size={16} />
                           <span>{tagCounts[tag]}</span>
                         </div>
                       </TooltipTrigger>

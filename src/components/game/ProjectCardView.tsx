@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Coins, Zap, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TagIcon } from './icons';
+import { TagBadge } from './GameIcons';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { describeCardEffect, describeCostReduction, describeParameterReduction } from '@/lib/cardDescriptions';
 
@@ -55,7 +55,7 @@ export function ProjectCardView({
   return (
     <Card
       className={cn(
-        'w-full h-auto flex flex-col relative overflow-hidden',
+        'w-full h-full flex flex-col relative overflow-hidden',
         cardColorStyles[cardSide.color] ?? cardColorStyles.grey,
         !canActivate && !isUsedThisGen && 'opacity-50',
       )}
@@ -87,7 +87,7 @@ export function ProjectCardView({
               <Tooltip>
                 <TooltipTrigger>
                   <Badge variant="secondary" className="gap-1 text-xs px-1.5 py-0.5">
-                    <TagIcon tag={tag} className={cn('w-3 h-3', TAG_COLORS[tag])} />
+                    <TagBadge tag={tag} size={14} />
                     <span className="capitalize">{tag}</span>
                   </Badge>
                 </TooltipTrigger>
@@ -116,7 +116,7 @@ export function ProjectCardView({
                     canActivate ? 'text-green-400' : 'text-muted-foreground',
                   )}
                 >
-                  <TagIcon tag={req.tag} className={cn('w-3 h-3', TAG_COLORS[req.tag])} />
+                  <TagBadge tag={req.tag} size={14} />
                   <span>x{req.count}</span>
                   {canActivate && <CheckCircle className="w-2.5 h-2.5 text-green-500" />}
                 </div>

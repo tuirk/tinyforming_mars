@@ -13,14 +13,14 @@ interface MarsBoardProps {
   disabled?: boolean;
 }
 
-// Hex geometry constants
-const COL_SPACING = 95;
-const ROW_SPACING = 90;
-const VIEWBOX_W = 680;
-const VIEWBOX_H = 620;
+// Hex geometry constants — spaced for etched hex shadows/glow with 9px gaps
+const COL_SPACING = 117;
+const ROW_SPACING = 115;
+const VIEWBOX_W = 780;
+const VIEWBOX_H = 760;
 const CENTER_X = VIEWBOX_W / 2;
 const CENTER_Y = VIEWBOX_H / 2;
-const PLANET_RADIUS = 280;
+const PLANET_RADIUS = 350;
 
 // Grid structure: row -> col offsets (hex IDs 1-19)
 const GRID = [
@@ -53,30 +53,99 @@ function hexCenter(row: number, col: number): { x: number; y: number } {
   };
 }
 
-// Hex fill and stroke based on type
-function hexStyle(hex: HexState): {
-  fill: string;
-  fillOpacity: number;
-  stroke: string;
-  strokeWidth: number;
-} {
+// --- Etched hex base components ---
+
+function HexBase({ cx, cy, hex, isValid }: { cx: number; cy: number; hex: HexState; isValid: boolean }) {
+  const tx = cx - 50;
+  const ty = cy - 58;
+
   if (hex.bonusTag) {
-    const bonusStyles: Record<string, { fill: string; fillOpacity: number; stroke: string }> = {
-      production: { fill: '#8B4528', fillOpacity: 0.55, stroke: '#E8872D' },
-      nature: { fill: '#3A6B2A', fillOpacity: 0.45, stroke: '#4CAF50' },
-      science: { fill: '#4A5A6A', fillOpacity: 0.45, stroke: '#E0E0E0' },
-      space: { fill: '#7A6A5A', fillOpacity: 0.45, stroke: '#9A9A9A' },
-      energy: { fill: '#6A5A28', fillOpacity: 0.50, stroke: '#F5C842' },
-    };
-    const s = bonusStyles[hex.bonusTag] || bonusStyles.production;
-    return { ...s, strokeWidth: 7 };
+    return <BonusHexBase tx={tx} ty={ty} tag={hex.bonusTag} isValid={isValid} cx={cx} cy={cy} />;
   }
-
   if (hex.type === 'water') {
-    return { fill: '#3A6A8A', fillOpacity: 0.6, stroke: '#5A9ABB', strokeWidth: 1.5 };
+    return <WaterHexBase tx={tx} ty={ty} isValid={isValid} cx={cx} cy={cy} />;
   }
+  return <LandHexBase tx={tx} ty={ty} isValid={isValid} cx={cx} cy={cy} />;
+}
 
-  return { fill: '#8B4528', fillOpacity: 0.45, stroke: '#806050', strokeWidth: 1.5 };
+function LandHexBase({ tx, ty, isValid, cx, cy }: { tx: number; ty: number; isValid: boolean; cx: number; cy: number }) {
+  return (
+    <g>
+      <g transform={`translate(${tx}, ${ty})`}>
+        <polygon points="50,2 101,31 101,89 50,118 -1,89 -1,31" fill="#3A1808" fillOpacity="0.4" />
+        <polygon points="50,0 100,29 100,87 50,116 0,87 0,29" fill="#8B4528" fillOpacity="0.35" stroke="#6A4A35" strokeWidth="2" />
+        <path d="M50,0 L100,29" stroke="#B87050" strokeWidth="1" opacity="0.4" />
+        <path d="M50,0 L0,29" stroke="#B87050" strokeWidth="1" opacity="0.4" />
+        <path d="M0,87 L50,116" stroke="#3A1A08" strokeWidth="1" opacity="0.3" />
+        <path d="M100,87 L50,116" stroke="#3A1A08" strokeWidth="1" opacity="0.3" />
+      </g>
+      {isValid && <ValidPulse cx={cx} cy={cy} />}
+    </g>
+  );
+}
+
+function WaterHexBase({ tx, ty, isValid, cx, cy }: { tx: number; ty: number; isValid: boolean; cx: number; cy: number }) {
+  return (
+    <g>
+      <g transform={`translate(${tx}, ${ty})`}>
+        <polygon points="50,2 101,31 101,89 50,118 -1,89 -1,31" fill="#0A2030" fillOpacity="0.5" />
+        <polygon points="50,0 100,29 100,87 50,116 0,87 0,29" fill="#2A4A5A" fillOpacity="0.4" stroke="#4A7A90" strokeWidth="2.5" />
+        <polygon points="50,8 92,33 92,83 50,108 8,83 8,33" fill="#2A6A8A" fillOpacity="0.5" />
+        <polygon points="50,14 86,36 86,80 50,102 14,80 14,36" fill="#3A7A9A" fillOpacity="0.35" />
+        <path d="M25 55 Q38 50 50 54 Q62 58 78 53" fill="none" stroke="#5AAFCC" strokeWidth="0.7" opacity="0.35" />
+        <path d="M30 68 Q45 63 55 67 Q70 72 80 67" fill="none" stroke="#5AAFCC" strokeWidth="0.6" opacity="0.25" />
+        <path d="M22 42 Q35 38 50 42 Q65 46 82 41" fill="none" stroke="#5AAFCC" strokeWidth="0.5" opacity="0.2" />
+        <path d="M50,0 L100,29" stroke="#6ABADD" strokeWidth="1" opacity="0.25" />
+        <path d="M50,0 L0,29" stroke="#6ABADD" strokeWidth="1" opacity="0.25" />
+      </g>
+      {isValid && <ValidPulse cx={cx} cy={cy} />}
+    </g>
+  );
+}
+
+const BONUS_COLORS: Record<string, {
+  glow: string; glowOp: number;
+  shadow: string; shadowOp: number;
+  fill: string; fillOp: number; stroke: string;
+  hiLight: string; hiOp: number;
+  loLight: string; loOp: number;
+  echo: string; echoOp: number;
+}> = {
+  production: { glow: '#E8872D', glowOp: 0.15, shadow: '#5A2010', shadowOp: 0.5, fill: '#8B4528', fillOp: 0.4, stroke: '#E8872D', hiLight: '#F0A850', hiOp: 0.5, loLight: '#8A4010', loOp: 0.4, echo: '#E8872D', echoOp: 0.25 },
+  nature: { glow: '#4CAF50', glowOp: 0.12, shadow: '#0D3B0F', shadowOp: 0.5, fill: '#3A6B2A', fillOp: 0.35, stroke: '#4CAF50', hiLight: '#66BB6A', hiOp: 0.5, loLight: '#1B5E20', loOp: 0.4, echo: '#4CAF50', echoOp: 0.25 },
+  science: { glow: '#E0E0E0', glowOp: 0.1, shadow: '#1A1A2A', shadowOp: 0.5, fill: '#4A5A6A', fillOp: 0.35, stroke: '#E0E0E0', hiLight: '#FFF', hiOp: 0.35, loLight: '#888', loOp: 0.3, echo: '#E0E0E0', echoOp: 0.2 },
+  space: { glow: '#9A9A9A', glowOp: 0.1, shadow: '#1A1A1E', shadowOp: 0.5, fill: '#7A6A5A', fillOp: 0.35, stroke: '#9A9A9A', hiLight: '#BBB', hiOp: 0.4, loLight: '#555', loOp: 0.3, echo: '#9A9A9A', echoOp: 0.2 },
+  energy: { glow: '#F5C842', glowOp: 0.12, shadow: '#2A2010', shadowOp: 0.5, fill: '#6A5A28', fillOp: 0.4, stroke: '#F5C842', hiLight: '#FFE082', hiOp: 0.5, loLight: '#8A6A10', loOp: 0.4, echo: '#F5C842', echoOp: 0.25 },
+};
+
+function BonusHexBase({ tx, ty, tag, isValid, cx, cy }: { tx: number; ty: number; tag: string; isValid: boolean; cx: number; cy: number }) {
+  const c = BONUS_COLORS[tag] || BONUS_COLORS.production;
+  return (
+    <g>
+      <g transform={`translate(${tx}, ${ty})`}>
+        <polygon points="50,-3 104,28 104,90 50,120 -4,90 -4,28" fill={c.glow} fillOpacity={c.glowOp} />
+        <polygon points="50,2 101,31 101,89 50,118 -1,89 -1,31" fill={c.shadow} fillOpacity={c.shadowOp} />
+        <polygon points="50,0 100,29 100,87 50,116 0,87 0,29" fill={c.fill} fillOpacity={c.fillOp} stroke={c.stroke} strokeWidth="7" />
+        <path d="M50,0 L100,29" stroke={c.hiLight} strokeWidth="2" opacity={c.hiOp} />
+        <path d="M50,0 L0,29" stroke={c.hiLight} strokeWidth="2" opacity={c.hiOp} />
+        <path d="M0,87 L50,116" stroke={c.loLight} strokeWidth="2" opacity={c.loOp} />
+        <path d="M100,87 L50,116" stroke={c.loLight} strokeWidth="2" opacity={c.loOp} />
+        <polygon points="50,7 93,32 93,84 50,109 7,84 7,32" fill="none" stroke={c.echo} strokeWidth="0.5" opacity={c.echoOp} />
+      </g>
+      {isValid && <ValidPulse cx={cx} cy={cy} />}
+    </g>
+  );
+}
+
+function ValidPulse({ cx, cy }: { cx: number; cy: number }) {
+  return (
+    <>
+      <polygon points={hexPoints(cx, cy)} stroke="#66FF66" strokeWidth="3" fill="none" opacity="0.6" />
+      <polygon points={hexPoints(cx, cy, 40)} fill="#66FF66" fillOpacity="0.15">
+        <animate attributeName="fill-opacity" values="0.15;0.3;0.15" dur="1.5s" repeatCount="indefinite" />
+      </polygon>
+    </>
+  );
 }
 
 export function MarsBoard({
@@ -159,36 +228,36 @@ export function MarsBoard({
       {/* Labels */}
       <text
         x={CENTER_X}
-        y="52"
+        y="60"
         textAnchor="middle"
-        fontFamily="'Impact','Arial Black',sans-serif"
-        fontSize="14"
-        fill="#D4956A"
-        letterSpacing="4"
-        fontWeight="700"
+        fontFamily="'Orbitron',monospace"
+        fontSize="11"
+        fill="#E8C8A0"
+        letterSpacing="6"
+        fontWeight="500"
       >
         NORTH
       </text>
       <text
         x={CENTER_X}
-        y="582"
+        y="710"
         textAnchor="middle"
-        fontFamily="'Impact','Arial Black',sans-serif"
-        fontSize="14"
-        fill="#D4956A"
-        letterSpacing="4"
-        fontWeight="700"
+        fontFamily="'Orbitron',monospace"
+        fontSize="11"
+        fill="#E8C8A0"
+        letterSpacing="6"
+        fontWeight="500"
       >
         SOUTH
       </text>
       <text
-        x="610"
+        x="720"
         y="78"
         textAnchor="end"
-        fontFamily="'Impact','Arial Black',sans-serif"
-        fontSize="22"
-        fill="#E8872D"
-        letterSpacing="2"
+        fontFamily="'Orbitron',monospace"
+        fontSize="20"
+        fill="#F0A050"
+        letterSpacing="3"
         fontWeight="700"
       >
         {mapId.toUpperCase()}
@@ -200,7 +269,6 @@ export function MarsBoard({
         const hex = hexMap[id];
         if (!hex) return null;
 
-        const style = hexStyle(hex);
         const isValid = validHexIds.includes(id);
         const hasTile = hex.tile !== null;
         const hasCity = hex.city !== null;
@@ -214,26 +282,8 @@ export function MarsBoard({
               opacity: isPlacementActive && !isValid ? 0.5 : 1,
             }}
           >
-            {/* Base hex shape */}
-            <polygon
-              points={hexPoints(pos.x, pos.y)}
-              fill={style.fill}
-              fillOpacity={style.fillOpacity}
-              stroke={isValid ? '#66FF66' : style.stroke}
-              strokeWidth={isValid ? 5 : style.strokeWidth}
-            />
-
-            {/* Valid placement pulse animation */}
-            {isValid && (
-              <polygon points={hexPoints(pos.x, pos.y, 40)} fill="#66FF66" fillOpacity="0.15">
-                <animate
-                  attributeName="fill-opacity"
-                  values="0.15;0.3;0.15"
-                  dur="1.5s"
-                  repeatCount="indefinite"
-                />
-              </polygon>
-            )}
+            {/* Etched hex base */}
+            <HexBase cx={pos.x} cy={pos.y} hex={hex} isValid={isValid} />
 
             {/* Content layer — mutually exclusive */}
             {hasTile ? (
@@ -246,9 +296,9 @@ export function MarsBoard({
               />
             ) : (
               <>
-                {hex.bonusTag && <BonusIcon cx={pos.x} cy={pos.y} tag={hex.bonusTag} />}
+                {hex.bonusTag && <BonusMedallion cx={pos.x} cy={pos.y} tag={hex.bonusTag} />}
                 {hex.type === 'water' && hex.resourceTokenIcon && (
-                  <ResourceTokenIcon cx={pos.x} cy={pos.y} tokenType={hex.resourceTokenIcon} />
+                  <ResourceMedallion cx={pos.x} cy={pos.y} tokenType={hex.resourceTokenIcon} />
                 )}
               </>
             )}
@@ -259,65 +309,168 @@ export function MarsBoard({
   );
 }
 
-// --- Bonus hex center icons ---
+// --- Embossed bonus medallions (26px radius) ---
 
-function BonusIcon({ cx, cy, tag }: { cx: number; cy: number; tag: string }) {
-  const configs: Record<string, { bgFill: string; borderColor: string; r: number }> = {
-    production: { bgFill: '#C46830', borderColor: '#E8872D', r: 18 },
-    nature: { bgFill: '#1A3A12', borderColor: '#4CAF50', r: 16 },
-    science: { bgFill: '#1A1A1A', borderColor: '#E0E0E0', r: 16 },
-    space: { bgFill: '#3A3A3A', borderColor: '#999', r: 16 },
-    energy: { bgFill: '#3A3520', borderColor: '#F5C842', r: 16 },
-  };
-  const c = configs[tag] || configs.production;
-
+function BonusMedallion({ cx, cy, tag }: { cx: number; cy: number; tag: string }) {
   return (
-    <g>
-      <circle cx={cx} cy={cy} r={c.r} fill={c.bgFill} stroke={c.borderColor} strokeWidth="2.5" />
-      {tag === 'production' && <FactoryIcon cx={cx} cy={cy} color="#FFD085" />}
-      {tag === 'nature' && <PlantIcon cx={cx} cy={cy} color="#5CBF60" />}
-      {tag === 'science' && <LightbulbIcon cx={cx} cy={cy} color="#F5C842" />}
-      {tag === 'space' && <RocketIcon cx={cx} cy={cy} />}
-      {tag === 'energy' && <BoltIcon cx={cx} cy={cy} color="#F5C842" />}
+    <g transform={`translate(${cx}, ${cy})`}>
+      {tag === 'production' && <ProductionMedallion />}
+      {tag === 'nature' && <NatureMedallion />}
+      {tag === 'science' && <ScienceMedallion />}
+      {tag === 'space' && <SpaceMedallion />}
+      {tag === 'energy' && <ScienceMedallion />}
     </g>
   );
 }
 
-// --- Water hex resource token icons ---
-
-function ResourceTokenIcon({
-  cx,
-  cy,
-  tokenType,
-}: {
-  cx: number;
-  cy: number;
-  tokenType: string;
-}) {
-  const bgColors: Record<string, string> = {
-    nature: '#1A3A12',
-    science: '#1A1A1A',
-    production: '#5A3A20',
-  };
-  const borderColors: Record<string, string> = {
-    nature: '#4CAF50',
-    science: '#AAA',
-    production: '#E8872D',
-  };
-
+function ProductionMedallion() {
   return (
     <g>
-      <circle
-        cx={cx}
-        cy={cy}
-        r={15}
-        fill={bgColors[tokenType] || '#1A1A1A'}
-        stroke={borderColors[tokenType] || '#888'}
-        strokeWidth="1.5"
-      />
-      {tokenType === 'nature' && <PlantIcon cx={cx} cy={cy} color="#5CBF60" />}
-      {tokenType === 'science' && <LightbulbIcon cx={cx} cy={cy} color="#F5C842" />}
-      {tokenType === 'production' && <FactoryIcon cx={cx} cy={cy} color="#FFD085" />}
+      <circle cx="2" cy="3" r="26" fill="#000" fillOpacity="0.4" />
+      <circle cx="0" cy="0" r="26" fill="#8B4020" />
+      <path d="M-18,-18 A26,26 0 0,1 18,-18" fill="none" stroke="#C46830" strokeWidth="4" strokeLinecap="round" />
+      <path d="M18,18 A26,26 0 0,1 -18,18" fill="none" stroke="#5A2A12" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="20" fill="#B85A2E" />
+      <ellipse cx="-3" cy="-6" rx="14" ry="10" fill="#C46830" fillOpacity="0.6" />
+      <rect x="-14" y="-4" width="28" height="14" rx="2" fill="none" stroke="#FFD085" strokeWidth="2" />
+      <line x1="-14" y1="3" x2="14" y2="3" stroke="#FFD085" strokeWidth="1.5" />
+      <rect x="-10" y="-2" width="6" height="4" fill="#FFD085" fillOpacity="0.8" />
+      <rect x="-2" y="-2" width="6" height="4" fill="#FFD085" fillOpacity="0.8" />
+      <rect x="6" y="-2" width="5" height="4" fill="#FFD085" fillOpacity="0.8" />
+      <rect x="-7" y="-12" width="5" height="9" rx="1" fill="#FFD085" />
+      <rect x="3" y="-15" width="4" height="12" rx="1" fill="#FFD085" />
+      <circle cx="-4" cy="-16" r="2" fill="#FFD085" fillOpacity="0.4" />
+      <circle cx="6" cy="-19" r="1.5" fill="#FFD085" fillOpacity="0.3" />
+    </g>
+  );
+}
+
+function NatureMedallion() {
+  return (
+    <g>
+      <circle cx="2" cy="3" r="26" fill="#000" fillOpacity="0.4" />
+      <circle cx="0" cy="0" r="26" fill="#1A4A10" />
+      <path d="M-18,-18 A26,26 0 0,1 18,-18" fill="none" stroke="#2E7D32" strokeWidth="4" strokeLinecap="round" />
+      <path d="M18,18 A26,26 0 0,1 -18,18" fill="none" stroke="#0D2A08" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="20" fill="#1E5A14" />
+      <ellipse cx="-3" cy="-6" rx="14" ry="10" fill="#2E7D32" fillOpacity="0.5" />
+      <path d="M-9 10 Q-6 0 0 -12 Q6 0 9 10" fill="#66BB6A" stroke="#81C784" strokeWidth="1" />
+      <path d="M-14 10 Q-10 2 -7 -4" fill="none" stroke="#81C784" strokeWidth="3" strokeLinecap="round" />
+      <path d="M14 10 Q10 2 7 -4" fill="none" stroke="#81C784" strokeWidth="3" strokeLinecap="round" />
+      <line x1="0" y1="-12" x2="0" y2="12" stroke="#81C784" strokeWidth="2.5" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function ScienceMedallion() {
+  return (
+    <g>
+      <circle cx="2" cy="3" r="26" fill="#000" fillOpacity="0.4" />
+      <circle cx="0" cy="0" r="26" fill="#2A2A3A" />
+      <path d="M-18,-18 A26,26 0 0,1 18,-18" fill="none" stroke="#555" strokeWidth="4" strokeLinecap="round" />
+      <path d="M18,18 A26,26 0 0,1 -18,18" fill="none" stroke="#111" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="20" fill="#1E1E2E" />
+      <ellipse cx="-3" cy="-6" rx="14" ry="10" fill="#2A2A40" fillOpacity="0.6" />
+      <circle cx="0" cy="-4" r="9" fill="none" stroke="#F5C842" strokeWidth="2.5" />
+      <line x1="0" y1="5" x2="0" y2="13" stroke="#F5C842" strokeWidth="3" strokeLinecap="round" />
+      <line x1="-5" y1="13" x2="5" y2="13" stroke="#F5C842" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="-4" y1="16" x2="4" y2="16" stroke="#F5C842" strokeWidth="2" strokeLinecap="round" />
+      <line x1="0" y1="-16" x2="0" y2="-19" stroke="#F5C842" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+      <line x1="10" y1="-12" x2="13" y2="-14" stroke="#F5C842" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+      <line x1="-10" y1="-12" x2="-13" y2="-14" stroke="#F5C842" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+      <circle cx="0" cy="-4" r="5" fill="#F5C842" fillOpacity="0.15" />
+    </g>
+  );
+}
+
+function SpaceMedallion() {
+  return (
+    <g>
+      <circle cx="2" cy="3" r="26" fill="#000" fillOpacity="0.4" />
+      <circle cx="0" cy="0" r="26" fill="#3A3A40" />
+      <path d="M-18,-18 A26,26 0 0,1 18,-18" fill="none" stroke="#666" strokeWidth="4" strokeLinecap="round" />
+      <path d="M18,18 A26,26 0 0,1 -18,18" fill="none" stroke="#1A1A1E" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="20" fill="#2A2A30" />
+      <ellipse cx="-3" cy="-6" rx="14" ry="10" fill="#3A3A44" fillOpacity="0.5" />
+      <path d="M-4 14 L-10 2 L-4 -14 L4 -14 L10 2 L4 14 Z" fill="#E85530" stroke="#FF6E40" strokeWidth="1" />
+      <path d="M-3 -12 L0 -20 L3 -12" fill="#F8A030" />
+      <path d="M-1 -14 L0 -20 L1 -14" fill="#FFC107" fillOpacity="0.5" />
+      <circle cx="0" cy="-4" r="3.5" fill="#1A1A2E" stroke="#FFF" strokeWidth="1" opacity="0.6" />
+      <circle cx="-1" cy="-5" r="1" fill="#FFF" opacity="0.3" />
+      <path d="M-10 2 L-14 8 L-8 8 Z" fill="#B71C1C" />
+      <path d="M10 2 L14 8 L8 8 Z" fill="#B71C1C" />
+      <path d="M-3 14 L-2 18 L0 16 L2 18 L3 14" fill="#FFC107" fillOpacity="0.7" />
+    </g>
+  );
+}
+
+// --- Embossed resource token medallions (22px radius, on water hexes) ---
+
+function ResourceMedallion({ cx, cy, tokenType }: { cx: number; cy: number; tokenType: string }) {
+  return (
+    <g transform={`translate(${cx}, ${cy})`}>
+      {tokenType === 'nature' && <NatureTokenMedallion />}
+      {tokenType === 'science' && <ScienceTokenMedallion />}
+      {tokenType === 'production' && <ProductionTokenMedallion />}
+    </g>
+  );
+}
+
+function NatureTokenMedallion() {
+  return (
+    <g>
+      <circle cx="1" cy="2" r="22" fill="#000" fillOpacity="0.35" />
+      <circle cx="0" cy="0" r="22" fill="#0D2A08" />
+      <path d="M-15,-15 A22,22 0 0,1 15,-15" fill="none" stroke="#2E7D32" strokeWidth="3" strokeLinecap="round" />
+      <path d="M15,15 A22,22 0 0,1 -15,15" fill="none" stroke="#061A04" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="17" fill="#1A4A10" />
+      <ellipse cx="-2" cy="-4" rx="12" ry="8" fill="#1E5A14" fillOpacity="0.5" />
+      <path d="M-7 8 Q-5 0 0 -10 Q5 0 7 8" fill="#66BB6A" />
+      <path d="M-10 8 Q-7 2 -5 -2" fill="none" stroke="#81C784" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M10 8 Q7 2 5 -2" fill="none" stroke="#81C784" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="0" y1="-10" x2="0" y2="9" stroke="#81C784" strokeWidth="2" strokeLinecap="round" />
+    </g>
+  );
+}
+
+function ScienceTokenMedallion() {
+  return (
+    <g>
+      <circle cx="1" cy="2" r="22" fill="#000" fillOpacity="0.35" />
+      <circle cx="0" cy="0" r="22" fill="#1A1A2A" />
+      <path d="M-15,-15 A22,22 0 0,1 15,-15" fill="none" stroke="#444" strokeWidth="3" strokeLinecap="round" />
+      <path d="M15,15 A22,22 0 0,1 -15,15" fill="none" stroke="#0A0A14" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="17" fill="#151520" />
+      <ellipse cx="-2" cy="-4" rx="12" ry="8" fill="#1E1E30" fillOpacity="0.5" />
+      <circle cx="0" cy="-3" r="7" fill="none" stroke="#F5C842" strokeWidth="2" />
+      <line x1="0" y1="4" x2="0" y2="10" stroke="#F5C842" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="-4" y1="10" x2="4" y2="10" stroke="#F5C842" strokeWidth="2" strokeLinecap="round" />
+      <line x1="0" y1="-12" x2="0" y2="-14" stroke="#F5C842" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+      <line x1="8" y1="-8" x2="10" y2="-10" stroke="#F5C842" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+      <line x1="-8" y1="-8" x2="-10" y2="-10" stroke="#F5C842" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
+      <circle cx="0" cy="-3" r="3.5" fill="#F5C842" fillOpacity="0.1" />
+    </g>
+  );
+}
+
+function ProductionTokenMedallion() {
+  return (
+    <g>
+      <circle cx="1" cy="2" r="22" fill="#000" fillOpacity="0.35" />
+      <circle cx="0" cy="0" r="22" fill="#5A2A10" />
+      <path d="M-15,-15 A22,22 0 0,1 15,-15" fill="none" stroke="#A06030" strokeWidth="3" strokeLinecap="round" />
+      <path d="M15,15 A22,22 0 0,1 -15,15" fill="none" stroke="#2A1508" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="0" cy="0" r="17" fill="#7A4020" />
+      <ellipse cx="-2" cy="-4" rx="12" ry="8" fill="#8B4A28" fillOpacity="0.5" />
+      <rect x="-11" y="-4" width="22" height="12" rx="2" fill="none" stroke="#FFD085" strokeWidth="2" />
+      <line x1="-11" y1="2" x2="11" y2="2" stroke="#FFD085" strokeWidth="1.5" />
+      <rect x="-7" y="-2" width="5" height="3" fill="#FFD085" fillOpacity="0.8" />
+      <rect x="-1" y="-2" width="5" height="3" fill="#FFD085" fillOpacity="0.8" />
+      <rect x="5" y="-2" width="4" height="3" fill="#FFD085" fillOpacity="0.8" />
+      <rect x="-4" y="-11" width="4" height="8" rx="1" fill="#FFD085" />
+      <rect x="2" y="-13" width="3" height="10" rx="1" fill="#FFD085" />
+      <circle cx="-2" cy="-14" r="1.5" fill="#FFD085" fillOpacity="0.4" />
+      <circle cx="4" cy="-16" r="1" fill="#FFD085" fillOpacity="0.3" />
     </g>
   );
 }
@@ -498,80 +651,3 @@ function PuffyCity({
   );
 }
 
-// --- Micro icon components ---
-
-function FactoryIcon({ cx, cy, color }: { cx: number; cy: number; color: string }) {
-  return (
-    <g>
-      <rect x={cx - 12} y={cy - 6} width={24} height={16} rx={2} fill="none" stroke={color} strokeWidth="1.5" />
-      <rect x={cx - 10} y={cy - 4} width={6} height={3} fill={color} />
-      <rect x={cx - 2} y={cy - 4} width={6} height={3} fill={color} />
-      <rect x={cx + 6} y={cy - 4} width={4} height={3} fill={color} />
-      <line x1={cx - 12} y1={cy + 2} x2={cx + 12} y2={cy + 2} stroke={color} strokeWidth="1" />
-      <rect x={cx - 6} y={cy - 10} width={4} height={5} fill={color} />
-      <rect x={cx + 3} y={cy - 12} width={3} height={7} fill={color} />
-    </g>
-  );
-}
-
-function PlantIcon({ cx, cy, color }: { cx: number; cy: number; color: string }) {
-  return (
-    <g>
-      <path
-        d={`M${cx - 7} ${cy + 8} Q${cx - 5} ${cy - 2} ${cx} ${cy - 10} Q${cx + 5} ${cy - 2} ${cx + 7} ${cy + 8}`}
-        fill={color}
-        stroke="none"
-      />
-      <path
-        d={`M${cx - 12} ${cy + 8} Q${cx - 8} ${cy} ${cx - 5} ${cy - 4}`}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-      />
-      <path
-        d={`M${cx + 12} ${cy + 8} Q${cx + 8} ${cy} ${cx + 5} ${cy - 4}`}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-      />
-    </g>
-  );
-}
-
-function LightbulbIcon({ cx, cy, color }: { cx: number; cy: number; color: string }) {
-  return (
-    <g>
-      <circle cx={cx} cy={cy - 4} r={7} fill="none" stroke={color} strokeWidth="1.8" />
-      <line x1={cx} y1={cy + 3} x2={cx} y2={cy + 10} stroke={color} strokeWidth="1.8" />
-      <line x1={cx - 4} y1={cy + 10} x2={cx + 4} y2={cy + 10} stroke={color} strokeWidth="1.8" />
-    </g>
-  );
-}
-
-function BoltIcon({ cx, cy, color }: { cx: number; cy: number; color: string }) {
-  return (
-    <polygon
-      points={`${cx - 2},${cy - 12} ${cx + 5},${cy - 2} ${cx},${cy - 1} ${cx + 2},${cy + 12} ${cx - 5},${cy + 2} ${cx},${cy + 1}`}
-      fill={color}
-      stroke="none"
-    />
-  );
-}
-
-function RocketIcon({ cx, cy }: { cx: number; cy: number }) {
-  return (
-    <g>
-      <path
-        d={`M${cx - 3} ${cy + 10} L${cx - 8} ${cy} L${cx - 3} ${cy - 12} L${cx + 3} ${cy - 12} L${cx + 8} ${cy} L${cx + 3} ${cy + 10} Z`}
-        fill="#E85530"
-        stroke="none"
-      />
-      <path
-        d={`M${cx - 2} ${cy - 10} L${cx} ${cy - 17} L${cx + 2} ${cy - 10}`}
-        fill="#F8A030"
-        stroke="none"
-      />
-      <circle cx={cx} cy={cy - 5} r={2.5} fill="#FFF" opacity="0.5" />
-    </g>
-  );
-}
