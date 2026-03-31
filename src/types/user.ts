@@ -9,6 +9,7 @@ export interface UserProfile {
     losses: number;
     totalGames: number;
   };
+  tutorialCompleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

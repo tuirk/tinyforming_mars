@@ -158,8 +158,11 @@ export interface PlayerState {
 
 // --- Game State ---
 
+export type MatchType = 'human-vs-ai' | 'human-vs-human' | 'solo';
+
 export interface GameState {
   id: string;
+  matchType: MatchType;
   map: MapId;
   generation: number;
   phase: Phase;
@@ -235,7 +238,7 @@ export interface ActionLogEntry {
   timestamp: number;
 }
 
-export type AIMode = 'random' | 'heuristic' | 'minimax';
+export type AIMode = 'random' | 'heuristic' | 'minimax' | 'gemini';
 
 export interface AILogEntry {
   generation: number;

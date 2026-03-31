@@ -7,6 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
+import { updateUserDocument } from '@/lib/firebase/user';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,18 +79,18 @@ function initialState(completed: boolean): TutorialState {
   };
 }
 
-export function TutorialProvider({ children }: { children: ReactNode }) {
+export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { children: ReactNode; uid?: string; tutorialCompletedFromDB?: boolean }) {
   const [state, setState] = useState<TutorialState>(() =>
     initialState(false),
   );
 
-  // Hydrate from localStorage once on mount
+  // Hydrate from Firestore (via prop) or localStorage
   useEffect(() => {
-    const completed = readCompleted();
+    const completed = tutorialCompletedFromDB || readCompleted();
     if (completed) {
       setState(initialState(true));
     }
-  }, []);
+  }, [tutorialCompletedFromDB]);
 
   // ------------------------------------------------------------------
   // Actions
@@ -113,12 +114,16 @@ export function TutorialProvider({ children }: { children: ReactNode }) {
       // If the final step is being dismissed, mark the tutorial completed.
       if (prev.currentStepId === FINAL_STEP_ID) {
         writeCompleted(true);
+        // Also persist to Firestore if user is logged in
+        if (uid) {
+          updateUserDocument(uid, { tutorialCompleted: true }).catch(() => {});
+        }
         return { ...prev, currentStepId: null, completed: true };
       }
 
       return { ...prev, currentStepId: null };
     });
-  }, []);
+  }, [uid]);
 
   const skipAll = useCallback(() => {
     setState((prev) => ({ ...prev, skipped: true, currentStepId: null }));

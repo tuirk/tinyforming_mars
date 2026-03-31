@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  signInAnonymously as firebaseSignInAnonymously,
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
@@ -31,6 +32,8 @@ export const signInWithGoogle = () => {
 
 export const resetPassword = (email: string) =>
   sendPasswordResetEmail(auth, email);
+
+export const signInAsGuest = () => firebaseSignInAnonymously(auth);
 
 export const onAuthChange = (callback: (user: User | null) => void) =>
   onAuthStateChanged(auth, callback);

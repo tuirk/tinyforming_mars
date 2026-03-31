@@ -12,6 +12,8 @@ import { draftCard } from '../engine/gameState';
 import { evaluate } from './heuristic';
 import { pickRandomAction, pickRandomDraftSide, pickRandomCityHex } from './placeholderAI';
 import { minimaxSearch } from './minimax';
+import { serializeGameState, serializeCandidates } from './serialize';
+import { geminiDecision } from './flows/gemini-decision';
 
 // ============================================================
 // Scored action interface
@@ -35,6 +37,7 @@ export interface EnrichedResult {
   searchDepth?: number;
   topActions?: { action: GameAction; score: number }[]; // top 5 scored
   minimaxAdjustments?: { action: GameAction; heuristicScore: number; minimaxScore: number }[];
+  geminiReasoning?: string;
 }
 
 // ============================================================
@@ -179,7 +182,7 @@ export function getAllScoredActions(state: GameState): ScoredAction[] {
 // Mode-dispatching: pickActionByMode
 // ============================================================
 
-export function pickActionByMode(state: GameState, mode: AIMode): EnrichedResult {
+export async function pickActionByMode(state: GameState, mode: AIMode): Promise<EnrichedResult> {
   const startTime = performance.now();
 
   try {
@@ -223,6 +226,50 @@ export function pickActionByMode(state: GameState, mode: AIMode): EnrichedResult
           }],
         };
       }
+      case 'gemini': {
+        // Use minimax as candidate generator, Gemini to re-rank
+        const mmResult = minimaxSearch(state, 2, 'ai');
+        const allScored = getAllScoredActions(state);
+        const top5 = allScored.slice(0, 5);
+
+        try {
+          const gameContext = serializeGameState(state);
+          const candidatesText = serializeCandidates(top5, state);
+
+          const geminiResult = await geminiDecision({
+            gameContext,
+            candidates: candidatesText,
+            candidateCount: top5.length,
+          });
+
+          const chosenAction = top5[geminiResult.chosenIndex]?.action ?? mmResult.bestAction;
+          const chosenScore = top5[geminiResult.chosenIndex]?.score ?? mmResult.score;
+
+          console.log('[AI] Gemini chose action index', geminiResult.chosenIndex, ':', geminiResult.reasoning);
+
+          return {
+            action: chosenAction,
+            score: chosenScore,
+            decisionSource: 'gemini',
+            thinkingTimeMs: performance.now() - startTime,
+            actionsEvaluated: mmResult.nodesEvaluated,
+            searchDepth: mmResult.depth,
+            topActions: top5,
+            geminiReasoning: geminiResult.reasoning,
+          };
+        } catch (geminiErr) {
+          console.error('[AI] Gemini failed, falling back to minimax:', geminiErr);
+          return {
+            action: mmResult.bestAction,
+            score: mmResult.score,
+            decisionSource: 'minimax',
+            thinkingTimeMs: performance.now() - startTime,
+            actionsEvaluated: mmResult.nodesEvaluated,
+            searchDepth: mmResult.depth,
+            geminiReasoning: `[Gemini fallback] ${geminiErr instanceof Error ? geminiErr.message : 'Unknown error'}`,
+          };
+        }
+      }
     }
   } catch (err) {
     console.error('[AI] pickActionByMode failed, falling back to random:', err);
@@ -260,8 +307,9 @@ export function pickDraftByMode(
         };
       }
       case 'heuristic':
-      case 'minimax': {
-        // Minimax draft would be too expensive — use heuristic for drafts
+      case 'minimax':
+      case 'gemini': {
+        // Minimax/Gemini draft would be too expensive — use heuristic for drafts
         const result = pickBestDraftSide(state, cardId);
         return {
           side: result.side,
@@ -293,6 +341,7 @@ export function pickCityByMode(state: GameState, mode: AIMode): number | null {
         return pickRandomCityHex(state);
       case 'heuristic':
       case 'minimax':
+      case 'gemini':
         return pickBestCityHex(state);
     }
   } catch (err) {
