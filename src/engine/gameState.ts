@@ -115,6 +115,7 @@ export function createGameState(
 
   return {
     id,
+    matchType: 'human-vs-ai',
     map,
     generation: 1,
     phase: 'setup',

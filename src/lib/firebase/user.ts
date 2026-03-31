@@ -42,6 +42,7 @@ export async function getUserDocument(uid: string): Promise<UserProfile | null> 
     photoURL: data.photoURL,
     authProvider: data.authProvider,
     stats: data.stats ?? { wins: 0, losses: 0, totalGames: 0 },
+    tutorialCompleted: data.tutorialCompleted ?? false,
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
     updatedAt: data.updatedAt?.toDate?.() ?? new Date(),
   } as UserProfile;
