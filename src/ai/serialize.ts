@@ -82,7 +82,7 @@ export function serializeAction(action: GameAction, state: GameState): string {
     case 'standard_project': {
       const names: Record<string, string> = {
         sell_patent: 'Sell Patent — gain 1 credit',
-        build_city: `Build City — place/relocate city${action.targetHexId ? ` on hex ${action.targetHexId}` : ''}`,
+        build_city: `Build City — place/relocate city${action.fromHexId != null ? ` from hex ${action.fromHexId}` : ''}${action.targetHexId ? ` to hex ${action.targetHexId}` : ''}`,
         import_water: `Import Water — place water tile${action.targetHexId ? ` on hex ${action.targetHexId}` : ''}`,
         greenhouses: `Greenhouses — place greenery tile${action.targetHexId ? ` on hex ${action.targetHexId}` : ''}`,
         energy_farms: 'Energy Farms — gain 1 heat tile to personal supply',
@@ -96,9 +96,14 @@ export function serializeAction(action: GameAction, state: GameState): string {
       if (!card) return `Activate unknown card ${action.cardId}${action.side}`;
       const side = action.side === 'A' ? card.sideA : card.sideB;
       const target = action.targetHexId !== undefined ? ` → hex ${action.targetHexId}` : '';
+      const from = action.fromHexId !== undefined ? ` from hex ${action.fromHexId}` : '';
+      const secondary =
+        action.secondaryTargetHexId !== undefined
+          ? ` (return greenery hex ${action.secondaryTargetHexId})`
+          : '';
       const tokens = action.spentTokens?.length ? ` (spending tokens: ${action.spentTokens.join(', ')})` : '';
       const optional = action.optionalSpend ? ' [with optional spend]' : '';
-      return `Activate ${side.name} (Card ${action.cardId}${action.side}): ${describeCardEffect(side.effect)}${target}${tokens}${optional}`;
+      return `Activate ${side.name} (Card ${action.cardId}${action.side}): ${describeCardEffect(side.effect)}${from}${target}${secondary}${tokens}${optional}`;
     }
   }
 }

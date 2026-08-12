@@ -7,6 +7,12 @@ import type { GameState, PlayerState, HexId } from './types';
 export function processIncomePhase(state: GameState): GameState {
   const s = structuredClone(state);
 
+  // Step 0 (rulebook): when both players have passed, credits on projects
+  // return to the supply BEFORE income is collected.
+  s.creditSupply += s.players.human.creditsOnCards + s.players.ai.creditsOnCards;
+  s.players.human.creditsOnCards = 0;
+  s.players.ai.creditsOnCards = 0;
+
   // Step 1: Determine player order — start player first
   const startId = s.startPlayerId as 'human' | 'ai';
   const otherId: 'human' | 'ai' = startId === 'human' ? 'ai' : 'human';
@@ -46,28 +52,22 @@ export function processIncomePhase(state: GameState): GameState {
     }
   }
 
-  // Step 3: Return credits from cards to supply
-  s.creditSupply += s.players.human.creditsOnCards + s.players.ai.creditsOnCards;
-  s.players.human.creditsOnCards = 0;
-  s.players.ai.creditsOnCards = 0;
-
-  // Step 4: Discard current cards
+  // Step 3: Discard current cards
   for (const drafted of s.currentCards) {
     s.discard.push(drafted.cardId);
   }
   s.currentCards = [];
 
-  // Step 5: Clear per-generation flags for both players
+  // Step 4: Clear per-generation flags for both players
   for (const pid of playerOrder) {
     const player: PlayerState = s.players[pid];
     player.projectCardsFacing = [];
     player.usedProjectThisGen = [];
     player.usedStandardProjectThisGen = false;
     player.hasPassed = false;
-    // creditsOnCards already zeroed in step 3
   }
 
-  // Step 6: Clear passed players
+  // Step 5: Clear passed players
   s.passedPlayers = [];
 
   return s;

@@ -75,18 +75,28 @@ describe('checkEndCondition', () => {
     expect(checkEndCondition(state)).toBe('hexes_full');
   });
 
-  it('does NOT end at generation 12 (no gen cap per rulebook)', () => {
+  it('ends at generation 12', () => {
     const state = makeGameState({ generation: 12 });
-    expect(checkEndCondition(state)).toBeNull();
+    expect(checkEndCondition(state)).toBe('generation_12');
   });
 
-  it('does NOT end at generation 15 (no gen cap per rulebook)', () => {
+  it('ends at generation above 12', () => {
     const state = makeGameState({ generation: 15 });
-    expect(checkEndCondition(state)).toBeNull();
+    expect(checkEndCondition(state)).toBe('generation_12');
   });
 
-  it('checks conditions in priority order: parameters > hexes_full', () => {
+  it('prefers generation_12 over parameters when both are true', () => {
+    // By gen 12, heat/greenery supplies are often empty — reason is still gen 12
     const state = makeGameState({
+      generation: 12,
+      parameterSupply: { heat: 0, greenery: 0, water: 2 },
+    });
+    expect(checkEndCondition(state)).toBe('generation_12');
+  });
+
+  it('returns parameters before hexes_full when generation < 12', () => {
+    const state = makeGameState({
+      generation: 5,
       parameterSupply: { heat: 0, greenery: 0, water: 0 },
     });
     expect(checkEndCondition(state)).toBe('parameters');
@@ -336,19 +346,36 @@ describe('calculateGameResult', () => {
     };
     // Human: city=1, AI: city=1, both total=1. Tied on city too. Full tie again.
 
-    // Tiebreaker per rulebook: most credits remaining
-    // Both players have same score but AI has more credits
+    // Tiebreaker per rulebook: Cities → Greenery → Water → Heat (not credits)
+    // Both players have same score but different category splits are tested elsewhere.
+    // Complete tie on all categories → null winner regardless of credits.
     let tb = makeGameState({
       players: {
         human: makePlayerState({ credits: 2 }),
         ai: makePlayerState({ id: 'ai', color: 'black', credits: 4 }),
       },
     });
-    // Both have total=0 (empty board, no heat) but AI has more credits
     const tbResult = calculateGameResult(tb);
     expect(tbResult.human.total).toBe(tbResult.ai.total);
-    expect(tbResult.winner).toBe('ai');
-    expect(tbResult.tiebreaker).toBe('credits');
+    expect(tbResult.winner).toBeNull();
+  });
+
+  it('uses cityPoints as first tiebreaker category', () => {
+    let state = makeGameState();
+    state = withCity(state, 2, 'human');
+    state = withTile(state, 1, 'greenery', 'human'); // adj to hex 2 → cityPoints +1
+    // Exclusive greenery also +1 → human total 2. Match with AI heat 2.
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        ai: { ...state.players.ai, heatTilesPersonal: 2 },
+      },
+    };
+    const result = calculateGameResult(state);
+    expect(result.human.total).toBe(result.ai.total);
+    expect(result.winner).toBe('human');
+    expect(result.tiebreaker).toBe('cityPoints');
   });
 
   it('returns null winner on complete tie', () => {

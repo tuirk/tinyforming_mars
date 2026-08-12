@@ -18,7 +18,12 @@ import type {
 } from './types';
 import { getCardSide } from './cards';
 import { getStandardProject } from './standardProjects';
-import { calculateEffectiveCost, countPlayerTags, getPlayerById } from './rules';
+import {
+  calculateEffectiveCost,
+  computeSpentTokensForRequirements,
+  countPlayerTags,
+  getPlayerById,
+} from './rules';
 
 // ============================================================
 // Internal helper: hex lookup (rules.ts keeps its own private)
@@ -28,6 +33,45 @@ function getHex(state: GameState, hexId: HexId): HexState {
   const hex = state.board.find((h) => h.id === hexId);
   if (!hex) throw new Error(`Hex ${hexId} not found on board`);
   return hex;
+}
+
+/**
+ * Rulebook card payment: place 1 Credit on the Project Card as the use marker;
+ * any additional credits paid return immediately to the supply.
+ */
+function payProjectCardCost(state: GameState, playerId: string, cost: number): void {
+  const player = getPlayerById(state, playerId);
+  player.credits -= cost;
+  if (cost <= 0) return;
+  player.creditsOnCards += 1;
+  if (cost > 1) {
+    state.creditSupply += cost - 1;
+  }
+}
+
+/** Standard projects are marked with the blank player token — paid credits return to supply. */
+function payStandardProjectCost(state: GameState, playerId: string, cost: number): void {
+  if (cost <= 0) return;
+  const player = getPlayerById(state, playerId);
+  player.credits -= cost;
+  state.creditSupply += cost;
+}
+
+/** Spend resource tokens, returning each to the shared supply. */
+function spendResourceTokens(
+  state: GameState,
+  playerId: string,
+  tokens: ResourceType[],
+): void {
+  if (tokens.length === 0) return;
+  const player = getPlayerById(state, playerId);
+  for (const token of tokens) {
+    const idx = player.resourceTokens.indexOf(token);
+    if (idx !== -1) {
+      player.resourceTokens.splice(idx, 1);
+      state.resourceTokenSupply[token]++;
+    }
+  }
 }
 
 // ============================================================
@@ -42,6 +86,13 @@ export function executeAction(
 ): GameState {
   // Clone once at the top — all sub-functions mutate this clone
   const s = structuredClone(state);
+  const actor = getPlayerById(s, actingPlayerId);
+
+  // Passed players may not take further actions
+  if (actor.hasPassed && action.type !== 'pass') {
+    console.warn(`[Engine] Player ${actingPlayerId} has passed; ignoring ${action.type}`);
+    return s;
+  }
 
   switch (action.type) {
     case 'activate_project':
@@ -86,24 +137,19 @@ function executeProjectCard(
   // 2. Calculate effective cost
   const cost = calculateEffectiveCost(cardSide, player, state);
 
-  // 3. Deduct credits (guard against overspend)
+  // 3. Pay cost (rulebook: 1 credit stays on the project card; remainder returns to supply)
   if (player.credits < cost) {
     console.warn(`[Engine] Player ${playerId} has ${player.credits} credits but needs ${cost} for card ${action.cardId}${action.side}`);
     return state; // return unmodified clone
   }
-  player.credits -= cost;
-  player.creditsOnCards += cost;
+  payProjectCardCost(state, playerId, cost);
 
-  // 4. Spend resource tokens if provided
-  if (action.spentTokens && action.spentTokens.length > 0) {
-    for (const token of action.spentTokens) {
-      const idx = player.resourceTokens.indexOf(token);
-      if (idx !== -1) {
-        player.resourceTokens.splice(idx, 1);
-        state.resourceTokenSupply[token]++;
-      }
-    }
-  }
+  // 4. Spend resource tokens needed for tag requirements (rulebook: return to supply)
+  const tokensToSpend =
+    action.spentTokens && action.spentTokens.length > 0
+      ? action.spentTokens
+      : computeSpentTokensForRequirements(player, state, cardSide.tagRequirements);
+  spendResourceTokens(state, playerId, tokensToSpend);
 
   // 5. Duplicate-use guard
   if (player.usedProjectThisGen.includes(action.cardId)) return state; // already used
@@ -135,34 +181,29 @@ function executeStandardProject(
   const project = getStandardProject(action.projectId);
   if (!project) throw new Error(`Standard project ${action.projectId} not found`);
 
-  // 2. Deduct credits (guard against overspend)
+  // 2. Pay cost (std projects are marked with the player token — credits return to supply)
   if (player.credits < project.cost) {
     console.warn(`[Engine] Player ${playerId} has ${player.credits} credits but needs ${project.cost} for ${action.projectId}`);
     return state; // return unmodified clone
   }
-  player.credits -= project.cost;
-  player.creditsOnCards += project.cost;
+  payStandardProjectCost(state, playerId, project.cost);
 
-  // 3. Spend resource tokens if provided
-  if (action.spentTokens && action.spentTokens.length > 0) {
-    for (const token of action.spentTokens) {
-      const idx = player.resourceTokens.indexOf(token);
-      if (idx !== -1) {
-        player.resourceTokens.splice(idx, 1);
-        state.resourceTokenSupply[token]++;
-      }
-    }
-  }
+  // 3. Spend resource tokens needed for tag requirements
+  const tokensToSpend =
+    action.spentTokens && action.spentTokens.length > 0
+      ? action.spentTokens
+      : computeSpentTokensForRequirements(player, state, project.tagRequirements);
+  spendResourceTokens(state, playerId, tokensToSpend);
 
   // 4. Execute by project ID
   switch (action.projectId) {
     case 'sell_patent':
-      // Gain 1 credit from supply
+      // Gain 1 credit from supply (no cost)
       gainCreditsFromSupply(state, playerId, 1);
       break;
     case 'build_city':
       if (action.targetHexId !== undefined) {
-        placeCity(state, action.targetHexId, playerId);
+        placeOrRelocateCity(state, action.targetHexId, playerId, action.fromHexId);
       }
       break;
     case 'import_water':
@@ -234,16 +275,15 @@ function executeCardEffect(
 
     case 'place_or_relocate_city':
       if ('targetHexId' in action && action.targetHexId !== undefined) {
-        placeOrRelocateCity(state, action.targetHexId, playerId);
+        const fromHexId = 'fromHexId' in action ? action.fromHexId : undefined;
+        placeOrRelocateCity(state, action.targetHexId, playerId, fromHexId);
 
         // Check bonus condition (e.g., Research Outpost: not adjacent to cubes)
         if (effect.bonusCondition) {
           const hex = getHex(state, action.targetHexId);
           if (effect.bonusCondition.not_adjacent_to_cubes) {
             const adjacents = hex.adjacentHexIds.map((id) => getHex(state, id));
-            const hasAdjacentCubes = adjacents.some(
-              (adj) => adj.tile !== null || adj.city !== null,
-            );
+            const hasAdjacentCubes = adjacents.some((adj) => adj.tile !== null);
             if (!hasAdjacentCubes) {
               // Bonus: gain resource token
               if (
@@ -330,33 +370,41 @@ function executeCompositeEffect(
     // Step 1: gain_heat(1)
     gainHeatToPersonal(state, playerId, 1);
 
-    // Step 2: Optional spend — if action.optionalSpend === true AND player has 2+ credits
-    // AND has Space tag, deduct 2 more credits and gain 1 more heat
+    // Step 2: Optional spend — additional 2 credits + an *additional* Space tag (≥2 total)
     if ('optionalSpend' in action && action.optionalSpend === true) {
       const player = getPlayerById(state, playerId);
       const tags = countPlayerTags(player, state);
-      if (player.credits >= 2 && tags.space >= 1) {
+      if (player.credits >= 2 && tags.space >= 2) {
+        // Additional spend returns to supply (activation marker already on the card)
         player.credits -= 2;
-        player.creditsOnCards += 2;
+        state.creditSupply += 2;
         gainHeatToPersonal(state, playerId, 1);
       }
     }
     return;
   }
 
-  // --- Ice Asteroid (Card 4A): place water + conditional return greenery ---
+  // --- Ice Asteroid (Card 4A): place water + mandatory return greenery if adjacent ---
   if (cardId === 4 && side === 'A') {
     // Place water first
     if ('targetHexId' in action && action.targetHexId !== undefined) {
       placeWaterTile(state, action.targetHexId, playerId);
     }
-    // Conditionally return 1 adjacent greenery to supply (player's choice via secondaryTargetHexId)
-    if ('secondaryTargetHexId' in action && action.secondaryTargetHexId !== undefined) {
-      const targetHex = getHex(state, action.targetHexId!);
-      const adjHex = getHex(state, action.secondaryTargetHexId);
-      // Only return if the secondary hex has greenery AND is adjacent to placed water
-      if (adjHex.tile === 'greenery' && targetHex.adjacentHexIds.includes(action.secondaryTargetHexId)) {
-        returnGreeneryToSupply(state, action.secondaryTargetHexId);
+    if ('targetHexId' in action && action.targetHexId !== undefined) {
+      const targetHex = getHex(state, action.targetHexId);
+      const adjacentGreenery = targetHex.adjacentHexIds.filter((adjId) => {
+        const adj = getHex(state, adjId);
+        return adj.tile === 'greenery';
+      });
+      if (adjacentGreenery.length > 0) {
+        // Card text: return 1 adjacent greenery (mandatory). Prefer player's choice.
+        const chosen =
+          'secondaryTargetHexId' in action &&
+          action.secondaryTargetHexId !== undefined &&
+          adjacentGreenery.includes(action.secondaryTargetHexId)
+            ? action.secondaryTargetHexId
+            : adjacentGreenery[0];
+        returnGreeneryToSupply(state, chosen);
       }
     }
     return;
@@ -520,13 +568,17 @@ function placeOrRelocateCity(
   state: GameState,
   hexId: HexId,
   playerId: string,
+  fromHexId?: HexId,
 ): void {
   const player = getPlayerById(state, playerId);
   if (player.cities.length < 2) {
     placeCity(state, hexId, playerId);
   } else if (player.cities.length === 2) {
-    // Relocate — move the first city
-    relocateCity(state, player.cities[0], hexId, playerId);
+    const from =
+      fromHexId !== undefined && player.cities.includes(fromHexId)
+        ? fromHexId
+        : player.cities[0];
+    relocateCity(state, from, hexId, playerId);
   }
 }
 
@@ -571,7 +623,18 @@ function evaluateCreditFormula(
     }
 
     case 'per_tags_union': {
-      const tags = countPlayerTags(player, state);
+      // Asteroid Mining: count tags on Project Cards only (not bonus hexes / tokens)
+      const tags: Record<TagType, number> = {
+        energy: 0,
+        production: 0,
+        nature: 0,
+        science: 0,
+        space: 0,
+      };
+      for (const cardSide of player.projectCardsFacing) {
+        tags[cardSide.tags[0]]++;
+        tags[cardSide.tags[1]]++;
+      }
       let total = 0;
       for (const tag of formula.tags) {
         total += tags[tag];

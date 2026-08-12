@@ -216,6 +216,30 @@ describe('Research Outpost (Card 7B)', () => {
     expect(result.board.find((h) => h.id === 17)?.city).toEqual({ playerId: 'human' });
     expect(result.players.human.resourceTokens).not.toContain('science');
   });
+
+  it('relocates the chosen city via fromHexId when player already has 2 cities', () => {
+    let state = makeGameState();
+    state = withCity(state, 1, 'human');
+    state = withCity(state, 17, 'human');
+    state = setupCard(state, 7, 'B', 10);
+
+    const result = executeAction(
+      state,
+      {
+        type: 'activate_project',
+        cardId: 7,
+        side: 'B',
+        fromHexId: 17,
+        targetHexId: 8,
+        chosenResourceToken: 'science',
+      },
+      'human',
+    );
+    expect(result.board.find((h) => h.id === 17)?.city).toBeNull();
+    expect(result.board.find((h) => h.id === 1)?.city).toEqual({ playerId: 'human' });
+    expect(result.board.find((h) => h.id === 8)?.city).toEqual({ playerId: 'human' });
+    expect(result.players.human.cities.sort()).toEqual([1, 8]);
+  });
 });
 
 // ============================================================
@@ -235,13 +259,12 @@ describe('Methane from Titan (Card 12B)', () => {
     expect(result.players.human.heatTilesPersonal).toBe(1);
   });
 
-  it('gains 2 heat with optional spend when player has credits and Space tag', () => {
+  it('gains 2 heat with optional spend when player has credits and an additional Space tag', () => {
     let state = makeGameState();
     state = setupCard(state, 12, 'B', 10);
-    // Card 12B itself has tags Energy+Nature. Need Space tag from another card.
-    const card3A = getCardSide(3, 'A')!; // has Space tag in requirements... but we need bottom tags with space
-    const card7B = getCardSide(7, 'B')!; // tags: energy, space
-    state = withPlayerCards(state, 'human', [getCardSide(12, 'B')!, card7B]);
+    // Card 12B tags: energy, nature (0 space). Need ≥2 space for optional path.
+    const card9A = getCardSide(9, 'A')!; // tags: space, space
+    state = withPlayerCards(state, 'human', [getCardSide(12, 'B')!, card9A]);
 
     const result = executeAction(
       state,
@@ -383,7 +406,7 @@ describe('Ice Asteroid (Card 4A)', () => {
     expect(result.parameterSupply.greenery).toBe(greeneryBefore + 1);
   });
 
-  it('places water without returning greenery when no secondary target', () => {
+  it('places water without returning greenery when no adjacent greenery', () => {
     let state = makeGameState();
     state = setupCard(state, 4, 'A', 10);
 
@@ -393,6 +416,21 @@ describe('Ice Asteroid (Card 4A)', () => {
       'human',
     );
     expect(result.board.find((h) => h.id === 3)?.tile).toBe('water');
+  });
+
+  it('auto-returns an adjacent greenery when secondary target omitted', () => {
+    let state = makeGameState();
+    state = withTile(state, 2, 'greenery', 'ai'); // adjacent to water hex 3
+    state = setupCard(state, 4, 'A', 10);
+    const greeneryBefore = state.parameterSupply.greenery;
+
+    const result = executeAction(
+      state,
+      { type: 'activate_project', cardId: 4, side: 'A', targetHexId: 3 },
+      'human',
+    );
+    expect(result.board.find((h) => h.id === 2)?.tile).toBeNull();
+    expect(result.parameterSupply.greenery).toBe(greeneryBefore + 1);
   });
 });
 
@@ -476,7 +514,8 @@ describe('Bushes (Card 12A)', () => {
       { type: 'activate_project', cardId: 12, side: 'A', targetHexId: 8 },
       'human',
     );
-    expect(result.players.human.creditsOnCards).toBe(4); // reduced cost
+    expect(result.players.human.creditsOnCards).toBe(1); // use marker only
     expect(result.players.human.credits).toBe(10 - 4); // paid reduced cost
+    expect(result.creditSupply).toBe(0 + 3); // remainder of cost 4 → supply (makeGameState supply=0)
   });
 });

@@ -5,11 +5,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   countPlayerTags,
+  countPermanentTags,
+  computeSpentTokensForRequirements,
   calculateEffectiveCost,
   checkRequirements,
   getLegalActions,
   calculateParameterLevel,
   countMapTiles,
+  getValidHexesForPlacement,
 } from '../rules';
 import { getCardSide } from '../cards';
 import type { CardSide, PlayerState, GameState, DraftedCard } from '../types';
@@ -98,10 +101,61 @@ describe('countPlayerTags', () => {
     };
 
     const tags = countPlayerTags(player, state);
-    // production: 1(card) + 1(hex bonus) + 1(token) = 3
-    expect(tags.production).toBe(3);
-    // nature: 1(card)
+    expect(tags.production).toBe(3); // card + city + token
     expect(tags.nature).toBe(1);
+  });
+});
+
+describe('computeSpentTokensForRequirements', () => {
+  it('spends nothing when permanent tags cover requirements', () => {
+    const card1A = getCardSide(1, 'A')!; // production, nature
+    const state = makeGameState();
+    const player = makePlayerState({
+      projectCardsFacing: [card1A],
+      resourceTokens: ['science'],
+    });
+    const spent = computeSpentTokensForRequirements(player, state, [
+      { tag: 'production', count: 1 },
+      { tag: 'nature', count: 1 },
+    ]);
+    expect(spent).toEqual([]);
+  });
+
+  it('spends only the shortfall beyond permanent tags', () => {
+    // Card 2B tags: energy, nature — needs production + science for Solar Power
+    const card2B = getCardSide(2, 'B')!;
+    const state = makeGameState();
+    const player = makePlayerState({
+      projectCardsFacing: [card2B],
+      resourceTokens: ['production', 'science', 'nature'],
+    });
+    const spent = computeSpentTokensForRequirements(player, state, [
+      { tag: 'production', count: 1 },
+      { tag: 'science', count: 1 },
+    ]);
+    expect(spent.sort()).toEqual(['production', 'science']);
+  });
+
+  it('does not invent energy/space tokens', () => {
+    const state = makeGameState();
+    const player = makePlayerState({ resourceTokens: ['nature'] });
+    const spent = computeSpentTokensForRequirements(player, state, [
+      { tag: 'energy', count: 1 },
+    ]);
+    expect(spent).toEqual([]);
+  });
+
+  it('countPermanentTags excludes held resource tokens', () => {
+    const card1A = getCardSide(1, 'A')!;
+    const state = makeGameState();
+    const player = makePlayerState({
+      projectCardsFacing: [card1A],
+      resourceTokens: ['science', 'production'],
+    });
+    const permanent = countPermanentTags(player, state);
+    expect(permanent.production).toBe(1);
+    expect(permanent.science).toBe(0);
+    expect(countPlayerTags(player, state).science).toBe(1);
   });
 });
 
@@ -424,7 +478,7 @@ describe('getLegalActions', () => {
     expect(passActions).toHaveLength(1);
   });
 
-  it('does not include pass when player has passed', () => {
+  it('returns no actions when player has passed', () => {
     const state = makeGameState({
       phase: 'action',
       players: {
@@ -433,8 +487,7 @@ describe('getLegalActions', () => {
       },
     });
     const actions = getLegalActions(state, 'human');
-    const passActions = actions.filter((a) => a.type === 'pass');
-    expect(passActions).toHaveLength(0);
+    expect(actions).toHaveLength(0);
   });
 
   it('includes affordable project card actions', () => {
@@ -519,6 +572,7 @@ describe('getLegalActions', () => {
 
   it('includes standard project when requirements met and not already used', () => {
     // sell_patent: cost 1, no tag requirements, need creditSupply > 0
+    // (cost is 0; supply check is the real gate)
     let state = makeGameState({
       phase: 'action',
       creditSupply: 5,
@@ -598,5 +652,135 @@ describe('getLegalActions', () => {
     );
     const uniqueHexIds = new Set(hexIds);
     expect(uniqueHexIds.size).toBe(14);
+  });
+});
+
+// ============================================================
+// Ice Cap Melting — southern any hex (allow_any_hex)
+// ============================================================
+
+describe('getValidHexesForPlacement — Ice Cap Melting allow_any_hex', () => {
+  const iceCapConstraint = { row: 'south' as const, allow_any_hex: true };
+
+  it('allows southern land hexes for water placement', () => {
+    const state = makeGameState();
+    const valid = getValidHexesForPlacement(state, 'water', 'human', iceCapConstraint);
+    // South land: 13, 14, 17, 18, 19; south water: 15, 16
+    expect(valid).toEqual(expect.arrayContaining([13, 14, 15, 16, 17, 18, 19]));
+    expect(valid).toHaveLength(7);
+  });
+
+  it('rejects non-southern hexes even with allow_any_hex', () => {
+    const state = makeGameState();
+    const valid = getValidHexesForPlacement(state, 'water', 'human', iceCapConstraint);
+    expect(valid).not.toContain(1); // north/center land
+    expect(valid).not.toContain(3); // water but not south
+  });
+
+  it('without allow_any_hex, only southern water hexes are valid', () => {
+    const state = makeGameState();
+    const valid = getValidHexesForPlacement(state, 'water', 'human', { row: 'south' });
+    expect(valid.sort()).toEqual([15, 16]);
+  });
+});
+
+// ============================================================
+// Comet (10B) — optional water legal moves
+// ============================================================
+
+describe('getLegalActions — Comet optional water', () => {
+  function setupComet(heat: number): GameState {
+    const comet = getCardSide(10, 'B')!;
+    // Comet requires energy:1 + space:1; card tags are nature/nature only
+    const energySpace = getCardSide(7, 'B')!; // energy, space
+    return {
+      ...makeGameState(),
+      currentCards: [{ cardId: 10, humanSide: 'B', aiSide: 'A' }],
+      players: {
+        human: makePlayerState({
+          credits: 10,
+          heatTilesPersonal: heat,
+          projectCardsFacing: [comet, energySpace],
+        }),
+        ai: makePlayerState({ id: 'ai', color: 'black' }),
+      },
+    };
+  }
+
+  it('emits heat-only action when post-gain heat < 5', () => {
+    const state = setupComet(3);
+    const actions = getLegalActions(state, 'human').filter(
+      (a) => a.type === 'activate_project' && a.cardId === 10,
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({ type: 'activate_project', cardId: 10, side: 'B' });
+    expect(actions[0].type === 'activate_project' && actions[0].targetHexId).toBeUndefined();
+  });
+
+  it('emits heat-only plus water hex variants when post-gain heat >= 5', () => {
+    const state = setupComet(4);
+    const actions = getLegalActions(state, 'human').filter(
+      (a) => a.type === 'activate_project' && a.cardId === 10,
+    );
+    const heatOnly = actions.filter(
+      (a) => a.type === 'activate_project' && a.targetHexId === undefined,
+    );
+    const withWater = actions.filter(
+      (a) => a.type === 'activate_project' && a.targetHexId !== undefined,
+    );
+    expect(heatOnly).toHaveLength(1);
+    expect(withWater.length).toBeGreaterThan(0);
+  });
+
+  it('does not emit water variants when water supply is empty', () => {
+    const state = {
+      ...setupComet(4),
+      parameterSupply: { heat: 11, greenery: 7, water: 0 },
+    };
+    const actions = getLegalActions(state, 'human').filter(
+      (a) => a.type === 'activate_project' && a.cardId === 10,
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0].type === 'activate_project' && actions[0].targetHexId).toBeUndefined();
+  });
+});
+
+// ============================================================
+// City relocate — fromHexId legal moves
+// ============================================================
+
+describe('getLegalActions — city relocate fromHexId', () => {
+  it('Build City emits fromHexId × targetHexId when player has 2 cities', () => {
+    let state = makeGameState();
+    state = withCity(state, 1, 'human');
+    state = withCity(state, 17, 'human');
+    // Build City requires production:1 + space:1
+    // Card 8A: production, production; Card 7B: energy, space
+    state = withPlayerCards(state, 'human', [getCardSide(8, 'A')!, getCardSide(7, 'B')!]);
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        human: { ...state.players.human, credits: 5 },
+      },
+      creditSupply: 5,
+    };
+
+    const actions = getLegalActions(state, 'human').filter(
+      (a) => a.type === 'standard_project' && a.projectId === 'build_city',
+    );
+    expect(actions.length).toBeGreaterThan(0);
+    for (const a of actions) {
+      expect(a.type).toBe('standard_project');
+      if (a.type === 'standard_project') {
+        expect([1, 17]).toContain(a.fromHexId);
+        expect(a.targetHexId).toBeDefined();
+      }
+    }
+    const fromIds = new Set(
+      actions.map((a) => (a.type === 'standard_project' ? a.fromHexId : undefined)),
+    );
+    expect(fromIds.has(1)).toBe(true);
+    expect(fromIds.has(17)).toBe(true);
   });
 });

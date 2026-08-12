@@ -9,10 +9,9 @@ export const STANDARD_PROJECTS: StandardProjectDefinition[] = [
   {
     id: 'sell_patent',
     name: 'Sell Patent',
-    cost: 1,
+    cost: 0, // Rulebook: no cost — Gain 1 Credit if supply has any
     tagRequirements: [],
     effectType: 'gain_credits',
-    // Note: Cannot use if credit supply is empty
   },
   {
     id: 'build_city',

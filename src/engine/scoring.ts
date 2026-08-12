@@ -20,16 +20,27 @@ function isAdjacentToPlayerCity(state: GameState, hexId: HexId, playerId: string
 // End-Game Detection (1A.12)
 // ---------------------------------------------------------------------------
 
-/** Check if the game should end. Returns the condition or null. */
+/**
+ * Check if the game should end after a generation's income phase.
+ *
+ * Rulebook: when 2+ parameter types are exhausted OR the board is full OR
+ * Generation 12 has been reached — whichever comes first — that generation
+ * is the final one; after it finishes, the game ends.
+ *
+ * Generation 12 is "reached" at the start of gen 12, so completing gen 12
+ * always ends for reason generation_12 (even if supplies also hit 0 during it).
+ */
 export function checkEndCondition(state: GameState): EndCondition | null {
-  // 1. Count exhausted parameter types (supply === 0)
+  // Completing generation 12 always ends the game for that reason
+  if (state.generation >= 12) return 'generation_12';
+
+  // Earlier generations: parameter exhaustion or full board
   const parameterTypes: ParameterTileType[] = ['heat', 'greenery', 'water'];
   const exhaustedCount = parameterTypes.filter(
     (t) => state.parameterSupply[t] === 0,
   ).length;
   if (exhaustedCount >= 2) return 'parameters';
 
-  // 2. All hexes occupied (every hex has tile or city)
   const allOccupied = state.board.every((hex) => hex.tile !== null || hex.city !== null);
   if (allOccupied) return 'hexes_full';
 
@@ -103,16 +114,22 @@ export function calculateGameResult(state: GameState): GameResult {
     };
   }
 
-  // Tiebreaker: most credits remaining (per rulebook)
-  const humanCredits = state.players.human.credits;
-  const aiCredits = state.players.ai.credits;
-  if (humanCredits !== aiCredits) {
-    return {
-      human,
-      ai,
-      winner: humanCredits > aiCredits ? 'human' : 'ai',
-      tiebreaker: 'credits',
-    };
+  // Tiebreaker (rulebook): Cities → Greenery → Water → Heat category points
+  const categories: (keyof ScoreBreakdown)[] = [
+    'cityPoints',
+    'greeneryPoints',
+    'waterPoints',
+    'heatPoints',
+  ];
+  for (const key of categories) {
+    if (human[key] !== ai[key]) {
+      return {
+        human,
+        ai,
+        winner: human[key] > ai[key] ? 'human' : 'ai',
+        tiebreaker: key,
+      };
+    }
   }
 
   // Complete tie

@@ -46,7 +46,7 @@ describe('Engine module', () => {
     expect(engine.STANDARD_PROJECTS).toHaveLength(5);
     expect(engine.getStandardProject).toBeTypeOf('function');
     expect(engine.getStandardProject('sell_patent')).toBeDefined();
-    expect(engine.getStandardProject('sell_patent')?.cost).toBe(1);
+    expect(engine.getStandardProject('sell_patent')?.cost).toBe(0);
   });
 
   it('exports all 14 project cards', () => {

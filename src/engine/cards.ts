@@ -24,7 +24,7 @@ const card1: ProjectCard = {
       { tag: 'production', count: 1 },
     ],
     parameterRequirements: [{ type: 'heat', count: 5 }],
-    effect: { type: 'place_water', constraint: { row: 'south' } },
+    effect: { type: 'place_water', constraint: { row: 'south', allow_any_hex: true } },
     tags: ['production', 'nature'],
   },
   sideB: {

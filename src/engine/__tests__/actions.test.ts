@@ -92,15 +92,14 @@ describe('executeAction — pass', () => {
 // ============================================================
 
 describe('executeAction — standard project: sell_patent', () => {
-  it('gains 1 credit from supply', () => {
+  it('gains 1 credit from supply with no cost', () => {
     const state = withCredits(makeGameState(), { human: 5, supply: 5 });
     const action: GameAction = { type: 'standard_project', projectId: 'sell_patent' };
     const result = executeAction(state, action, 'human');
-    // cost=1 deducted, then +1 from supply => net credits unchanged, but supply goes down by 1
-    // credits: 5 - 1(cost) + 1(gained) = 5
-    expect(result.players.human.credits).toBe(5);
+    // Rulebook: no cost — Gain 1 Credit from supply
+    expect(result.players.human.credits).toBe(6);
     expect(result.creditSupply).toBe(4);
-    expect(result.players.human.creditsOnCards).toBe(1);
+    expect(result.players.human.creditsOnCards).toBe(0);
   });
 
   it('marks usedStandardProjectThisGen', () => {
@@ -126,7 +125,7 @@ describe('executeAction — standard project: build_city', () => {
     expect(result.players.human.cities).toContain(2);
   });
 
-  it('deducts credits equal to cost (2)', () => {
+  it('deducts credits equal to cost (2) and returns them to supply', () => {
     const state = withCredits(makeGameState(), { human: 5, supply: 5 });
     const action: GameAction = {
       type: 'standard_project',
@@ -135,7 +134,29 @@ describe('executeAction — standard project: build_city', () => {
     };
     const result = executeAction(state, action, 'human');
     expect(result.players.human.credits).toBe(3); // 5 - 2
-    expect(result.players.human.creditsOnCards).toBe(2);
+    expect(result.players.human.creditsOnCards).toBe(0);
+    expect(result.creditSupply).toBe(7); // 5 + 2 paid
+  });
+
+  it('relocates the chosen city when fromHexId is provided', () => {
+    let state = withCredits(makeGameState(), { human: 5, supply: 5 });
+    state = withCity(state, 1, 'human');
+    state = withCity(state, 17, 'human');
+    // Move city on hex 17 (not cities[0]=1) to hex 8
+    const result = executeAction(
+      state,
+      {
+        type: 'standard_project',
+        projectId: 'build_city',
+        fromHexId: 17,
+        targetHexId: 8,
+      },
+      'human',
+    );
+    expect(result.board.find((h) => h.id === 17)?.city).toBeNull();
+    expect(result.board.find((h) => h.id === 1)?.city).toEqual({ playerId: 'human' });
+    expect(result.board.find((h) => h.id === 8)?.city).toEqual({ playerId: 'human' });
+    expect(result.players.human.cities.sort()).toEqual([1, 8]);
   });
 });
 
@@ -250,7 +271,7 @@ describe('executeAction — standard project with spent tokens', () => {
 // ============================================================
 
 describe('executeAction — project card basics', () => {
-  it('deducts credits and adds to creditsOnCards', () => {
+  it('deducts credits: 1 stays on card, remainder returns to supply', () => {
     // Card 2B (Solar Power): cost=3, effect=gain_heat(1)
     // Needs: production×1, science×1
     const card2B = getCardSide(2, 'B')!;
@@ -278,7 +299,39 @@ describe('executeAction — project card basics', () => {
     };
     const result = executeAction(state, action, 'human');
     expect(result.players.human.credits).toBe(5 - card2B.cost); // 5-3=2
-    expect(result.players.human.creditsOnCards).toBe(card2B.cost); // 3
+    expect(result.players.human.creditsOnCards).toBe(1); // use marker only
+    expect(result.creditSupply).toBe(5 + (card2B.cost - 1)); // remainder to supply
+    // Auto-spend tokens used to meet tag requirements
+    expect(result.players.human.resourceTokens).toEqual([]);
+    expect(result.resourceTokenSupply.production).toBe(1);
+    expect(result.resourceTokenSupply.science).toBe(1);
+  });
+
+  it('auto-spends only shortfall tokens for tag requirements', () => {
+    // Card 8A Lichen: needs nature×2. Card tags production×2 — spend 2 nature tokens.
+    let state = makeGameState();
+    state = withDraftedCard(state, 8, 'A');
+    state = {
+      ...state,
+      creditSupply: 5,
+      players: {
+        ...state.players,
+        human: {
+          ...state.players.human,
+          credits: 5,
+          heatTilesPersonal: 2, // lichen needs 2 heat
+          resourceTokens: ['nature', 'nature', 'science'],
+        },
+      },
+      resourceTokenSupply: { nature: 0, production: 1, science: 0 },
+    };
+    const result = executeAction(
+      state,
+      { type: 'activate_project', cardId: 8, side: 'A', targetHexId: 1 },
+      'human',
+    );
+    expect(result.players.human.resourceTokens).toEqual(['science']);
+    expect(result.resourceTokenSupply.nature).toBe(2);
   });
 
   it('marks card as used this generation', () => {
@@ -502,10 +555,10 @@ describe('water placement side effects', () => {
       targetHexId: 10, // adjacent to hex 9
     };
     const result = executeAction(state, action, 'human');
-    // Credits: 5 - 3(cost) + 1(adjacent water bonus) = 3
-    // Plus creditsOnCards = 3
+    // Credits: 5 - 3(cost→supply) + 1(adjacent water bonus) = 3
     expect(result.players.human.credits).toBe(3);
-    expect(result.players.human.creditsOnCards).toBe(3);
+    expect(result.players.human.creditsOnCards).toBe(0);
+    expect(result.creditSupply).toBe(10 + 3 - 1); // paid 3 to supply, took 1 bonus
   });
 
   it('gains credits for multiple adjacent water tiles', () => {

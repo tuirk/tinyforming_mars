@@ -173,9 +173,9 @@ describe('integration — scripted mini-game', () => {
     state = startActionPhase(state);
     expect(state.phase).toBe('action');
 
-    // Human: sell patent (cost 1, gain 1 from supply — but supply is 0 at start!)
-    // Actually credit supply starts at 0 (10 total - 5 per player).
-    // Let's give some credits to supply for testing
+    // Human: sell patent (cost 0, gain 1 from supply)
+    // credit supply starts at 0 (10 total - 5 per player).
+    // Give some credits to supply for testing
     state = { ...state, creditSupply: 5 };
 
     // Human uses sell_patent
@@ -345,14 +345,10 @@ describe('integration — resource conservation', () => {
       { type: 'standard_project', projectId: 'sell_patent' },
       'human',
     );
-    // sell_patent: cost 1 -> creditsOnCards+1, credits-1, then gain 1 from supply
-    // Total should still be 10 (adjusting for our manual override)
-    const t = totalCredits(state);
-    // We manually set credits to 3 and supply to 5 = 3+5+5+0+0 = 13 (not 10 since we overrode)
-    // The point is: the operation itself conserves credits
+    // sell_patent: cost 0, gain 1 from supply
     // Before: human=3, ai=5, supply=5, onCards=0+0 = 13
-    // After: human=3-1+1=3, ai=5, supply=5-1=4, onCards=1+0 = 13
-    expect(totalCredits(state)).toBe(t); // self-consistent
+    // After: human=3+1=4, ai=5, supply=5-1=4, onCards=0 = 13
+    expect(totalCredits(state)).toBe(13);
   });
 
   it('parameter tiles total is conserved (supply + board)', () => {

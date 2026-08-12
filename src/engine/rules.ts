@@ -95,6 +95,21 @@ export function calculateParameterLevel(state: GameState, paramType: ParameterTi
  * (c) Held resource tokens (spendable as matching tags)
  */
 export function countPlayerTags(player: PlayerState, state: GameState): Record<TagType, number> {
+  const tags = countPermanentTags(player, state);
+
+  // (c) Resource tokens — nature, production, science map 1:1 to matching tag
+  for (const token of player.resourceTokens) {
+    tags[token as TagType]++;
+  }
+
+  return tags;
+}
+
+/**
+ * Tags that are always available without spending: card bottoms + bonus hex cities.
+ * Resource tokens are NOT included — they must be spent to count toward requirements.
+ */
+export function countPermanentTags(player: PlayerState, state: GameState): Record<TagType, number> {
   const tags: Record<TagType, number> = {
     energy: 0,
     production: 0,
@@ -103,13 +118,11 @@ export function countPlayerTags(player: PlayerState, state: GameState): Record<T
     space: 0,
   };
 
-  // (a) Project card bottom tags — each card side has tags: [TagType, TagType]
   for (const cardSide of player.projectCardsFacing) {
     tags[cardSide.tags[0]]++;
     tags[cardSide.tags[1]]++;
   }
 
-  // (b) Bonus hex tags from cities
   for (const cityHexId of player.cities) {
     const hex = getHex(state, cityHexId);
     if (hex.bonusTag !== null) {
@@ -117,13 +130,41 @@ export function countPlayerTags(player: PlayerState, state: GameState): Record<T
     }
   }
 
-  // (c) Resource tokens — nature, production, science map 1:1 to matching tag
-  for (const token of player.resourceTokens) {
-    // ResourceType is 'nature' | 'production' | 'science', all valid TagType values
-    tags[token as TagType]++;
+  return tags;
+}
+
+/**
+ * Minimum resource tokens to spend so tag requirements are met.
+ * Rulebook: tokens are returned to supply when needed as matching tags.
+ * Only spends for the shortfall beyond permanent tags (cards + bonus hexes).
+ */
+export function computeSpentTokensForRequirements(
+  player: PlayerState,
+  state: GameState,
+  requirements: TagRequirement[],
+): ResourceType[] {
+  const permanent = countPermanentTags(player, state);
+  const pool = [...player.resourceTokens];
+  const spent: ResourceType[] = [];
+
+  for (const req of requirements) {
+    const shortfall = Math.max(0, req.count - permanent[req.tag]);
+    if (shortfall === 0) continue;
+
+    // Only nature / production / science exist as resource tokens
+    if (req.tag !== 'nature' && req.tag !== 'production' && req.tag !== 'science') {
+      continue;
+    }
+
+    for (let i = 0; i < shortfall; i++) {
+      const idx = pool.indexOf(req.tag);
+      if (idx === -1) break;
+      pool.splice(idx, 1);
+      spent.push(req.tag);
+    }
   }
 
-  return tags;
+  return spent;
 }
 
 // ============================================================
@@ -355,13 +396,19 @@ export function checkStandardProjectRequirements(
       }
       break;
     case 'place_or_relocate_city':
-      // build_city: check that a valid hex exists
-      // Also: player cannot have more than 2 cities
-      if (player.cities.length >= 2) {
-        noSupplyForEffect = true;
-      } else {
-        const validHexes = getValidHexesForPlacement(state, 'city', player.id);
-        noSupplyForEffect = validHexes.length === 0;
+      // build_city: place if under 2 cities, else relocate — needs a valid hex either way
+      {
+        if (player.cities.length >= 2) {
+          noSupplyForEffect = !player.cities.some(
+            (fromHexId) =>
+              getValidHexesForPlacement(state, 'city', player.id, undefined, {
+                ignoreCityHexId: fromHexId,
+              }).length > 0,
+          );
+        } else {
+          const validHexes = getValidHexesForPlacement(state, 'city', player.id);
+          noSupplyForEffect = validHexes.length === 0;
+        }
       }
       break;
   }
@@ -463,6 +510,7 @@ export function getValidHexesForPlacement(
   tileType: ParameterTileType | 'city',
   playerId: string,
   constraint?: PlacementConstraint,
+  options?: { ignoreCityHexId?: HexId },
 ): HexId[] {
   const validHexes: HexId[] = [];
 
@@ -472,8 +520,8 @@ export function getValidHexesForPlacement(
 
     switch (tileType) {
       case 'water':
-        // Water goes on water hexes
-        if (hex.type !== 'water') continue;
+        // Water goes on water hexes, unless card allows any hex (Ice Cap Melting)
+        if (!constraint?.allow_any_hex && hex.type !== 'water') continue;
         break;
       case 'greenery':
         // Greenery normally goes on land, UNLESS constraint says hex_type=water (Protected Valley)
@@ -488,11 +536,21 @@ export function getValidHexesForPlacement(
         if (hex.type !== 'land') continue;
         break;
       case 'city':
-        // Cities go on land, not adjacent to any city
+        // Cities go on land, not adjacent to any other city
         if (hex.type !== 'land') continue;
         {
+          const player = getPlayerById(state, playerId);
+          const ignoreCityHexId =
+            options?.ignoreCityHexId ??
+            (player.cities.length >= 2 ? player.cities[0] : null);
           const adjacents = hex.adjacentHexIds.map((id) => getHex(state, id));
-          if (adjacents.some((adj) => adj.city !== null)) continue;
+          if (
+            adjacents.some(
+              (adj) => adj.city !== null && adj.id !== ignoreCityHexId,
+            )
+          ) {
+            continue;
+          }
         }
         break;
     }
@@ -566,6 +624,11 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
   const player = getPlayerById(state, playerId);
   const actions: GameAction[] = [];
 
+  // After passing, no further actions this generation
+  if (player.hasPassed) {
+    return actions;
+  }
+
   // 1. Project cards
   for (const drafted of state.currentCards) {
     const side: CardSideId = playerId === 'human' ? drafted.humanSide : drafted.aiSide;
@@ -583,6 +646,8 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
     const needsResourceToken = effectNeedsResourceTokenChoice(cardSide.effect);
     const hasReturnGreenery = effectHasReturnGreenery(cardSide.effect);
     const isMethaneFromTitan = drafted.cardId === 12 && side === 'B';
+    const isComet = drafted.cardId === 10 && side === 'B';
+    const isResearchOutpost = drafted.cardId === 7 && side === 'B';
 
     // Collect available resource token types if needed
     const tokenTypes: ResourceType[] = [];
@@ -600,9 +665,57 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
       }
     }
 
+    // --- Comet (10B): gain heat always; optional water if post-gain heat >= 5 ---
+    if (isComet) {
+      const baseAction: GameAction = {
+        type: 'activate_project',
+        cardId: drafted.cardId,
+        side,
+      };
+      actions.push(baseAction);
+      const heatAfter = player.heatTilesPersonal + 1;
+      if (heatAfter >= 5 && state.parameterSupply.water > 0) {
+        const waterHexes = getValidHexesForPlacement(state, 'water', playerId);
+        for (const hexId of waterHexes) {
+          actions.push({ ...baseAction, targetHexId: hexId });
+        }
+      }
+      continue;
+    }
+
     // Check if effect requires tile placement
     const placement = effectPlacesTile(cardSide.effect);
     if (placement) {
+      // Research Outpost / city place-or-relocate with 2 cities: fromHexId × target
+      if (isResearchOutpost && player.cities.length >= 2) {
+        for (const fromHexId of player.cities) {
+          const validHexes = getValidHexesForPlacement(
+            state,
+            'city',
+            playerId,
+            undefined,
+            { ignoreCityHexId: fromHexId },
+          );
+          for (const hexId of validHexes) {
+            const baseAction: GameAction = {
+              type: 'activate_project',
+              cardId: drafted.cardId,
+              side,
+              targetHexId: hexId,
+              fromHexId,
+            };
+            if (needsResourceToken && tokenTypes.length > 0) {
+              for (const tokenType of tokenTypes) {
+                actions.push({ ...baseAction, chosenResourceToken: tokenType });
+              }
+            } else {
+              actions.push(baseAction);
+            }
+          }
+        }
+        continue;
+      }
+
       const validHexes = getValidHexesForPlacement(
         state,
         placement.tileType,
@@ -625,22 +738,21 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
             actions.push({ ...baseAction, chosenResourceToken: tokenType });
           }
         } else if (hasReturnGreenery) {
-          // Ice Asteroid (4A): for each placed water hex, generate actions
-          // with secondaryTargetHexId for each adjacent greenery, plus one without
+          // Ice Asteroid (4A): return 1 adjacent greenery is mandatory when any exist
           const placedHex = state.board.find((h) => h.id === hexId);
+          let adjGreeneryCount = 0;
           if (placedHex) {
             for (const adjId of placedHex.adjacentHexIds) {
               const adjHex = state.board.find((h) => h.id === adjId);
               if (adjHex && adjHex.tile === 'greenery') {
+                adjGreeneryCount++;
                 actions.push({ ...baseAction, secondaryTargetHexId: adjId });
               }
             }
           }
-          // Also allow placing water without returning greenery (it's optional)
-          actions.push(baseAction);
-        } else if (isMethaneFromTitan) {
-          actions.push(baseAction);
-          actions.push({ ...baseAction, optionalSpend: true });
+          if (adjGreeneryCount === 0) {
+            actions.push(baseAction);
+          }
         } else {
           actions.push(baseAction);
         }
@@ -659,7 +771,11 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
         }
       } else if (isMethaneFromTitan) {
         actions.push(baseAction);
-        actions.push({ ...baseAction, optionalSpend: true });
+        const tags = countPlayerTags(player, state);
+        const creditsAfterCost = player.credits - result.effectiveCost;
+        if (creditsAfterCost >= 2 && tags.space >= 2) {
+          actions.push({ ...baseAction, optionalSpend: true });
+        }
       } else if (hasReturnGreenery) {
         // Asteroid (13B): no tile placement, optional return greenery from anywhere
         for (const gHexId of greeneryHexIds) {
@@ -704,13 +820,33 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
           break;
         }
         case 'place_or_relocate_city': {
-          const validHexes = getValidHexesForPlacement(state, 'city', playerId);
-          for (const hexId of validHexes) {
-            actions.push({
-              type: 'standard_project',
-              projectId: project.id,
-              targetHexId: hexId,
-            });
+          if (player.cities.length >= 2) {
+            for (const fromHexId of player.cities) {
+              const validHexes = getValidHexesForPlacement(
+                state,
+                'city',
+                playerId,
+                undefined,
+                { ignoreCityHexId: fromHexId },
+              );
+              for (const hexId of validHexes) {
+                actions.push({
+                  type: 'standard_project',
+                  projectId: project.id,
+                  targetHexId: hexId,
+                  fromHexId,
+                });
+              }
+            }
+          } else {
+            const validHexes = getValidHexesForPlacement(state, 'city', playerId);
+            for (const hexId of validHexes) {
+              actions.push({
+                type: 'standard_project',
+                projectId: project.id,
+                targetHexId: hexId,
+              });
+            }
           }
           break;
         }

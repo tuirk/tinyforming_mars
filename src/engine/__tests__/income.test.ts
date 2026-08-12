@@ -144,7 +144,7 @@ describe('processIncomePhase — credit cap at 5', () => {
 // ============================================================
 
 describe('processIncomePhase — creditsOnCards cleanup', () => {
-  it('returns creditsOnCards to supply', () => {
+  it('returns creditsOnCards to supply before collecting income', () => {
     let state = withCredits(makeGameState(), { human: 0, ai: 0, supply: 0 });
     state = {
       ...state,
@@ -158,6 +158,25 @@ describe('processIncomePhase — creditsOnCards cleanup', () => {
     expect(result.players.human.creditsOnCards).toBe(0);
     expect(result.players.ai.creditsOnCards).toBe(0);
     expect(result.creditSupply).toBe(5); // 0 + 3 + 2
+  });
+
+  it('uses returned card credits to pay city income', () => {
+    // Regression: previously income ran while supply was empty, then card
+    // credits returned too late — so cities earned 0 forever after spend-heavy gens.
+    let state = makeGameState();
+    state = withCity(state, 2, 'human');
+    state = withCredits(state, { human: 0, ai: 0, supply: 0 });
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        human: { ...state.players.human, credits: 0, creditsOnCards: 4 },
+        ai: { ...state.players.ai, credits: 0, creditsOnCards: 0 },
+      },
+    };
+    const result = processIncomePhase(state);
+    expect(result.players.human.credits).toBe(1); // +1 city income from returned supply
+    expect(result.creditSupply).toBe(3); // 4 returned - 1 income
   });
 });
 
