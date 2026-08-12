@@ -13,6 +13,7 @@ import type {
   PlayerColor,
   AILogEntry,
   AIMode,
+  ResourceType,
 } from '@/engine/types';
 import {
   createInitialState,
@@ -29,8 +30,6 @@ import {
 import {
   getLegalActions,
   countPlayerTags,
-  checkRequirements,
-  checkStandardProjectRequirements,
   calculateEffectiveCost,
   getValidHexesForPlacement,
 } from '@/engine/rules';
@@ -46,6 +45,8 @@ import { MarsBoard } from './MarsBoard';
 import { PlayerDashboard } from './PlayerDashboard';
 import { Supply } from './Supply';
 import { ResourceTokenSupply } from './ResourceTokenSupply';
+import { ResourceTokenPicker } from './ResourceTokenPicker';
+import { OptionalConfirmDialog } from './OptionalConfirmDialog';
 import { StandardProjects } from './StandardProjects';
 import { CardPanel } from './CardPanel';
 import { DraftingView } from './DraftingView';
@@ -127,6 +128,56 @@ function getPlacementConstraint(effect: CardEffect): PlacementConstraint | undef
   }
 }
 
+/** True if the effect (or a composite sub-effect / city bonus) lets the player choose a resource token. */
+function effectNeedsTokenChoice(effect: CardEffect): boolean {
+  if (effect.type === 'gain_resource_token' && effect.choice) return true;
+  if (effect.type === 'composite') return effect.effects.some(effectNeedsTokenChoice);
+  if (
+    effect.type === 'place_or_relocate_city' &&
+    effect.bonusCondition?.bonus.type === 'gain_resource_token'
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** Research Outpost-style bonus: only if the target hex has no adjacent parameter tiles (cubes). */
+function cityBonusEligible(state: GameState, hexId: HexId): boolean {
+  const hex = state.board.find((h) => h.id === hexId);
+  if (!hex) return false;
+  return !hex.adjacentHexIds.some((adjId) => {
+    const adj = state.board.find((h) => h.id === adjId);
+    return adj != null && adj.tile !== null;
+  });
+}
+
+function availableResourceTokens(state: GameState): ResourceType[] {
+  const types: ResourceType[] = [];
+  if (state.resourceTokenSupply.nature > 0) types.push('nature');
+  if (state.resourceTokenSupply.production > 0) types.push('production');
+  if (state.resourceTokenSupply.science > 0) types.push('science');
+  return types;
+}
+
+function allGreeneryHexIds(state: GameState): HexId[] {
+  return state.board.filter((h) => h.tile === 'greenery').map((h) => h.id);
+}
+
+function adjacentGreeneryHexIds(state: GameState, hexId: HexId): HexId[] {
+  const hex = state.board.find((h) => h.id === hexId);
+  if (!hex) return [];
+  return hex.adjacentHexIds.filter((adjId) => {
+    const adj = state.board.find((h) => h.id === adjId);
+    return adj?.tile === 'greenery';
+  });
+}
+
+function effectPlacesCity(effect: CardEffect): boolean {
+  if (effect.type === 'place_or_relocate_city') return true;
+  if (effect.type === 'composite') return effect.effects.some(effectPlacesCity);
+  return false;
+}
+
 /** Check if a standard project effect type needs hex placement. */
 function stdProjectNeedsPlacement(effectType: string): boolean {
   return (
@@ -176,11 +227,30 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   const [aiLogEntries, setAiLogEntries] = useState<AILogEntry[]>([]);
   const [isAILogOpen, setIsAILogOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [tokenPicker, setTokenPicker] = useState<{
+    available: ResourceType[];
+    pending: {
+      cardId: number;
+      side: CardSideId;
+      targetHexId?: HexId;
+      fromHexId?: HexId;
+      optionalSpend?: boolean;
+      secondaryTargetHexId?: HexId;
+    };
+  } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    description: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  } | null>(null);
   const [aiMode, setAIMode] = useState<AIMode>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('aiMode') as AIMode) || 'heuristic';
+      return (localStorage.getItem('aiMode') as AIMode) || 'minimax';
     }
-    return 'heuristic';
+    return 'minimax';
   });
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -232,17 +302,20 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
 
   const canActivateCards = useMemo(() => {
     if (!humanPlayer || !gameState) return [];
-    return humanPlayer.projectCardsFacing.map(
-      (card) => checkRequirements(humanPlayer, gameState, card).canActivate,
+    // Prefer getLegalActions so placement-impossible cards stay disabled
+    const legal = getLegalActions(gameState, 'human');
+    return humanPlayer.projectCardsFacing.map((card) =>
+      legal.some((a) => a.type === 'activate_project' && a.cardId === card.cardId),
     );
   }, [humanPlayer, gameState]);
 
   const stdProjectCanActivate = useMemo(() => {
     if (!humanPlayer || !gameState) return {} as Record<StandardProjectId, boolean>;
+    const legal = getLegalActions(gameState, 'human');
     return Object.fromEntries(
       STANDARD_PROJECTS.map((p) => [
         p.id,
-        checkStandardProjectRequirements(humanPlayer, gameState, p).canActivate,
+        legal.some((a) => a.type === 'standard_project' && a.projectId === p.id),
       ]),
     ) as Record<StandardProjectId, boolean>;
   }, [humanPlayer, gameState]);
@@ -253,8 +326,14 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   useEffect(() => {
     if (setupStep === 'loading') tutorial.triggerStep('welcome');
     if (setupStep === 'map-reveal') tutorial.triggerStep('map_reveal');
-    if (setupStep === 'color-reveal') tutorial.triggerStep('color_assignment');
-    if (setupStep === 'city-black' || setupStep === 'city-white') tutorial.triggerStep('first_city');
+    if (setupStep === 'color-reveal') {
+      tutorial.triggerStep('color_assignment');
+      tutorial.triggerStep('starting_credits');
+    }
+    if (setupStep === 'city-black' || setupStep === 'city-white') {
+      tutorial.triggerStep('first_city');
+      tutorial.triggerStep('bonus_hex_tip');
+    }
   }, [setupStep, tutorial]);
 
   // ----------------------------------------------------------
@@ -264,15 +343,22 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
     if (!gameState) return;
     if (gameState.phase === 'research' && gameState.generation === 1) {
       tutorial.triggerStep('card_draft_intro');
+      tutorial.triggerStep('reading_a_card');
+      tutorial.triggerStep('tags_explained');
     }
     if (gameState.phase === 'action') {
       tutorial.triggerStep('action_phase_start');
+      // Queue follow-ups in guide order — shown after Got it, not on hover/click
+      tutorial.triggerStep('standard_projects');
+      tutorial.triggerStep('passing');
     }
     if (gameState.phase === 'income') {
       tutorial.triggerStep('income_phase');
     }
     if (gameState.phase === 'game_over') {
       tutorial.triggerStep('end_game_trigger');
+      tutorial.triggerStep('scoring_breakdown');
+      tutorial.triggerStep('tutorial_complete');
     }
   }, [gameState?.phase, gameState?.generation, tutorial]);
 
@@ -436,12 +522,24 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
 
       tutorial.triggerStep('activating_project');
 
-      const executeCardAction = (hexId?: HexId) => {
+      type ActionFields = {
+        hexId?: HexId;
+        fromHexId?: HexId;
+        optionalSpend?: boolean;
+        secondaryTargetHexId?: HexId;
+        chosenResourceToken?: ResourceType;
+      };
+
+      const commitAction = (fields: ActionFields = {}) => {
         const action = {
           type: 'activate_project' as const,
           cardId: cardSide.cardId,
           side: cardSide.side,
-          targetHexId: hexId,
+          targetHexId: fields.hexId,
+          fromHexId: fields.fromHexId,
+          optionalSpend: fields.optionalSpend,
+          secondaryTargetHexId: fields.secondaryTargetHexId,
+          chosenResourceToken: fields.chosenResourceToken,
         };
         setGameState((prev) => {
           if (!prev || getNextActor(prev) !== 'human') return prev; // turn guard
@@ -451,18 +549,220 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
         });
       };
 
+      const maybeAskTokenThenCommit = (fields: ActionFields = {}) => {
+        const wantsChoice = effectNeedsTokenChoice(cardSide.effect);
+        const isCityBonus =
+          cardSide.effect.type === 'place_or_relocate_city' &&
+          cardSide.effect.bonusCondition?.bonus.type === 'gain_resource_token';
+
+        const shouldAsk =
+          wantsChoice &&
+          (!isCityBonus || (fields.hexId !== undefined && cityBonusEligible(gameState, fields.hexId)));
+
+        if (shouldAsk) {
+          const available = availableResourceTokens(gameState);
+          if (available.length > 0) {
+            setTokenPicker({
+              available,
+              pending: {
+                cardId: cardSide.cardId,
+                side: cardSide.side,
+                targetHexId: fields.hexId,
+                fromHexId: fields.fromHexId,
+                optionalSpend: fields.optionalSpend,
+                secondaryTargetHexId: fields.secondaryTargetHexId,
+              },
+            });
+            return;
+          }
+        }
+        commitAction(fields);
+      };
+
+      // --- Comet (10B): optional water after heat ---
+      if (cardSide.cardId === 10 && cardSide.side === 'B') {
+        const heatAfter = humanPlayer.heatTilesPersonal + 1;
+        const waterHexes = getValidHexesForPlacement(gameState, 'water', 'human');
+        const canWater =
+          heatAfter >= 5 && gameState.parameterSupply.water > 0 && waterHexes.length > 0;
+
+        if (!canWater) {
+          commitAction();
+          return;
+        }
+
+        setConfirmDialog({
+          title: 'Place water?',
+          description:
+            'After gaining heat you will have 5+ heat. Also place a water tile?',
+          confirmLabel: 'Place water',
+          cancelLabel: 'Heat only',
+          onConfirm: () => {
+            setConfirmDialog(null);
+            placement.startPlacement({
+              type: 'water',
+              playerId: 'human',
+              prompt: 'Select a water hex',
+              onComplete: (hexId) => commitAction({ hexId }),
+            });
+          },
+          onCancel: () => {
+            setConfirmDialog(null);
+            commitAction();
+          },
+        });
+        return;
+      }
+
+      // --- Methane from Titan (12B): optional extra spend ---
+      if (cardSide.cardId === 12 && cardSide.side === 'B') {
+        const effectiveCost = calculateEffectiveCost(cardSide, humanPlayer, gameState);
+        const creditsAfterCost = humanPlayer.credits - effectiveCost;
+        const tags = countPlayerTags(humanPlayer, gameState);
+        const canOptional = creditsAfterCost >= 2 && tags.space >= 2;
+
+        if (!canOptional) {
+          commitAction();
+          return;
+        }
+
+        setConfirmDialog({
+          title: 'Extra heat?',
+          description: 'Spend 2 more credits for a second heat? (Requires 2 Space tags.)',
+          confirmLabel: 'Spend 2 credits',
+          cancelLabel: 'Just 1 heat',
+          onConfirm: () => {
+            setConfirmDialog(null);
+            commitAction({ optionalSpend: true });
+          },
+          onCancel: () => {
+            setConfirmDialog(null);
+            commitAction();
+          },
+        });
+        return;
+      }
+
+      // --- Asteroid (13B): optional return any greenery ---
+      if (cardSide.cardId === 13 && cardSide.side === 'B') {
+        const greeneryHexes = allGreeneryHexIds(gameState);
+        if (greeneryHexes.length === 0) {
+          commitAction();
+          return;
+        }
+
+        setConfirmDialog({
+          title: 'Return greenery?',
+          description: 'Optionally return 1 greenery tile from the board to supply.',
+          confirmLabel: 'Choose greenery',
+          cancelLabel: 'Skip',
+          onConfirm: () => {
+            setConfirmDialog(null);
+            placement.startPlacement({
+              type: 'custom',
+              playerId: 'human',
+              validHexIds: greeneryHexes,
+              prompt: 'Select a greenery to return',
+              onComplete: (hexId) => commitAction({ secondaryTargetHexId: hexId }),
+            });
+          },
+          onCancel: () => {
+            setConfirmDialog(null);
+            commitAction();
+          },
+        });
+        return;
+      }
+
+      // --- Ice Asteroid (4A): water then mandatory adjacent greenery pick ---
+      if (cardSide.cardId === 4 && cardSide.side === 'A') {
+        placement.startPlacement({
+          type: 'water',
+          playerId: 'human',
+          constraint: getPlacementConstraint(cardSide.effect),
+          prompt: 'Place water tile',
+          onComplete: (hexId) => {
+            const adj = adjacentGreeneryHexIds(gameState, hexId);
+            if (adj.length === 0) {
+              commitAction({ hexId });
+              return;
+            }
+            placement.startPlacement({
+              type: 'custom',
+              playerId: 'human',
+              validHexIds: adj,
+              prompt: 'Select adjacent greenery to return',
+              onComplete: (secondary) =>
+                commitAction({ hexId, secondaryTargetHexId: secondary }),
+            });
+          },
+        });
+        return;
+      }
+
+      // --- City place / relocate (Research Outpost) ---
+      if (effectPlacesCity(cardSide.effect)) {
+        const startCityDestination = (fromHexId?: HexId) => {
+          placement.startPlacement({
+            type: 'city',
+            playerId: 'human',
+            ignoreCityHexId: fromHexId,
+            prompt: fromHexId != null ? 'Select destination hex' : 'Select hex for city',
+            onComplete: (hexId) => maybeAskTokenThenCommit({ hexId, fromHexId }),
+          });
+        };
+
+        if (humanPlayer.cities.length >= 2) {
+          placement.startPlacement({
+            type: 'custom',
+            playerId: 'human',
+            validHexIds: [...humanPlayer.cities],
+            prompt: 'Select a city to relocate',
+            onComplete: (fromHexId) => startCityDestination(fromHexId),
+          });
+        } else {
+          startCityDestination();
+        }
+        return;
+      }
+
       if (needsPlacement(cardSide.effect)) {
         placement.startPlacement({
           type: getPlacementTileType(cardSide.effect),
           playerId: 'human',
           constraint: getPlacementConstraint(cardSide.effect),
-          onComplete: (hexId: HexId) => executeCardAction(hexId),
+          onComplete: (hexId: HexId) => maybeAskTokenThenCommit({ hexId }),
         });
       } else {
-        executeCardAction();
+        maybeAskTokenThenCommit();
       }
     },
     [gameState, humanPlayer, placement, tutorial],
+  );
+
+  const handleTokenPick = useCallback(
+    (token: ResourceType) => {
+      if (!tokenPicker) return;
+      const { pending } = tokenPicker;
+      setTokenPicker(null);
+      const action = {
+        type: 'activate_project' as const,
+        cardId: pending.cardId,
+        side: pending.side,
+        targetHexId: pending.targetHexId,
+        fromHexId: pending.fromHexId,
+        optionalSpend: pending.optionalSpend,
+        secondaryTargetHexId: pending.secondaryTargetHexId,
+        chosenResourceToken: token,
+      };
+      setGameState((prev) => {
+        if (!prev || getNextActor(prev) !== 'human') return prev;
+        const after = executeAction(prev, action, 'human');
+        const aiPassed = after.players.ai.hasPassed;
+        return { ...after, turnOrder: aiPassed ? ['human', 'ai'] : ['ai', 'human'] };
+      });
+    },
+    [tokenPicker],
   );
 
   // ----------------------------------------------------------
@@ -470,17 +770,16 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   // ----------------------------------------------------------
   const handleStandardProject = useCallback(
     (projectId: StandardProjectId) => {
-      if (!gameState) return;
+      if (!gameState || !humanPlayer) return;
       const project = STANDARD_PROJECTS.find((p) => p.id === projectId);
       if (!project) return;
 
-      tutorial.triggerStep('standard_projects');
-
-      const executeStdAction = (hexId?: HexId) => {
+      const executeStdAction = (hexId?: HexId, fromHexId?: HexId) => {
         const action = {
           type: 'standard_project' as const,
           projectId,
           targetHexId: hexId,
+          fromHexId,
         };
         setGameState((prev) => {
           if (!prev || getNextActor(prev) !== 'human') return prev; // turn guard
@@ -489,6 +788,31 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
           return { ...after, turnOrder: aiPassed ? ['human', 'ai'] : ['ai', 'human'] };
         });
       };
+
+      if (project.effectType === 'place_or_relocate_city') {
+        const startCityDestination = (fromHexId?: HexId) => {
+          placement.startPlacement({
+            type: 'city',
+            playerId: 'human',
+            ignoreCityHexId: fromHexId,
+            prompt: fromHexId != null ? 'Select destination hex' : 'Select hex for city',
+            onComplete: (hexId: HexId) => executeStdAction(hexId, fromHexId),
+          });
+        };
+
+        if (humanPlayer.cities.length >= 2) {
+          placement.startPlacement({
+            type: 'custom',
+            playerId: 'human',
+            validHexIds: [...humanPlayer.cities],
+            prompt: 'Select a city to relocate',
+            onComplete: (fromHexId) => startCityDestination(fromHexId),
+          });
+        } else {
+          startCityDestination();
+        }
+        return;
+      }
 
       if (stdProjectNeedsPlacement(project.effectType)) {
         placement.startPlacement({
@@ -500,7 +824,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
         executeStdAction();
       }
     },
-    [gameState, placement, tutorial],
+    [gameState, humanPlayer, placement, tutorial],
   );
 
   // ----------------------------------------------------------
@@ -796,7 +1120,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
             <span>AI is thinking...</span>
           </div>
         )}
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-[min(92vw,520px)]">
           <MarsBoard
             board={gameState.board}
             mapId={gameState.map}
@@ -830,7 +1154,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
             <span>AI is thinking...</span>
           </div>
         )}
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-[min(92vw,520px)]">
           <MarsBoard
             board={gameState.board}
             mapId={gameState.map}
@@ -910,12 +1234,17 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
                 playerColorMap={playerColorMap}
               />
               {placement.isActive && (
-                <button
-                  className="text-sm text-muted-foreground underline hover:text-foreground"
-                  onClick={placement.cancelPlacement}
-                >
-                  Cancel placement
-                </button>
+                <div className="flex flex-col items-center gap-1">
+                  {placement.prompt && (
+                    <p className="text-sm text-foreground font-medium">{placement.prompt}</p>
+                  )}
+                  <button
+                    className="text-sm text-muted-foreground underline hover:text-foreground"
+                    onClick={placement.cancelPlacement}
+                  >
+                    Cancel placement
+                  </button>
+                </div>
               )}
             </div>
 
@@ -955,7 +1284,6 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
                   hasPassed={humanPlayer.hasPassed}
                   onStandardProject={handleStandardProject}
                   onPass={handlePass}
-                  onPassMouseEnter={() => tutorial.triggerStep('passing')}
                 />
               </div>
 
@@ -1023,6 +1351,24 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
             </div>
           </div>
         </div>
+
+        {/* Resource token choice (Fusion Power, Research Outpost bonus, etc.) */}
+        <ResourceTokenPicker
+          open={tokenPicker !== null}
+          available={tokenPicker?.available ?? []}
+          onPick={handleTokenPick}
+          onCancel={() => setTokenPicker(null)}
+        />
+
+        <OptionalConfirmDialog
+          open={confirmDialog !== null}
+          title={confirmDialog?.title ?? ''}
+          description={confirmDialog?.description ?? ''}
+          confirmLabel={confirmDialog?.confirmLabel}
+          cancelLabel={confirmDialog?.cancelLabel}
+          onConfirm={() => confirmDialog?.onConfirm()}
+          onCancel={() => confirmDialog?.onCancel()}
+        />
 
         {/* Tutorial overlay */}
         {renderTutorialOverlay()}

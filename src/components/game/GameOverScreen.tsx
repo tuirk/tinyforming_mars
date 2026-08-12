@@ -61,7 +61,13 @@ export function GameOverScreen({ state, onPlayAgain, onBackToDashboard }: GameOv
             </h1>
             {state.endCondition && (
               <p className="text-sm text-muted-foreground">
-                Game ended: {formatEndCondition(state.endCondition)}
+                Game ended: {formatEndCondition(state.endCondition, state.generation)}
+              </p>
+            )}
+            {state.endCondition === 'generation_12' && (
+              <p className="text-xs text-muted-foreground/80">
+                Supplies — Heat {state.parameterSupply.heat}, Greenery{' '}
+                {state.parameterSupply.greenery}, Water {state.parameterSupply.water}
               </p>
             )}
           </div>
@@ -162,14 +168,16 @@ export function GameOverScreen({ state, onPlayAgain, onBackToDashboard }: GameOv
   );
 }
 
-function formatEndCondition(condition: string): string {
+function formatEndCondition(condition: string, generation?: number): string {
   switch (condition) {
     case 'parameters':
       return '2 parameter types exhausted';
     case 'hexes_full':
       return 'All hexes occupied';
     case 'generation_12':
-      return 'Generation 12 completed';
+      return generation != null
+        ? `Generation ${generation} completed (max 12)`
+        : 'Generation 12 completed';
     default:
       return condition;
   }
