@@ -11,6 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { HELP_SECTIONS } from './HelpContent';
 import { CardReference } from './CardReference';
+import { renderHelpMarkdown } from './renderHelpMarkdown';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import type { Phase } from '@/engine/types';
 import { cn } from '@/lib/utils';
@@ -131,8 +132,8 @@ export function HelpPanel({ currentPhase }: HelpPanelProps) {
                   {isCardRef ? (
                     <CardReference />
                   ) : (
-                    <div className="prose prose-sm prose-invert max-w-none text-sm text-foreground/80 whitespace-pre-line leading-relaxed">
-                      {section.content}
+                    <div className="prose prose-sm prose-invert max-w-none text-sm text-foreground/80 leading-relaxed">
+                      {renderHelpMarkdown(section.content)}
                     </div>
                   )}
                 </CollapsibleContent>

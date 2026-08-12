@@ -140,7 +140,7 @@ Standard projects have tag requirements just like project cards. Tags can come f
 Tags can come from any combination of:
 - **Project card bottom tags** — Each of your 3 project cards provides 2 tags on the side facing you. Available whether the project is activated or not.
 - **Bonus hex cities** — If your city is on a bonus hex, it counts as having that tag.
-- **Resource tokens** — Can be spent (returned to supply) to count as a matching tag.
+- **Resource tokens** — Spent (returned to supply) to count as a matching tag when your card/bonus-hex tags are not enough. Spending is automatic on activate.
 
 ### Resource Tokens
 There are **4 resource tokens** in the supply: Nature x2, Production x1, Science x1.
@@ -149,7 +149,7 @@ Resource tokens are gained by:
 - Placing a water tile on a water hex that has a resource token icon
 - Certain project card effects that grant a resource token of your choice
 
-A resource token can be **spent** (returned to the supply) when you need that matching tag for a project or standard project.`,
+A resource token is **spent** (returned to the supply) when you need that matching tag for a project or standard project and permanent tags alone are not enough.`,
     keywords: [
       'tag', 'tags', 'token', 'tokens', 'resource', 'energy',
       'production', 'nature', 'science', 'space', 'lightning',
@@ -161,15 +161,18 @@ A resource token can be **spent** (returned to the supply) when you need that ma
     title: 'Income Phase',
     content: `During the Income Phase (after all players have passed in the Action Phase):
 
-**Income collection (starting player first, then second player):**
+**First — return credits from projects:**
+- All credits placed on project cards during the Action Phase are **returned to the supply**
+
+**Then — income collection (starting player first, then second player):**
 - **+1 credit** per city you own
 - **+1 credit** per water tile adjacent to each of your cities
 - A water tile touching **both** of your cities counts for each city
+- Credits come from the **shared supply** (10 total in the game). If the supply is short, you get what remains and the rest is lost.
 
 **Credit cap:** After collecting income (added to any unspent credits), you must **return all credits above 5** to the supply.
 
 **Cleanup:**
-- All credits placed on project cards during the Action Phase are **returned to the supply**
 - All project cards for that generation are **discarded**
 - If the draw pile is empty, shuffle the discard pile to form a new draw pile`,
     keywords: [
