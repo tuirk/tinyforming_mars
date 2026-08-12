@@ -66,7 +66,7 @@ export function TutorialOverlay({
 
     const rect = target.getBoundingClientRect();
 
-    // Highlight cutout style -- positioned over the target element
+    // Highlight ring over the target element (dimming is the full-screen blocker)
     setHighlightStyle({
       position: 'fixed',
       top: rect.top - 4,
@@ -74,7 +74,6 @@ export function TutorialOverlay({
       width: rect.width + 8,
       height: rect.height + 8,
       borderRadius: 8,
-      boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)',
       zIndex: 41,
       pointerEvents: 'none',
     });
@@ -148,23 +147,24 @@ export function TutorialOverlay({
 
   return (
     <>
-      {/* Backdrop -- click-through */}
-      {!highlightStyle && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300"
-          style={{
-            pointerEvents: 'none',
-            opacity: visible ? 1 : 0,
-          }}
-        />
-      )}
+      {/* Full-screen blocker — must acknowledge tip before continuing play */}
+      <div
+        className="fixed inset-0 z-40 bg-black/45 transition-opacity duration-300"
+        style={{
+          pointerEvents: 'auto',
+          opacity: visible ? 1 : 0,
+        }}
+        aria-hidden
+      />
 
-      {/* Highlight cutout */}
+      {/* Highlight ring (visual only; play is still blocked until Got it) */}
       {highlightStyle && (
         <div
-          className="transition-opacity duration-300"
+          className="transition-opacity duration-300 ring-2 ring-primary"
           style={{
             ...highlightStyle,
+            boxShadow: 'none',
+            background: 'transparent',
             opacity: visible ? 1 : 0,
           }}
         />

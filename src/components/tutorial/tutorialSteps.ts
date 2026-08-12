@@ -17,7 +17,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'welcome',
     title: 'Welcome!',
     content:
-      "Welcome to TINYforming Mars! You'll compete against an AI to terraform Mars. Let's walk through your first game together. You can dismiss these tips anytime.",
+      "Welcome to TINYforming Mars! You'll compete against an AI to terraform Mars. Follow these tips in order — tap Got it to continue, or Skip all to play freely.",
     position: 'center',
   },
   // 2

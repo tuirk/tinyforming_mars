@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { updateUserDocument } from '@/lib/firebase/user';
+import { getStepIndex } from '@/components/tutorial/tutorialSteps';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -18,6 +19,8 @@ export interface TutorialState {
   skipped: boolean; // true if user clicked "Skip Tutorial" at step 1
   stepsShown: Set<string>; // which steps have been displayed this game
   currentStepId: string | null; // currently visible step
+  /** Steps waiting to show after the user dismisses the current tip. */
+  pendingStepIds: string[];
 }
 
 export interface TutorialContextType {
@@ -40,7 +43,7 @@ export const TutorialContext = createContext<TutorialContextType | null>(null);
 // ---------------------------------------------------------------------------
 
 const STORAGE_KEY = 'tutorialCompleted';
-const FINAL_STEP_ID = '21';
+const FINAL_STEP_ID = 'tutorial_complete';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,9 +69,10 @@ function writeCompleted(value: boolean): void {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Provider
-// ---------------------------------------------------------------------------
+/** Keep pending tips in tutorial definition order (earliest first). */
+function sortPending(ids: string[]): string[] {
+  return [...ids].sort((a, b) => getStepIndex(a) - getStepIndex(b));
+}
 
 function initialState(completed: boolean): TutorialState {
   return {
@@ -76,8 +80,13 @@ function initialState(completed: boolean): TutorialState {
     skipped: false,
     stepsShown: new Set<string>(),
     currentStepId: null,
+    pendingStepIds: [],
   };
 }
+
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
 
 export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { children: ReactNode; uid?: string; tutorialCompletedFromDB?: boolean }) {
   const [state, setState] = useState<TutorialState>(() =>
@@ -98,12 +107,26 @@ export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { c
 
   const triggerStep = useCallback((stepId: string) => {
     setState((prev) => {
-      if (prev.completed || prev.skipped || prev.stepsShown.has(stepId)) {
-        return prev;
+      if (prev.completed || prev.skipped) return prev;
+      if (prev.stepsShown.has(stepId)) return prev;
+      if (prev.currentStepId === stepId) return prev;
+      if (prev.pendingStepIds.includes(stepId)) return prev;
+
+      // Never interrupt: if a tip is open, queue this one for later.
+      if (prev.currentStepId !== null) {
+        return {
+          ...prev,
+          pendingStepIds: sortPending([...prev.pendingStepIds, stepId]),
+        };
       }
+
       const nextShown = new Set(prev.stepsShown);
       nextShown.add(stepId);
-      return { ...prev, stepsShown: nextShown, currentStepId: stepId };
+      return {
+        ...prev,
+        stepsShown: nextShown,
+        currentStepId: stepId,
+      };
     });
   }, []);
 
@@ -111,22 +134,46 @@ export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { c
     setState((prev) => {
       if (prev.currentStepId === null) return prev;
 
-      // If the final step is being dismissed, mark the tutorial completed.
+      // Final step → mark tutorial completed.
       if (prev.currentStepId === FINAL_STEP_ID) {
         writeCompleted(true);
-        // Also persist to Firestore if user is logged in
         if (uid) {
           updateUserDocument(uid, { tutorialCompleted: true }).catch(() => {});
         }
-        return { ...prev, currentStepId: null, completed: true };
+        return {
+          ...prev,
+          currentStepId: null,
+          pendingStepIds: [],
+          completed: true,
+        };
       }
 
-      return { ...prev, currentStepId: null };
+      // Show the next queued tip (already sorted by tutorial order).
+      const pending = [...prev.pendingStepIds];
+      while (pending.length > 0) {
+        const nextId = pending.shift()!;
+        if (prev.stepsShown.has(nextId)) continue;
+        const nextShown = new Set(prev.stepsShown);
+        nextShown.add(nextId);
+        return {
+          ...prev,
+          stepsShown: nextShown,
+          currentStepId: nextId,
+          pendingStepIds: pending,
+        };
+      }
+
+      return { ...prev, currentStepId: null, pendingStepIds: [] };
     });
   }, [uid]);
 
   const skipAll = useCallback(() => {
-    setState((prev) => ({ ...prev, skipped: true, currentStepId: null }));
+    setState((prev) => ({
+      ...prev,
+      skipped: true,
+      currentStepId: null,
+      pendingStepIds: [],
+    }));
   }, []);
 
   const resetTutorial = useCallback(() => {
@@ -134,15 +181,7 @@ export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { c
     setState(initialState(false));
   }, []);
 
-  // ------------------------------------------------------------------
-  // Derived
-  // ------------------------------------------------------------------
-
   const isActive = state.currentStepId !== null;
-
-  // ------------------------------------------------------------------
-  // Render
-  // ------------------------------------------------------------------
 
   return (
     <TutorialContext.Provider
