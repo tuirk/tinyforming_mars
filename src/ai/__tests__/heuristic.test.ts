@@ -9,6 +9,9 @@ import {
   withCity,
   withTile,
 } from '../../engine/__tests__/helpers/stateFactory';
+import { createGameState, draftCard, drawCardsForResearch } from '../../engine/gameState';
+import { startActionPhase } from '../../engine/generation';
+import { pickActionByMode, pickCityByMode } from '../aiController';
 
 // ============================================================
 // Tharsis map adjacency reference (for test clarity):
@@ -32,7 +35,7 @@ describe('evaluate', () => {
 
     const score = evaluate(state, 'human');
 
-    // credits (5 * 0.3 * positionalMul) + legal moves (pass=1 * 0.1 * positionalMul)
+    // credits (5 * 0.3 * positionalMul) + legalMoves weight (0 — combinatorial, not flexibility)
     const expected = 5 * WEIGHTS.credits * positionalMul
       + 1 * WEIGHTS.legalMoves * positionalMul; // only pass action
     expect(score).toBeCloseTo(expected, 5);
@@ -227,5 +230,42 @@ describe('getEndGameProximity', () => {
     const prox = getEndGameProximity(state);
     // 3/3 exhausted + 17/19 occupied + 12/12 generation = (1 + 0.895 + 1)/3 ~ 0.965
     expect(prox).toBeGreaterThan(0.9);
+  });
+});
+
+describe('pickActionByMode (regression)', () => {
+  it('does not over-prefer pass at gen 1', async () => {
+    // Regression: getLegalActions emits one entry per token / greenery /
+    // optional-spend variant, inflating the legal-moves count. With
+    // legalMoves weighted >0, playing any card removed many entries while
+    // pass removed only one — so heuristic preferred pass.
+    let passCount = 0;
+    const N = 30;
+    for (let i = 0; i < N; i++) {
+      let s = createGameState(Math.random() < 0.5 ? 'tharsis' : 'elysium', 'black');
+      const aiCity = pickCityByMode(s, 'heuristic')!;
+      s = {
+        ...s,
+        board: s.board.map((h) => h.id === aiCity ? { ...h, city: { playerId: 'ai' } } : h),
+        players: { ...s.players, ai: { ...s.players.ai, cities: [aiCity] } },
+      };
+      const humanCity = s.board.find(
+        (h) => h.type === 'land' && h.city === null && !h.adjacentHexIds.includes(aiCity),
+      )!.id;
+      s = {
+        ...s,
+        board: s.board.map((h) => h.id === humanCity ? { ...h, city: { playerId: 'human' } } : h),
+        players: { ...s.players, human: { ...s.players.human, cities: [humanCity] } },
+      };
+      const drawn = drawCardsForResearch(s);
+      s = drawn.newState;
+      for (const cid of drawn.drawnCardIds) s = draftCard(s, cid, 'A');
+      s = startActionPhase(s);
+      const r = await pickActionByMode(s, 'heuristic');
+      if (r.action.type === 'pass') passCount++;
+    }
+    // With 5 credits and 3 drafted cards, the heuristic should
+    // basically never pass on its first action of generation 1.
+    expect(passCount).toBeLessThan(N * 0.1);
   });
 });

@@ -22,7 +22,10 @@ export const WEIGHTS = {
   credits: 0.3,
   cityOnBonusHex: 0.8,
   resourceToken: 0.8,
-  legalMoves: 0.1,
+  // legalMoves intentionally 0: getLegalActions emits one entry per
+  // token/greenery/optional-spend variant, so this counts combinatorial
+  // explosion, not flexibility — using it makes pass dominate.
+  legalMoves: 0,
 };
 
 // ============================================================
