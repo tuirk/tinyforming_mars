@@ -76,6 +76,7 @@ Path alias: `@/*` → `src/*`.
 - Match existing UI patterns (Mars ochre / Orbitron headings / Inter body). Do not invent a new design system.
 - Gemini opponent mode is disabled on the cloud build; do not re-enable without an explicit ask.
 - Do not commit `.env`, `.env.local`, or secrets. Use `.env.example` only as the template.
+- License is MIT. Do not relicense without an explicit ask.
 - Global npm often has `ignore-scripts=true`. Do not disable it without approval; use `npm rebuild` if a package needs scripts.
 - Never install axios `1.14.1` / `0.30.4`, or `plain-crypto-js`.
 

@@ -67,6 +67,12 @@ Useful scripts: `npm run lint`, `npm run test` (watch), `npm run genkit:dev` (LL
 
 Do not commit `.env` / `.env.local`. Keep secrets outside the repo when you can.
 
+`package.json` has `"private": true`. That only tells npm not to publish this app as a package. It is not about GitHub visibility. This repo can stay private or go public independently of that flag.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Contributions are under the same license ([CONTRIBUTING.md](CONTRIBUTING.md)).
+
 ## For coding agents
 
 AI coding agents should read [AGENTS.md](AGENTS.md) for build/test commands, rule invariants, and edit boundaries. It follows the [AGENTS.md](https://agents.md/) open format and complements this README.
@@ -75,3 +81,5 @@ AI coding agents should read [AGENTS.md](AGENTS.md) for build/test commands, rul
 
 - Original game: [Michael Bevilacqua](https://boardgamegeek.com/boardgame/282493/tinyforming-mars) (BoardGameGeek)
 - Digital adaptation: Tuirk
+
+See also [AUTHORS](AUTHORS), [SECURITY.md](SECURITY.md), and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).

@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in the digital game or repo is wrong
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security issues: do not use this form. See SECURITY.md.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Play / UI
+        - Rules / engine
+        - AI opponent
+        - Auth / Firebase
+        - Docs / setup
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you expect, and what actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Browser, OS, hosted vs local clone, guest vs signed in.
+    validations:
+      required: true
