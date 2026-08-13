@@ -27,7 +27,7 @@ function parseUserDoc(data: Record<string, unknown>): UserProfile {
     email: data.email as string,
     displayName: data.displayName as string | undefined,
     photoURL: data.photoURL as string | undefined,
-    authProvider: data.authProvider as 'email' | 'google',
+    authProvider: data.authProvider as UserProfile['authProvider'],
     stats: (data.stats as UserProfile['stats']) ?? { wins: 0, losses: 0, totalGames: 0 },
     createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
     updatedAt: (data.updatedAt as { toDate?: () => Date })?.toDate?.() ?? new Date(),
@@ -62,20 +62,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfileError(false);
 
       if (user) {
+        // Keep the shell in a loading state until the Firestore profile arrives
+        // (avoids a frozen landing page after guest/email/Google sign-in).
+        setUserProfile(null);
+        setLoading(true);
+        loadingResolved.current = false;
+
         const userRef = doc(db, 'users', user.uid);
         unsubProfile = onSnapshot(
           userRef,
           (snap) => {
             if (snap.exists()) {
               setUserProfile(parseUserDoc(snap.data()));
+              if (!loadingResolved.current) {
+                loadingResolved.current = true;
+                setLoading(false);
+              }
             } else {
-              createUserDocument(user).catch((err) =>
-                console.error('Auto-create user document failed:', err),
-              );
-            }
-            if (!loadingResolved.current) {
-              loadingResolved.current = true;
-              setLoading(false);
+              createUserDocument(user)
+                .then(() => {
+                  // Snapshot will re-fire when the doc appears
+                })
+                .catch((err) => {
+                  console.error('Auto-create user document failed:', err);
+                  setProfileError(true);
+                  if (!loadingResolved.current) {
+                    loadingResolved.current = true;
+                    setLoading(false);
+                  }
+                });
             }
           },
           (error) => {
@@ -95,6 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(null);
         if (!loadingResolved.current) {
           loadingResolved.current = true;
+          setLoading(false);
+        } else {
           setLoading(false);
         }
       }

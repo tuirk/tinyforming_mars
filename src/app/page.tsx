@@ -14,8 +14,11 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: '#0d0d1a' }}>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3" style={{ background: '#0d0d1a' }}>
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-xs text-muted-foreground" style={{ fontFamily: "'Orbitron', monospace", letterSpacing: '1px' }}>
+          Preparing mission…
+        </p>
       </div>
     );
   }

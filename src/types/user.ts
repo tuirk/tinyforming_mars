@@ -3,7 +3,7 @@ export interface UserProfile {
   email: string;
   displayName?: string;
   photoURL?: string;
-  authProvider: 'email' | 'google';
+  authProvider: 'email' | 'google' | 'anonymous';
   stats: {
     wins: number;
     losses: number;

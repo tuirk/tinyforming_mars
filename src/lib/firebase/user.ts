@@ -10,14 +10,16 @@ export async function createUserDocument(firebaseUser: FirebaseUser): Promise<vo
     return;
   }
 
-  const provider = firebaseUser.providerData[0]?.providerId === 'google.com'
-    ? 'google'
-    : 'email';
+  const provider: UserProfile['authProvider'] = firebaseUser.isAnonymous
+    ? 'anonymous'
+    : firebaseUser.providerData[0]?.providerId === 'google.com'
+      ? 'google'
+      : 'email';
 
   await setDoc(userRef, {
     uid: firebaseUser.uid,
     email: firebaseUser.email ?? '',
-    displayName: firebaseUser.displayName ?? '',
+    displayName: firebaseUser.displayName ?? (firebaseUser.isAnonymous ? 'Guest' : ''),
     photoURL: firebaseUser.photoURL ?? '',
     authProvider: provider,
     stats: { wins: 0, losses: 0, totalGames: 0 },
