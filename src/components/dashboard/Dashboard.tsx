@@ -7,6 +7,7 @@ import { signOut } from '@/lib/firebase/auth';
 import { canAccessMatchType } from '@/lib/firebase/gameStore';
 import { GameFooter } from '@/components/shared/GameFooter';
 import { LogOut } from 'lucide-react';
+import { MissionIconAi, MissionIconSolo, MissionIconFriend } from './MissionIcons';
 
 interface DashboardProps {
   userProfile: UserProfile;
@@ -14,10 +15,34 @@ interface DashboardProps {
   onStartGame: (matchType: MatchType) => void;
 }
 
-const MODES: { type: MatchType; title: string; description: string; icon: string; active: boolean }[] = [
-  { type: 'human-vs-ai', title: 'Player vs AI', description: 'Challenge the AI across 4 difficulty levels. Terraform Mars before your opponent.', icon: '🤖', active: true },
-  { type: 'solo', title: 'Solo Mode', description: 'Single-player challenge. Terraform Mars alone against the clock.', icon: '🎯', active: false },
-  { type: 'human-vs-human', title: 'Play with a Friend', description: 'Invite a friend for a real-time match. Requires sign-in.', icon: '👥', active: false },
+const MODES: {
+  type: MatchType;
+  title: string;
+  description: string;
+  Icon: () => JSX.Element;
+  active: boolean;
+}[] = [
+  {
+    type: 'human-vs-ai',
+    title: 'Player vs AI',
+    description: 'Challenge the AI across 4 difficulty levels. Terraform Mars before your opponent.',
+    Icon: MissionIconAi,
+    active: true,
+  },
+  {
+    type: 'solo',
+    title: 'Solo Mode',
+    description: 'Single-player challenge. Terraform Mars alone against the clock.',
+    Icon: MissionIconSolo,
+    active: false,
+  },
+  {
+    type: 'human-vs-human',
+    title: 'Play with a Friend',
+    description: 'Invite a friend for a real-time match. Requires sign-in.',
+    Icon: MissionIconFriend,
+    active: false,
+  },
 ];
 
 export function Dashboard({ userProfile, isGuest, onStartGame }: DashboardProps) {
@@ -37,13 +62,13 @@ export function Dashboard({ userProfile, isGuest, onStartGame }: DashboardProps)
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '12px', color: '#8a8aaa', fontFamily: "'Inter', system-ui, sans-serif" }}>
+          <span style={{ fontSize: '12px', color: '#c8c8d8', fontFamily: "'Inter', system-ui, sans-serif" }}>
             {displayName}
-            {isGuest && <span style={{ color: '#5a5a7a', marginLeft: '6px' }}>(Guest)</span>}
+            {isGuest && <span style={{ color: '#9a9ab4', marginLeft: '6px' }}>(Guest)</span>}
           </span>
           <button
             onClick={() => signOut()}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid #2a2a3e', borderRadius: '6px', padding: '6px 12px', color: '#5a5a7a', fontSize: '11px', cursor: 'pointer', fontFamily: "'Inter', system-ui, sans-serif" }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid #3a3a55', borderRadius: '6px', padding: '6px 12px', color: '#c8c8d8', fontSize: '11px', cursor: 'pointer', fontFamily: "'Inter', system-ui, sans-serif" }}
           >
             <LogOut size={12} />
             Sign Out
@@ -89,7 +114,9 @@ export function Dashboard({ userProfile, isGuest, onStartGame }: DashboardProps)
                 onMouseEnter={(e) => { if (canAccess) { e.currentTarget.style.borderColor = '#E8872D'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2a2a3e'; e.currentTarget.style.transform = 'none'; }}
               >
-                <div style={{ fontSize: '32px', marginBottom: '12px' }}>{mode.icon}</div>
+                <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+                  <mode.Icon />
+                </div>
                 <h3 style={{ fontFamily: "'Orbitron', monospace", fontSize: '13px', fontWeight: 600, color: '#e0e0e0', margin: '0 0 8px' }}>
                   {mode.title}
                 </h3>
