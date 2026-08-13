@@ -42,7 +42,7 @@ export function IncomeVisualization({ state, onComplete }: IncomeVisualizationPr
 
   function getStepStyle(step: IncomeStep) {
     if (step.creditChange > 0) return 'text-green-400';
-    if (step.creditChange < 0) return 'text-amber-400';
+    if (step.creditChange < 0 || step.description.includes('unpaid')) return 'text-amber-400';
     return 'text-muted-foreground';
   }
 
@@ -59,24 +59,27 @@ export function IncomeVisualization({ state, onComplete }: IncomeVisualizationPr
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2 text-lg font-semibold">
             <Coins className="h-5 w-5 text-yellow-400" />
-            <span>Income Phase &mdash; Generation {state.generation}</span>
+            <span>Income — Generation {state.generation}</span>
           </div>
+          <p className="text-xs text-muted-foreground font-normal leading-relaxed">
+            Income is paid from the shared credit pool (10 total). If the pool is short, unpaid income is skipped.
+          </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             {steps.length === 0 && (
-              <p className="text-sm text-muted-foreground">No income to process.</p>
+              <p className="text-sm text-muted-foreground">No income this generation.</p>
             )}
             {steps.slice(0, visibleCount).map((step, i) => (
               <div
                 key={i}
                 className={cn(
-                  'flex items-center gap-2 text-sm transition-opacity duration-300',
+                  'flex items-start gap-2 text-sm transition-opacity duration-300',
                   getStepStyle(step),
                 )}
               >
-                {getStepIcon(step)}
-                <span>{step.description}</span>
+                <span className="mt-0.5">{getStepIcon(step)}</span>
+                <span className="leading-snug">{step.description}</span>
               </div>
             ))}
           </div>
