@@ -1,9 +1,7 @@
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
+  # Version bumps for npm stay off. CVE fixes still come from Dependabot
+  # security updates (GitHub Settings), which do not need this file.
   - package-ecosystem: github-actions
     directory: /
     schedule:
