@@ -18,13 +18,22 @@ export function MapRevealScreen({ state, onContinue }: MapRevealScreenProps) {
   const mapName = MAP_DISPLAY_NAMES[state.map] ?? state.map;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-4 p-4">
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Mars Awaits</h1>
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <p className="text-lg md:text-xl text-muted-foreground">
-          Map: <span className="font-semibold text-foreground">{mapName}</span>
+    <div className="tf-setup-screen">
+      <h1 className="tf-setup-title">Mars Awaits</h1>
+
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <p className="tf-setup-subtitle">
+          Map:{' '}
+          <span className="font-headline font-semibold tracking-wide text-foreground">
+            {mapName}
+          </span>
         </p>
-        <Button size="lg" onClick={onContinue}>
+        <Button
+          variant="launch"
+          size="xs"
+          className="normal-case tracking-wide"
+          onClick={onContinue}
+        >
           Continue
         </Button>
       </div>

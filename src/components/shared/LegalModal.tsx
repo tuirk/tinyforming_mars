@@ -52,8 +52,6 @@ function DisclaimerContent() {
         The digital artwork, UI design, and code for this web application were created by{' '}
         <a href="https://github.com/tuirk" target="_blank" rel="noopener noreferrer" style={linkStyle}>Tuirk</a>.
         The AI opponent and digital-specific features are original additions to the digital version.
-        If the original creator has any concerns about this adaptation, please reach out via GitHub
-        and it will be addressed promptly.
       </p>
       <p style={pStyle}>
         This project is provided as-is, free of charge, with no warranties of any kind. Digital rules

@@ -55,6 +55,14 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        mars: {
+          DEFAULT: 'hsl(var(--mars))',
+          bright: 'hsl(var(--mars-bright))',
+        },
+        panel: {
+          DEFAULT: 'hsl(var(--panel))',
+          elevated: 'hsl(var(--panel-elevated))',
+        },
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',
