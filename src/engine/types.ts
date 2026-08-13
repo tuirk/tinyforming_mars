@@ -1,6 +1,6 @@
 // ============================================================
 // TINYforming Mars — Core Type Definitions
-// Source of truth: PRD Section 5 (docs/prd.md)
+// Source of truth: rulebook + engine tests (docs/prd.md is local-only if present)
 // ============================================================
 
 // --- Primitive / Literal Types ---

@@ -41,8 +41,16 @@ next-env.d.ts
 .env*
 !.env.example
 
-# claude
+# claude / local agent notes
 CLAUDE.md
+
+# internal planning / verification (keep local; not for public clones)
+docs/tasks.md
+docs/prd.md
+docs/blueprint.md
+docs/verify-cards.md
+docs/verify-maps.md
+docs/verify-standard-projects.md
 
 # firebase
 firebase-debug.log
