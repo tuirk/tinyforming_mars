@@ -459,6 +459,39 @@ describe('executeAction — project card: place_water effect', () => {
   });
 });
 
+describe('executeAction — Protected Valley grants water-hex resource tokens', () => {
+  it('grants the hex icon token when greenery is placed on a water hex', () => {
+    // Hex 9 is water with resourceTokenIcon = nature
+    let state = makeGameState();
+    state = withDraftedCard(state, 13, 'A');
+    state = {
+      ...state,
+      creditSupply: 5,
+      players: {
+        ...state.players,
+        human: {
+          ...state.players.human,
+          credits: 5,
+          heatTilesPersonal: 2,
+          resourceTokens: ['nature', 'nature'],
+        },
+      },
+    };
+    const action: GameAction = {
+      type: 'activate_project',
+      cardId: 13,
+      side: 'A',
+      targetHexId: 9,
+    };
+    const result = executeAction(state, action, 'human');
+    const hex9 = result.board.find((h) => h.id === 9)!;
+    expect(hex9.tile).toBe('greenery');
+    // Spent 2 nature for tags (returned to supply), then gained 1 from hex 9
+    expect(result.players.human.resourceTokens).toEqual(['nature']);
+    expect(result.resourceTokenSupply.nature).toBe(3);
+  });
+});
+
 describe('executeAction — project card: gain_heat effect', () => {
   it('moves heat from supply to personal', () => {
     // Card 2B (Solar Power): effect = gain_heat(1)

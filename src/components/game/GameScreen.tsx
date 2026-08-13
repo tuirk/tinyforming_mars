@@ -304,25 +304,32 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
     );
   }, [humanPlayer, gameState]);
 
-  const canActivateCards = useMemo(() => {
+  const humanLegalActions = useMemo(() => {
     if (!humanPlayer || !gameState) return [];
-    // Prefer getLegalActions so placement-impossible cards stay disabled
-    const legal = getLegalActions(gameState, 'human');
-    return humanPlayer.projectCardsFacing.map((card) =>
-      legal.some((a) => a.type === 'activate_project' && a.cardId === card.cardId),
-    );
+    return getLegalActions(gameState, 'human');
   }, [humanPlayer, gameState]);
 
+  const canActivateCards = useMemo(() => {
+    if (!humanPlayer) return [];
+    // Prefer getLegalActions so placement-impossible cards stay disabled
+    return humanPlayer.projectCardsFacing.map((card) =>
+      humanLegalActions.some((a) => a.type === 'activate_project' && a.cardId === card.cardId),
+    );
+  }, [humanPlayer, humanLegalActions]);
+
   const stdProjectCanActivate = useMemo(() => {
-    if (!humanPlayer || !gameState) return {} as Record<StandardProjectId, boolean>;
-    const legal = getLegalActions(gameState, 'human');
+    if (!humanPlayer) return {} as Record<StandardProjectId, boolean>;
     return Object.fromEntries(
       STANDARD_PROJECTS.map((p) => [
         p.id,
-        legal.some((a) => a.type === 'standard_project' && a.projectId === p.id),
+        humanLegalActions.some((a) => a.type === 'standard_project' && a.projectId === p.id),
       ]),
     ) as Record<StandardProjectId, boolean>;
-  }, [humanPlayer, gameState]);
+  }, [humanPlayer, humanLegalActions]);
+
+  const highlightPass = isHumanTurn && !humanPlayer?.hasPassed
+    && humanLegalActions.length > 0
+    && humanLegalActions.every((a) => a.type === 'pass');
 
   // ----------------------------------------------------------
   // Tutorial triggers — setup steps
@@ -1309,6 +1316,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
                   alreadyUsedThisGen={humanPlayer.usedStandardProjectThisGen}
                   isHumanTurn={isHumanTurn}
                   hasPassed={humanPlayer.hasPassed}
+                  highlightPass={highlightPass}
                   onStandardProject={handleStandardProject}
                   onPass={handlePass}
                 />

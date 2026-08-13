@@ -1,7 +1,35 @@
 // Income phase calculation
 // Phase 1A task 1A.11
 
-import type { GameState, PlayerState, HexId } from './types';
+import type { GameState, PlayerState } from './types';
+
+export function cityIncomeCredits(
+  state: GameState,
+  playerId: 'human' | 'ai',
+): number {
+  const player = state.players[playerId];
+  let totalIncome = player.cities.length;
+  for (const cityHexId of player.cities) {
+    const cityHex = state.board.find((h) => h.id === cityHexId);
+    if (!cityHex) continue;
+    for (const adjId of cityHex.adjacentHexIds) {
+      const adjHex = state.board.find((h) => h.id === adjId);
+      if (adjHex && adjHex.tile === 'water') {
+        totalIncome += 1;
+      }
+    }
+  }
+  return totalIncome;
+}
+
+export function expectedCreditsAfterIncome(
+  state: GameState,
+  playerId: 'human' | 'ai',
+): number {
+  const player = state.players[playerId];
+  const gained = Math.min(cityIncomeCredits(state, playerId), state.creditSupply);
+  return Math.min(5, player.credits + gained);
+}
 
 /** Process the income phase for both players and return updated state */
 export function processIncomePhase(state: GameState): GameState {
@@ -22,29 +50,12 @@ export function processIncomePhase(state: GameState): GameState {
   for (const pid of playerOrder) {
     const player: PlayerState = s.players[pid];
 
-    // 2a: Base income = number of cities
-    let totalIncome = player.cities.length;
-
-    // 2b: For each city, +1 per adjacent water tile on the map
-    for (const cityHexId of player.cities) {
-      const cityHex = s.board.find((h) => h.id === cityHexId);
-      if (!cityHex) continue;
-      for (const adjId of cityHex.adjacentHexIds) {
-        const adjHex = s.board.find((h) => h.id === adjId);
-        if (adjHex && adjHex.tile === 'water') {
-          totalIncome += 1;
-        }
-      }
-    }
-
-    // 2c: Can't gain more than supply has
+    const totalIncome = cityIncomeCredits(s, pid);
     const gained = Math.min(totalIncome, s.creditSupply);
 
-    // 2d: Add credits, deduct from supply
     player.credits += gained;
     s.creditSupply -= gained;
 
-    // 2e: Cap at 5 credits — return excess to supply
     if (player.credits > 5) {
       const excess = player.credits - 5;
       player.credits = 5;

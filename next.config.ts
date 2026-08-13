@@ -1,4 +1,7 @@
 import type {NextConfig} from 'next';
+import { sanitizeFirebasePublicEnv } from './src/lib/firebase/env';
+
+sanitizeFirebasePublicEnv(process.env);
 
 const nextConfig: NextConfig = {
   async headers() {

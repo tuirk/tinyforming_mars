@@ -55,3 +55,4 @@ docs/verify-standard-projects.md
 # firebase
 firebase-debug.log
 firestore-debug.log
+.firebase/

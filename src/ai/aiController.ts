@@ -10,6 +10,7 @@ import { executeAction } from '../engine/actions';
 import { getCard } from '../engine/cards';
 import { draftCard } from '../engine/gameState';
 import { evaluate } from './heuristic';
+import { rolloutUnpassedOpponent } from './passRollout';
 import { pickRandomAction, pickRandomDraftSide, pickRandomCityHex } from './placeholderAI';
 import { minimaxSearch } from './minimax';
 import { serializeGameState, serializeCandidates } from './serialize';
@@ -51,6 +52,14 @@ export interface EnrichedResult {
  * executeAction already clones internally, so no need for
  * structuredClone before calling it.
  */
+function scoreAfterAiAction(state: GameState, action: GameAction): number {
+  let newState = executeAction(state, action, 'ai');
+  if (action.type === 'pass' && !newState.players.human.hasPassed) {
+    newState = rolloutUnpassedOpponent(newState, 'human', 'ai');
+  }
+  return evaluate(newState, 'ai') - evaluate(newState, 'human');
+}
+
 export function pickBestAction(state: GameState): ScoredAction {
   try {
     const actions = getLegalActions(state, 'ai');
@@ -60,9 +69,7 @@ export function pickBestAction(state: GameState): ScoredAction {
     }
 
     const scored: ScoredAction[] = actions.map((action) => {
-      const newState = executeAction(state, action, 'ai');
-      const score = evaluate(newState, 'ai') - evaluate(newState, 'human');
-      return { action, score };
+      return { action, score: scoreAfterAiAction(state, action) };
     });
 
     // Sort descending by score
@@ -148,7 +155,7 @@ export function pickBestCityHex(state: GameState): number | null {
       hex.city = { playerId: 'ai' };
       newState.players.ai.cities.push(hexId);
 
-      const score = evaluate(newState, 'ai');
+      const score = evaluate(newState, 'ai') - evaluate(newState, 'human');
       if (score > bestScore) {
         bestScore = score;
         bestHex = hexId;
@@ -170,9 +177,7 @@ export function pickBestCityHex(state: GameState): number | null {
 export function getAllScoredActions(state: GameState): ScoredAction[] {
   const actions = getLegalActions(state, 'ai');
   const scored: ScoredAction[] = actions.map((action) => {
-    const newState = executeAction(state, action, 'ai');
-    const score = evaluate(newState, 'ai') - evaluate(newState, 'human');
-    return { action, score };
+    return { action, score: scoreAfterAiAction(state, action) };
   });
   scored.sort((a, b) => b.score - a.score);
   return scored;

@@ -185,6 +185,18 @@ describe('calculateEffectiveCost', () => {
     expect(calculateEffectiveCost(card, player, state)).toBe(2);
   });
 
+  it('does not apply per_tag reduction from unspent resource tokens', () => {
+    // GHG Factories 5B: cost 3, −1 per production tag beyond 2
+    const ghg = getCardSide(5, 'B')!;
+    const state = makeGameState();
+    const card13B = getCardSide(13, 'B')!; // production, production
+    const player = makePlayerState({
+      projectCardsFacing: [card13B],
+      resourceTokens: ['production'],
+    });
+    expect(calculateEffectiveCost(ghg, player, state)).toBe(3);
+  });
+
   it('applies per_tile cost reduction', () => {
     // Card 8B (GREAT DAM): cost 3, per_tile water beyond 2 amount 1
     const card = getCardSide(8, 'B')!;
@@ -594,6 +606,11 @@ describe('getLegalActions', () => {
       (a) => a.type === 'standard_project' && a.projectId === 'sell_patent',
     );
     expect(sellPatent.length).toBeGreaterThan(0);
+
+    const aiActions = getLegalActions(state, 'ai');
+    expect(
+      aiActions.some((a) => a.type === 'standard_project' && a.projectId === 'sell_patent'),
+    ).toBe(true);
   });
 
   it('excludes standard projects when already used one this generation', () => {
@@ -782,5 +799,30 @@ describe('getLegalActions — city relocate fromHexId', () => {
     );
     expect(fromIds.has(1)).toBe(true);
     expect(fromIds.has(17)).toBe(true);
+  });
+
+  it('excludes gain_heat project cards when heat supply is empty', () => {
+    const card2B = getCardSide(2, 'B')!;
+    let state = makeGameState({
+      phase: 'action',
+      currentCards: [{ cardId: 2, humanSide: 'B', aiSide: 'A' }],
+      parameterSupply: { heat: 0, greenery: 7, water: 4 },
+    });
+    state = withPlayerCards(state, 'human', [card2B]);
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        human: {
+          ...state.players.human,
+          credits: 10,
+          resourceTokens: ['production', 'science'],
+        },
+      },
+    };
+    const actions = getLegalActions(state, 'human');
+    expect(
+      actions.some((a) => a.type === 'activate_project' && a.cardId === 2),
+    ).toBe(false);
   });
 });

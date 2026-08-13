@@ -114,13 +114,15 @@ export function LandingPage() {
     }
     setLoading(true);
     try {
-      await signInAsGuest();
+      const result = await signInAsGuest();
+      await createUserDocument(result.user);
     } catch (err) {
       setError(
         err instanceof FirebaseError
           ? getAuthErrorMessage(err.code) || 'Failed to start guest session.'
           : 'Failed to start guest session.',
       );
+    } finally {
       setLoading(false);
     }
   }

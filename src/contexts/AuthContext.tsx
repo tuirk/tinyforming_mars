@@ -100,14 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
           (error) => {
             console.error('Firestore profile listener error:', error);
-            if ((error as { code?: string }).code === 'permission-denied') {
-              signOut().catch(() => {});
-              return;
-            }
             setProfileError(true);
             if (!loadingResolved.current) {
               loadingResolved.current = true;
               setLoading(false);
+            }
+            if ((error as { code?: string }).code === 'permission-denied') {
+              signOut().catch(() => {});
             }
           },
         );

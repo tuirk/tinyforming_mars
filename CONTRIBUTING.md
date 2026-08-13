@@ -23,7 +23,7 @@ AI coding agents should also read [AGENTS.md](AGENTS.md) and [README.md](README.
 
 ## Setup
 
-See README **Setup**. Short version:
+See README **Run locally** and **Develop**. Short version:
 
 ```bash
 npm install

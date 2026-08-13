@@ -449,6 +449,18 @@ function executeCompositeEffect(
 // Tile Placement Helpers (1A.10)
 // ============================================================
 
+function grantResourceTokenFromHex(
+  state: GameState,
+  hex: HexState,
+  playerId: string,
+): void {
+  if (hex.resourceTokenIcon === null) return;
+  const tokenType = hex.resourceTokenIcon;
+  if (state.resourceTokenSupply[tokenType] <= 0) return;
+  state.resourceTokenSupply[tokenType]--;
+  getPlayerById(state, playerId).resourceTokens.push(tokenType);
+}
+
 function placeWaterTile(
   state: GameState,
   hexId: HexId,
@@ -462,15 +474,7 @@ function placeWaterTile(
   // Decrement water supply
   state.parameterSupply.water--;
 
-  // If hex has resourceTokenIcon and that token is in supply, give to player
-  if (hex.resourceTokenIcon !== null) {
-    const tokenType = hex.resourceTokenIcon;
-    if (state.resourceTokenSupply[tokenType] > 0) {
-      state.resourceTokenSupply[tokenType]--;
-      const player = getPlayerById(state, playerId);
-      player.resourceTokens.push(tokenType);
-    }
-  }
+  grantResourceTokenFromHex(state, hex, playerId);
 
   // Count adjacent water tiles → gain 1 credit per adjacent water from creditSupply
   const adjacentWaterCount = hex.adjacentHexIds
@@ -493,6 +497,10 @@ function placeGreeneryTile(
 
   // Decrement greenery supply
   state.parameterSupply.greenery--;
+
+  // Protected Valley (and any greenery on a water hex): parameter tile on a
+  // water hex with a resource-token icon grants that token.
+  grantResourceTokenFromHex(state, hex, playerId);
 }
 
 function placeHeatTileOnMap(

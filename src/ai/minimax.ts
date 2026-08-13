@@ -3,8 +3,7 @@
 // ============================================================
 
 import type { GameState, GameAction } from '../engine/types';
-import { getLegalActions } from '../engine/rules';
-import { getOpponentId } from '../engine/rules';
+import { getLegalActions, getOpponentId, getPlayerById } from '../engine/rules';
 import { executeAction } from '../engine/actions';
 import { evaluate } from './heuristic';
 
@@ -35,16 +34,46 @@ function minimax(
 ): number {
   counter.nodes++;
 
-  // Leaf node: evaluate the position
+  const currentPlayerId = isMaximizing ? aiPlayerId : humanPlayerId;
+  const current = getPlayerById(state, currentPlayerId);
+  const otherId = currentPlayerId === aiPlayerId ? humanPlayerId : aiPlayerId;
+  const other = getPlayerById(state, otherId);
+
   if (depth === 0) {
     return evaluate(state, aiPlayerId) - evaluate(state, humanPlayerId);
   }
 
-  const currentPlayerId = isMaximizing ? aiPlayerId : humanPlayerId;
+  if (current.hasPassed) {
+    if (other.hasPassed) {
+      return evaluate(state, aiPlayerId) - evaluate(state, humanPlayerId);
+    }
+    return minimax(
+      state,
+      depth,
+      !isMaximizing,
+      alpha,
+      beta,
+      aiPlayerId,
+      humanPlayerId,
+      counter,
+    );
+  }
+
   const actions = getLegalActions(state, currentPlayerId);
 
-  // Terminal state: no legal actions available
   if (actions.length === 0) {
+    if (!other.hasPassed) {
+      return minimax(
+        state,
+        depth,
+        !isMaximizing,
+        alpha,
+        beta,
+        aiPlayerId,
+        humanPlayerId,
+        counter,
+      );
+    }
     return evaluate(state, aiPlayerId) - evaluate(state, humanPlayerId);
   }
 
@@ -122,10 +151,30 @@ export function minimaxSearch(
   const counter = { nodes: 0 };
 
   try {
+    const aiPlayer = getPlayerById(state, aiPlayerId);
+    const humanPlayer = getPlayerById(state, humanPlayerId);
     const actions = getLegalActions(state, aiPlayerId);
 
+    if (aiPlayer.hasPassed && !humanPlayer.hasPassed) {
+      const score = minimax(
+        state,
+        maxDepth,
+        false,
+        -Infinity,
+        Infinity,
+        aiPlayerId,
+        humanPlayerId,
+        counter,
+      );
+      return {
+        bestAction: { type: 'pass' },
+        score,
+        nodesEvaluated: counter.nodes,
+        depth: maxDepth,
+      };
+    }
+
     if (actions.length === 0) {
-      // No legal moves — return pass as a fallback
       return {
         bestAction: { type: 'pass' },
         score: evaluate(state, aiPlayerId) - evaluate(state, humanPlayerId),

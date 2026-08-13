@@ -185,7 +185,7 @@ export function calculateEffectiveCost(
 
   switch (reduction.type) {
     case 'per_tag': {
-      const tagCount = countPlayerTags(player, state)[reduction.tag];
+      const tagCount = countPermanentTags(player, state)[reduction.tag];
       const beyond = reduction.beyond ?? 0;
       const excess = Math.max(0, tagCount - beyond);
       discount = excess * reduction.amount;
@@ -283,7 +283,7 @@ export function checkRequirements(
     // Apply parameter reduction (e.g., Insects: reduce heat req per science tag)
     if (card.parameterReduction && card.parameterReduction.parameter === req.type) {
       const pr = card.parameterReduction;
-      const tagCount = playerTags[pr.per_tag];
+      const tagCount = countPermanentTags(player, state)[pr.per_tag];
       const excess = Math.max(0, tagCount - pr.beyond);
       requiredLevel -= excess * pr.reduction_per_tag;
       requiredLevel = Math.max(pr.minimum, requiredLevel);
@@ -330,16 +330,29 @@ function hasSupplyForEffect(
     case 'place_heat_on_map':
       return state.parameterSupply.heat > 0;
     case 'gain_heat':
-      return true; // gainHeatToPersonal handles supply=0 gracefully with Math.min
+      return state.parameterSupply.heat > 0;
     case 'gain_resource_token':
       return (
         state.resourceTokenSupply.nature > 0 ||
         state.resourceTokenSupply.production > 0 ||
         state.resourceTokenSupply.science > 0
       );
-    case 'composite':
-      // Check the primary (first) effect
-      return effect.effects.length === 0 || hasSupplyForEffect(state, effect.effects[0]);
+    case 'composite': {
+      const subs = effect.effects;
+      const needsHeat = subs.some(
+        (e) => e.type === 'gain_heat' || e.type === 'place_heat_on_map',
+      );
+      if (needsHeat && state.parameterSupply.heat <= 0) return false;
+      const needsGreenery = subs.some((e) => e.type === 'place_greenery');
+      if (needsGreenery && state.parameterSupply.greenery <= 0) return false;
+      // Comet lists optional place_water after gain_heat — do not block the card
+      // when the water supply is empty (heat-only activate is still legal).
+      const needsMandatoryWater =
+        subs.some((e) => e.type === 'place_water') &&
+        !subs.some((e) => e.type === 'gain_heat');
+      if (needsMandatoryWater && state.parameterSupply.water <= 0) return false;
+      return true;
+    }
     case 'gain_credits':
       return true; // Credits come from supply but we don't block on creditSupply for card effects
     case 'place_or_relocate_city':
@@ -673,7 +686,8 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
         side,
       };
       actions.push(baseAction);
-      const heatAfter = player.heatTilesPersonal + 1;
+      const heatGained = Math.min(1, state.parameterSupply.heat);
+      const heatAfter = player.heatTilesPersonal + heatGained;
       if (heatAfter >= 5 && state.parameterSupply.water > 0) {
         const waterHexes = getValidHexesForPlacement(state, 'water', playerId);
         for (const hexId of waterHexes) {
@@ -773,7 +787,11 @@ export function getLegalActions(state: GameState, playerId: string): GameAction[
         actions.push(baseAction);
         const tags = countPlayerTags(player, state);
         const creditsAfterCost = player.credits - result.effectiveCost;
-        if (creditsAfterCost >= 2 && tags.space >= 2) {
+        if (
+          creditsAfterCost >= 2 &&
+          tags.space >= 2 &&
+          state.parameterSupply.heat >= 2
+        ) {
           actions.push({ ...baseAction, optionalSpend: true });
         }
       } else if (hasReturnGreenery) {

@@ -5,7 +5,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { processIncomePhase } from '../income';
+import { processIncomePhase, cityIncomeCredits, expectedCreditsAfterIncome } from '../income';
 import { makeGameState, withCity, withTile } from './helpers/stateFactory';
 import type { GameState, DraftedCard } from '../types';
 import { getCardSide } from '../cards';
@@ -96,6 +96,28 @@ describe('processIncomePhase — water adjacency', () => {
     const result = processIncomePhase(state);
     // 1 (city) + 0 (no adjacent water) = 1
     expect(result.players.human.credits).toBe(1);
+  });
+
+  it('counts a shared water once per adjacent city of the same player', () => {
+    let state = makeGameState();
+    state = withCity(state, 5, 'human');
+    state = withCity(state, 11, 'human');
+    state = withTile(state, 10, 'water', 'human');
+    expect(cityIncomeCredits(state, 'human')).toBe(4);
+  });
+
+  it('expectedCreditsAfterIncome caps at 5', () => {
+    let state = makeGameState();
+    state = withCity(state, 2, 'human');
+    state = {
+      ...state,
+      creditSupply: 10,
+      players: {
+        ...state.players,
+        human: { ...state.players.human, credits: 5 },
+      },
+    };
+    expect(expectedCreditsAfterIncome(state, 'human')).toBe(5);
   });
 });
 

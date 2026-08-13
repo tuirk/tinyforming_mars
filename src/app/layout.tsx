@@ -8,6 +8,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const orbitron = Orbitron({ subsets: ['latin'], variable: '--font-orbitron', weight: ['400', '500', '600', '700'] });
 
+export const dynamic = 'force-dynamic';
+
 
 export const metadata: Metadata = {
   title: 'TINYforming Mars',

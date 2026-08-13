@@ -3,7 +3,7 @@
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import { evaluate, getEndGameProximity, WEIGHTS } from '../heuristic';
+import { evaluate, getEndGameProximity, WEIGHTS, TIEBREAK } from '../heuristic';
 import {
   makeGameState,
   withCity,
@@ -11,7 +11,11 @@ import {
 } from '../../engine/__tests__/helpers/stateFactory';
 import { createGameState, draftCard, drawCardsForResearch } from '../../engine/gameState';
 import { startActionPhase } from '../../engine/generation';
-import { pickActionByMode, pickCityByMode } from '../aiController';
+import { getAllScoredActions, pickActionByMode, pickBestAction, pickCityByMode } from '../aiController';
+import { calculatePlayerScore } from '../../engine/scoring';
+import { expectedCreditsAfterIncome } from '../../engine/income';
+import { getCardSide } from '../../engine/cards';
+import { getLegalActions } from '../../engine/rules';
 
 // ============================================================
 // Tharsis map adjacency reference (for test clarity):
@@ -35,10 +39,19 @@ describe('evaluate', () => {
 
     const score = evaluate(state, 'human');
 
-    // credits (5 * 0.3 * positionalMul) + legalMoves weight (0 — combinatorial, not flexibility)
-    const expected = 5 * WEIGHTS.credits * positionalMul
-      + 1 * WEIGHTS.legalMoves * positionalMul; // only pass action
-    expect(score).toBeCloseTo(expected, 5);
+    // creditSupply 0 and no cities → expected credits stay 5
+    const positional =
+      expectedCreditsAfterIncome(state, 'human') * WEIGHTS.credits * positionalMul +
+      WEIGHTS.standardProjectAvailable * positionalMul;
+    expect(score).toBeCloseTo(positional, 5);
+  });
+
+  it('does not score credits above 5 (income returns the excess)', () => {
+    const atFive = makeGameState();
+    const atSix = makeGameState({
+      players: { human: { credits: 6 } } as any,
+    });
+    expect(evaluate(atSix, 'human')).toBeCloseTo(evaluate(atFive, 'human'));
   });
 
   it('increases score for heat in personal supply', () => {
@@ -53,114 +66,55 @@ describe('evaluate', () => {
     expect(scoreHeat).toBeGreaterThan(scoreBase);
   });
 
-  it('scores +2.0 (adjusted) for greenery adjacent to own city only', () => {
-    // City on hex 5 (human), greenery on hex 1 (adjacent to 5)
+  it('matches calculatePlayerScore for exclusive greenery (city + exclusive tile)', () => {
     let state = makeGameState();
     state = withCity(state, 5, 'human');
     state = withTile(state, 1, 'greenery', 'human');
-
     const proximity = getEndGameProximity(state);
     const vpMul = 1 + proximity * 0.5;
-    const positionalMul = 1 - proximity * 0.5;
-
-    const score = evaluate(state, 'human');
-
-    // greeneryExclusive (2.0 * vpMul) + credits (5 * 0.3 * posMul)
-    // + cityOnBonusHex: hex 5 has no bonusTag = 0
-    // + legalMoves
-    // Verify the greenery contribution is positive and close to 2.0 * vpMul
-    const stateNoGreenery = withCity(makeGameState(), 5, 'human');
-    const scoreNoGreenery = evaluate(stateNoGreenery, 'human');
-    const greeneryContribution = score - scoreNoGreenery;
-
-    // The greenery uses 1 supply tile, changing proximity slightly, so use approximate
-    expect(greeneryContribution).toBeCloseTo(
-      WEIGHTS.greeneryExclusive * vpMul,
-      0,
+    const posMul = 1 - proximity * 0.5;
+    const breakdown = calculatePlayerScore(state, 'human');
+    expect(breakdown.cityPoints).toBe(1);
+    expect(breakdown.greeneryPoints).toBe(1);
+    const positional =
+      expectedCreditsAfterIncome(state, 'human') * WEIGHTS.credits * posMul +
+      WEIGHTS.standardProjectAvailable * posMul;
+    expect(evaluate(state, 'human')).toBeCloseTo(
+      breakdown.total * vpMul +
+        breakdown.cityPoints * TIEBREAK.city +
+        breakdown.greeneryPoints * TIEBREAK.greenery +
+        positional,
+      5,
     );
   });
 
-  it('scores +1.0 (adjusted) for greenery adjacent to both cities', () => {
-    // Human city on hex 5, AI city on hex 4, greenery on hex 1 (adj to both)
-    let state = makeGameState();
-    state = withCity(state, 5, 'human');
-    state = withCity(state, 4, 'ai');
-    state = withTile(state, 1, 'greenery', 'human');
-
-    const proximity = getEndGameProximity(state);
-    const vpMul = 1 + proximity * 0.5;
-
-    // Compare with same state but no greenery
-    let stateNoGreen = makeGameState();
-    stateNoGreen = withCity(stateNoGreen, 5, 'human');
-    stateNoGreen = withCity(stateNoGreen, 4, 'ai');
-
-    const diff = evaluate(state, 'human') - evaluate(stateNoGreen, 'human');
-    expect(diff).toBeCloseTo(WEIGHTS.greeneryShared * vpMul, 0);
-  });
-
-  it('scores -1.0 (adjusted) for greenery adjacent to opponent city only', () => {
-    // AI city on hex 4, greenery on hex 8 (adj to 4), human has no city
+  it('does not subtract opponent-only greenery from the non-adjacent player', () => {
     let state = makeGameState();
     state = withCity(state, 4, 'ai');
     state = withTile(state, 8, 'greenery', 'ai');
-
+    const human = calculatePlayerScore(state, 'human');
+    const ai = calculatePlayerScore(state, 'ai');
+    expect(human.greeneryPoints).toBe(0);
+    expect(human.cityPoints).toBe(0);
+    expect(ai.greeneryPoints).toBe(1);
+    expect(ai.cityPoints).toBe(1);
+    const gap = evaluate(state, 'ai') - evaluate(state, 'human');
     const proximity = getEndGameProximity(state);
     const vpMul = 1 + proximity * 0.5;
-
-    // Compare with same state but no greenery
-    let stateNoGreen = makeGameState();
-    stateNoGreen = withCity(stateNoGreen, 4, 'ai');
-
-    const diff = evaluate(state, 'human') - evaluate(stateNoGreen, 'human');
-    expect(diff).toBeCloseTo(WEIGHTS.greeneryOpponentOnly * vpMul, 0);
+    expect(gap).toBeCloseTo(2 * vpMul, 1);
   });
 
-  it('scores -1.0 (adjusted) for heat on map adjacent to own city', () => {
-    // Human city on hex 5, heat tile on hex 2 (adjacent to 5)
-    let state = makeGameState();
-    state = withCity(state, 5, 'human');
-    state = withTile(state, 2, 'heat', 'human');
+  it('counts map heat once per adjacent city', () => {
+    let oneCity = makeGameState();
+    oneCity = withCity(oneCity, 5, 'human');
+    oneCity = withTile(oneCity, 2, 'heat', 'human');
+    expect(calculatePlayerScore(oneCity, 'human').cityPoints).toBe(-1);
 
-    const proximity = getEndGameProximity(state);
-    const vpMul = 1 + proximity * 0.5;
-
-    let stateNoHeat = makeGameState();
-    stateNoHeat = withCity(stateNoHeat, 5, 'human');
-
-    const diff = evaluate(state, 'human') - evaluate(stateNoHeat, 'human');
-    expect(diff).toBeCloseTo(WEIGHTS.heatMapMyCity * vpMul, 0);
-  });
-
-  it('scores +1.5 (adjusted) for water adjacent to own city only', () => {
-    // Human city on hex 5, water tile on hex 9 (water hex, adj to 5)
-    let state = makeGameState();
-    state = withCity(state, 5, 'human');
-    state = withTile(state, 9, 'water', 'human');
-
-    const proximity = getEndGameProximity(state);
-    const vpMul = 1 + proximity * 0.5;
-
-    let stateNoWater = makeGameState();
-    stateNoWater = withCity(stateNoWater, 5, 'human');
-
-    const diff = evaluate(state, 'human') - evaluate(stateNoWater, 'human');
-    expect(diff).toBeCloseTo(WEIGHTS.waterExclusive * vpMul, 0);
-  });
-
-  it('adds bonus for city on a bonus hex', () => {
-    // Hex 1 has bonusTag = 'production'
-    let state = makeGameState();
-    state = withCity(state, 1, 'human');
-
-    let stateNonBonus = makeGameState();
-    // Hex 2 has no bonusTag
-    stateNonBonus = withCity(stateNonBonus, 2, 'human');
-
-    const scoreBonus = evaluate(state, 'human');
-    const scoreNonBonus = evaluate(stateNonBonus, 'human');
-
-    expect(scoreBonus).toBeGreaterThan(scoreNonBonus);
+    let twoCities = makeGameState();
+    twoCities = withCity(twoCities, 1, 'human');
+    twoCities = withCity(twoCities, 6, 'human');
+    twoCities = withTile(twoCities, 2, 'heat', 'human');
+    expect(calculatePlayerScore(twoCities, 'human').cityPoints).toBe(-2);
   });
 
   it('adds score for resource tokens', () => {
@@ -173,6 +127,68 @@ describe('evaluate', () => {
 
     expect(evaluate(withTokens, 'human')).toBeGreaterThan(
       evaluate(base, 'human'),
+    );
+  });
+
+  it('values city income only up to the 5-credit cap', () => {
+    const atFiveNoCity = makeGameState({
+      creditSupply: 10,
+      players: { human: { credits: 5 } } as any,
+    });
+    let atFiveWithCity = makeGameState({
+      creditSupply: 10,
+      players: { human: { credits: 5 } } as any,
+    });
+    atFiveWithCity = withCity(atFiveWithCity, 2, 'human');
+    expect(expectedCreditsAfterIncome(atFiveWithCity, 'human')).toBe(5);
+    expect(expectedCreditsAfterIncome(atFiveNoCity, 'human')).toBe(5);
+  });
+
+  it('raises credit term when income fills toward 5', () => {
+    let poor = makeGameState({
+      creditSupply: 10,
+      players: { human: { credits: 0 } } as any,
+    });
+    poor = withCity(poor, 2, 'human');
+    const rich = makeGameState({
+      creditSupply: 10,
+      players: { human: { credits: 0 } } as any,
+    });
+    expect(expectedCreditsAfterIncome(poor, 'human')).toBeGreaterThan(
+      expectedCreditsAfterIncome(rich, 'human'),
+    );
+    expect(evaluate(poor, 'human')).toBeGreaterThan(evaluate(rich, 'human'));
+  });
+
+  it('values a production token over a spare third science when City SP is still open', () => {
+    const fusion = getCardSide(4, 'B')!;
+    const lake = getCardSide(2, 'A')!;
+    const withProd = makeGameState({
+      phase: 'action',
+      creditSupply: 5,
+      players: {
+        human: {} as any,
+        ai: {
+          projectCardsFacing: [fusion, lake],
+          resourceTokens: ['science', 'science', 'production'],
+          usedStandardProjectThisGen: false,
+        } as any,
+      },
+    });
+    const withSci = makeGameState({
+      phase: 'action',
+      creditSupply: 5,
+      players: {
+        human: {} as any,
+        ai: {
+          projectCardsFacing: [fusion, lake],
+          resourceTokens: ['science', 'science', 'science'],
+          usedStandardProjectThisGen: false,
+        } as any,
+      },
+    });
+    expect(evaluate(withProd, 'ai') - evaluate(withProd, 'human')).toBeGreaterThan(
+      evaluate(withSci, 'ai') - evaluate(withSci, 'human'),
     );
   });
 });
@@ -267,5 +283,89 @@ describe('pickActionByMode (regression)', () => {
     // With 5 credits and 3 drafted cards, the heuristic should
     // basically never pass on its first action of generation 1.
     expect(passCount).toBeLessThan(N * 0.1);
+  });
+
+  it('will sell a patent when that is the only productive legal action', () => {
+    let state = makeGameState({
+      phase: 'action',
+      creditSupply: 5,
+      currentCards: [],
+    });
+    state = {
+      ...state,
+      players: {
+        human: { ...state.players.human, credits: 0, usedStandardProjectThisGen: true },
+        ai: { ...state.players.ai, credits: 0, usedStandardProjectThisGen: false },
+      },
+    };
+    const result = pickBestAction(state);
+    expect(result.action).toEqual({ type: 'standard_project', projectId: 'sell_patent' });
+  });
+
+  it('does not sell a patent when already at 5 credits', () => {
+    let state = makeGameState({
+      phase: 'action',
+      creditSupply: 5,
+      currentCards: [],
+    });
+    state = {
+      ...state,
+      players: {
+        human: { ...state.players.human, credits: 5, usedStandardProjectThisGen: true },
+        ai: { ...state.players.ai, credits: 5, usedStandardProjectThisGen: false },
+      },
+    };
+    const result = pickBestAction(state);
+    expect(result.action).toEqual({ type: 'pass' });
+  });
+
+  it('prefers Energy Farms over pass when the human can still place exclusive greenery', () => {
+    const bushes = getCardSide(12, 'A')!;
+    const powerGrid = getCardSide(1, 'B')!;
+    let state = makeGameState({
+      phase: 'action',
+      creditSupply: 0,
+      currentCards: [
+        { cardId: 12, humanSide: 'B', aiSide: 'A' },
+        { cardId: 1, humanSide: 'A', aiSide: 'B' },
+      ],
+    });
+    state = withCity(state, 5, 'human');
+    state = {
+      ...state,
+      players: {
+        human: {
+          ...state.players.human,
+          credits: 3,
+          projectCardsFacing: [getCardSide(12, 'B')!, getCardSide(1, 'A')!],
+          resourceTokens: ['production', 'nature', 'nature'],
+          usedStandardProjectThisGen: false,
+          hasPassed: false,
+        },
+        ai: {
+          ...state.players.ai,
+          credits: 3,
+          projectCardsFacing: [bushes, powerGrid],
+          usedStandardProjectThisGen: false,
+          hasPassed: false,
+        },
+      },
+      turnOrder: ['ai', 'human'],
+    };
+    const aiLegal = getLegalActions(state, 'ai');
+    const humanLegal = getLegalActions(state, 'human');
+    expect(aiLegal.some((a) => a.type === 'standard_project' && a.projectId === 'energy_farms')).toBe(true);
+    expect(humanLegal.some((a) => a.type === 'standard_project' && a.projectId === 'greenhouses')).toBe(true);
+    const result = pickBestAction(state);
+    expect(result.action).toMatchObject({
+      type: 'standard_project',
+      projectId: 'energy_farms',
+    });
+    const ranked = getAllScoredActions(state);
+    const farms = ranked.find((s) => s.action.type === 'standard_project' && s.action.projectId === 'energy_farms');
+    const pass = ranked.find((s) => s.action.type === 'pass');
+    expect(farms).toBeDefined();
+    expect(pass).toBeDefined();
+    expect(farms!.score).toBeGreaterThan(pass!.score);
   });
 });

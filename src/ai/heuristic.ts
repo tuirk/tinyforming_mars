@@ -3,150 +3,136 @@
 // Scores a GameState from a player's perspective.
 // ============================================================
 
-import type { GameState, HexId } from '../engine/types';
-import { getPlayerById, getOpponentId, getLegalActions } from '../engine/rules';
+import type { GameState, ResourceType, TagType } from '../engine/types';
+import {
+  getPlayerById,
+  getLegalActions,
+  countPermanentTags,
+  calculateEffectiveCost,
+} from '../engine/rules';
+import { calculatePlayerScore } from '../engine/scoring';
+import { expectedCreditsAfterIncome } from '../engine/income';
+import { STANDARD_PROJECTS } from '../engine/standardProjects';
 
-// ============================================================
-// Tunable weights (exported for external tuning / tests)
-// ============================================================
+export const TIEBREAK = {
+  city: 0.001,
+  greenery: 0.0001,
+  water: 0.00001,
+  heat: 0.000001,
+};
 
 export const WEIGHTS = {
-  heatPersonal: 1.0,
-  greeneryExclusive: 2.0,
-  greeneryShared: 1.0,
-  greeneryOpponentOnly: -1.0,
-  heatMapMyCity: -1.0,
-  heatMapOpponentCity: 0.5,
-  waterExclusive: 1.5,
-  waterShared: 0.5,
   credits: 0.3,
-  cityOnBonusHex: 0.8,
-  resourceToken: 0.8,
-  // legalMoves intentionally 0: getLegalActions emits one entry per
-  // token/greenery/optional-spend variant, so this counts combinatorial
-  // explosion, not flexibility — using it makes pass dominate.
+  resourceTokenUseful: 0.8,
+  resourceTokenSpare: 0.25,
+  tagFirst: 0.8,
+  tagSecond: 0.35,
+  tagExtra: 0.1,
+  affordableFacingCard: 0.12,
+  standardProjectAvailable: 0.08,
   legalMoves: 0,
 };
 
-// ============================================================
-// Helper: adjacency check
-// ============================================================
+const TAG_TYPES: TagType[] = ['energy', 'production', 'nature', 'science', 'space'];
 
-function isAdjacentToPlayerCity(
-  state: GameState,
-  hexId: HexId,
-  playerId: string,
-): boolean {
-  const player = getPlayerById(state, playerId);
-  const hex = state.board.find((h) => h.id === hexId)!;
-  return player.cities.some((cityId) => hex.adjacentHexIds.includes(cityId));
-}
-
-// ============================================================
-// End-game proximity (1C.2)
-// ============================================================
-
-/**
- * Returns a value from 0.0 (early game) to 1.0 (game about to end),
- * based on exhausted parameter supplies, board occupancy, and
- * generation progress.
- */
 export function getEndGameProximity(state: GameState): number {
-  // Count how many of the 3 parameter supply types are at 0
   const exhaustedCount =
     (state.parameterSupply.heat === 0 ? 1 : 0) +
     (state.parameterSupply.greenery === 0 ? 1 : 0) +
     (state.parameterSupply.water === 0 ? 1 : 0);
   const exhaustedParams = exhaustedCount / 3;
-
-  // Fraction of board hexes that are occupied (tile or city)
   const occupiedCount = state.board.filter(
     (h) => h.tile !== null || h.city !== null,
   ).length;
   const occupiedHexes = occupiedCount / 19;
-
-  // Generation progress (max 12 generations)
   const generationProgress = state.generation / 12;
-
   return (exhaustedParams + occupiedHexes + generationProgress) / 3;
 }
 
-// ============================================================
-// Main evaluation function
-// ============================================================
+export function scorePermanentTags(tags: Record<TagType, number>): number {
+  let s = 0;
+  for (const t of TAG_TYPES) {
+    const n = tags[t] ?? 0;
+    if (n >= 1) s += WEIGHTS.tagFirst;
+    if (n >= 2) s += WEIGHTS.tagSecond;
+    if (n >= 3) s += WEIGHTS.tagExtra * (n - 2);
+  }
+  return s;
+}
 
-/**
- * Evaluate a game state from a player's perspective.
- * Returns a numeric score — higher is better for the given player.
- * Used by both standalone heuristic decisions and minimax search.
- */
-export function evaluate(state: GameState, playerId: string): number {
+function tagDemand(state: GameState, playerId: string): Record<TagType, number> {
+  const demand: Record<TagType, number> = {
+    energy: 0, production: 0, nature: 0, science: 0, space: 0,
+  };
   const player = getPlayerById(state, playerId);
-  const opponentId = getOpponentId(playerId);
+  for (const card of player.projectCardsFacing) {
+    if (player.usedProjectThisGen.includes(card.cardId)) continue;
+    for (const req of card.tagRequirements) {
+      demand[req.tag] = Math.max(demand[req.tag], req.count);
+    }
+  }
+  if (!player.usedStandardProjectThisGen) {
+    for (const p of STANDARD_PROJECTS) {
+      for (const req of p.tagRequirements) {
+        demand[req.tag] = Math.max(demand[req.tag], req.count);
+      }
+    }
+  }
+  return demand;
+}
 
-  // End-game proximity modifiers
-  const proximity = getEndGameProximity(state);
-  const vpMultiplier = 1 + proximity * 0.5;          // up to 1.5x
-  const positionalMultiplier = 1 - proximity * 0.5;  // down to 0.5x
-
+export function scoreResourceTokens(state: GameState, playerId: string): number {
+  const player = getPlayerById(state, playerId);
+  const permanent = countPermanentTags(player, state);
+  const demand = tagDemand(state, playerId);
+  const remainingShort: Record<string, number> = {};
+  for (const t of TAG_TYPES) {
+    remainingShort[t] = Math.max(0, demand[t] - permanent[t]);
+  }
   let score = 0;
-
-  // --- 1. Heat in personal supply (direct VP) ---
-  score += player.heatTilesPersonal * WEIGHTS.heatPersonal * vpMultiplier;
-
-  // --- 2. Board tile scoring ---
-  for (const hex of state.board) {
-    if (hex.tile === null) continue;
-
-    const adjToMe = isAdjacentToPlayerCity(state, hex.id, playerId);
-    const adjToOpp = isAdjacentToPlayerCity(state, hex.id, opponentId);
-
-    if (hex.tile === 'greenery') {
-      if (adjToMe && !adjToOpp) {
-        score += WEIGHTS.greeneryExclusive * vpMultiplier;
-      } else if (adjToMe && adjToOpp) {
-        score += WEIGHTS.greeneryShared * vpMultiplier;
-      } else if (!adjToMe && adjToOpp) {
-        score += WEIGHTS.greeneryOpponentOnly * vpMultiplier;
-      }
-      // greenery adjacent to neither city: 0
-    }
-
-    if (hex.tile === 'heat') {
-      if (adjToMe) {
-        score += WEIGHTS.heatMapMyCity * vpMultiplier;
-      }
-      if (adjToOpp) {
-        score += WEIGHTS.heatMapOpponentCity * vpMultiplier;
-      }
-    }
-
-    if (hex.tile === 'water') {
-      if (adjToMe && !adjToOpp) {
-        score += WEIGHTS.waterExclusive * vpMultiplier;
-      } else if (adjToMe && adjToOpp) {
-        score += WEIGHTS.waterShared * vpMultiplier;
-      }
-      // water adjacent to opponent only or neither: 0
+  for (const tok of player.resourceTokens) {
+    const t = tok as ResourceType;
+    if ((remainingShort[t] ?? 0) > 0) {
+      score += WEIGHTS.resourceTokenUseful;
+      remainingShort[t] -= 1;
+    } else {
+      score += WEIGHTS.resourceTokenSpare;
     }
   }
+  return score;
+}
 
-  // --- 3. Credits (positional) ---
-  score += player.credits * WEIGHTS.credits * positionalMultiplier;
-
-  // --- 4. City on bonus hex (direct VP-ish) ---
-  for (const cityHexId of player.cities) {
-    const hex = state.board.find((h) => h.id === cityHexId)!;
-    if (hex.bonusTag !== null) {
-      score += WEIGHTS.cityOnBonusHex * vpMultiplier;
+function positionalScore(state: GameState, playerId: string, positionalMultiplier: number): number {
+  const player = getPlayerById(state, playerId);
+  let score = 0;
+  const pid = playerId as 'human' | 'ai';
+  score += expectedCreditsAfterIncome(state, pid) * WEIGHTS.credits * positionalMultiplier;
+  if (!player.usedStandardProjectThisGen) {
+    score += WEIGHTS.standardProjectAvailable * positionalMultiplier;
+  }
+  score += scorePermanentTags(countPermanentTags(player, state)) * positionalMultiplier;
+  for (const card of player.projectCardsFacing) {
+    if (player.credits >= calculateEffectiveCost(card, player, state)) {
+      score += WEIGHTS.affordableFacingCard * positionalMultiplier;
     }
   }
-
-  // --- 5. Resource tokens (positional) ---
-  score += player.resourceTokens.length * WEIGHTS.resourceToken * positionalMultiplier;
-
-  // --- 6. Legal moves (positional) ---
+  score += scoreResourceTokens(state, playerId) * positionalMultiplier;
   score += getLegalActions(state, playerId).length * WEIGHTS.legalMoves * positionalMultiplier;
+  return score;
+}
 
+export function evaluate(state: GameState, playerId: string): number {
+  const proximity = getEndGameProximity(state);
+  const vpMultiplier = 1 + proximity * 0.5;
+  const positionalMultiplier = 1 - proximity * 0.5;
+
+  const breakdown = calculatePlayerScore(state, playerId);
+  let score = breakdown.total * vpMultiplier;
+  score +=
+    breakdown.cityPoints * TIEBREAK.city +
+    breakdown.greeneryPoints * TIEBREAK.greenery +
+    breakdown.waterPoints * TIEBREAK.water +
+    breakdown.heatPoints * TIEBREAK.heat;
+  score += positionalScore(state, playerId, positionalMultiplier);
   return score;
 }

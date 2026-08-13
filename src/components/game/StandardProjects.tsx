@@ -18,6 +18,7 @@ interface StandardProjectsProps {
   alreadyUsedThisGen: boolean;
   isHumanTurn: boolean;
   hasPassed?: boolean;
+  highlightPass?: boolean;
   onStandardProject: (projectId: StandardProjectId) => void;
   onPass?: () => void;
   onPassMouseEnter?: () => void;
@@ -48,6 +49,7 @@ export function StandardProjects({
   alreadyUsedThisGen,
   isHumanTurn,
   hasPassed,
+  highlightPass,
   onStandardProject,
   onPass,
   onPassMouseEnter,
@@ -66,11 +68,12 @@ export function StandardProjects({
       <TooltipTrigger asChild>
         <div className={cn('min-w-0', passDisabled && 'cursor-not-allowed')} data-tutorial="pass-button">
           <Button
-            variant="secondary"
+            variant={highlightPass && !passDisabled ? 'default' : 'secondary'}
             size="sm"
             className={cn(
               'h-8 w-full gap-1 px-1.5 py-0',
               passDisabled && 'opacity-50 pointer-events-none',
+              highlightPass && !passDisabled && 'pass-nudge',
             )}
             disabled={passDisabled}
             onClick={onPass}
@@ -78,12 +81,19 @@ export function StandardProjects({
           >
             <PassStamp size={16} />
             <span className="text-[10px] leading-none truncate">{hasPassed ? 'Passed' : 'Pass'}</span>
-            <span className="text-[10px] leading-none text-muted-foreground">0C</span>
+            <span className={cn(
+              'text-[10px] leading-none',
+              highlightPass && !passDisabled ? 'text-primary-foreground/80' : 'text-muted-foreground',
+            )}>0C</span>
           </Button>
         </div>
       </TooltipTrigger>
       <TooltipContent side="top">
-        <p className="text-xs">End your turn for this generation. You cannot take any more actions after passing.</p>
+        <p className="text-xs">
+          {highlightPass && !passDisabled
+            ? 'No other legal actions this turn. Pass to continue.'
+            : 'End your actions for this generation. You cannot take any more actions after passing.'}
+        </p>
       </TooltipContent>
     </Tooltip>
   ) : null;
