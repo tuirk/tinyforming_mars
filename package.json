@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "deploy": "firebase deploy --only apphosting,firestore:rules --project studio-3765470109-337fd"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",

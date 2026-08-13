@@ -10,7 +10,12 @@ I built this so my friends and I always have a complete, playable adaptation. So
 
 ## Play
 
-1. Open the app. You do not need to create an account: use **Play as guest**, or sign in with Google / email if you prefer. Guest and new accounts need to accept Terms and Privacy first.
+Players: use the hosted app (no install):
+[https://studio--studio-3765470109-337fd.us-central1.hosted.app](https://studio--studio-3765470109-337fd.us-central1.hosted.app)
+
+You do not need to create an account: use **Play as guest**, or sign in with Google / email if you prefer.
+
+1. Open the app. Guest and new accounts need to accept Terms and Privacy first.
 2. On the dashboard, start **Player vs AI** (Solo and Play with a Friend are coming soon).
 3. Setup is automatic: the app picks a map (Tharsis or Elysium) and your color (Black or White), then you confirm the reveal screens. Per the rules, Black places the first city, then White places theirs (not adjacent). You place when it is your color; the AI places when it is theirs.
 4. Each generation: draft project cards, then take turns in the action phase (play a project, use a standard project, or pass) until both sides have passed. Income runs, then the next generation starts. White leads odd generations; Black leads even ones.
@@ -64,7 +69,7 @@ npm run typecheck
 npm run build
 ```
 
-Useful scripts: `npm run lint`, `npm run test` (watch), `npm run genkit:dev` (LLM flow server).
+Useful scripts: `npm run lint`, `npm run test` (watch), `npm run genkit:dev` (LLM flow server), `npm run deploy` (App Hosting + Firestore rules from this machine; no GitHub connection).
 
 Do not commit `.env` / `.env.local`. Keep secrets outside the repo when you can.
 
