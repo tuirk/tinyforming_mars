@@ -73,6 +73,10 @@ Do not commit `.env` / `.env.local`. Keep secrets outside the repo when you can.
 
 MIT. See [LICENSE](LICENSE). Contributions are under the same license ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
+## Contributions
+
+This project is not accepting public pull requests or issues. See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+
 ## For coding agents
 
 AI coding agents should read [AGENTS.md](AGENTS.md) for build/test commands, rule invariants, and edit boundaries. It follows the [AGENTS.md](https://agents.md/) open format and complements this README.

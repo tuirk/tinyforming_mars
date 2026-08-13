@@ -2,17 +2,46 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Games: authenticated users can create, and read/write their own
-    match /games/{gameId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // User profiles: users can only access their own
+    function isUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Saved games (unused by current human-vs-AI client play, but keep locked).
+    match /games/{gameId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+    }
+
+    // User profiles: own document only. uid cannot be retargeted.
     match /users/{userId} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == userId;
+      allow read: if isUser(userId);
+
+      allow create: if isUser(userId)
+        && request.resource.data.uid == userId;
+
+      allow update: if isUser(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'displayName',
+              'photoURL',
+              'email',
+              'authProvider',
+              'stats',
+              'tutorialCompleted',
+              'updatedAt'
+            ]);
+
+      allow delete: if isUser(userId);
     }
   }
 }

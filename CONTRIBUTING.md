@@ -1,8 +1,16 @@
 # Contributing
 
-Thanks for looking at TINYforming Mars. This is a small unofficial fan adaptation. Read [README.md](README.md) first.
+This project is **not accepting public contributions** (issues and pull requests from people who are not collaborators).
 
-AI coding agents should also read [AGENTS.md](AGENTS.md).
+It is an unofficial fan adaptation I built for myself and friends. GitHub pull request creation is restricted to collaborators. Security reports still go through [SECURITY.md](SECURITY.md).
+
+If you forked the code, that is fine under the MIT license. Please do not open a PR expecting a review.
+
+---
+
+The rest of this file is for the maintainer (and any collaborator who is later invited).
+
+AI coding agents should also read [AGENTS.md](AGENTS.md) and [README.md](README.md).
 
 ## Ground rules
 
@@ -41,17 +49,6 @@ If `npm install` fails because a package needs postinstall scripts, use `npm reb
 
 Never install axios `1.14.1` / `0.30.4`, or `plain-crypto-js`.
 
-## Pull requests
-
-1. Keep the change small and described.
-2. Add or update Vitest coverage when you change engine or AI logic.
-3. Run `npm run test:run` and `npm run typecheck` before you open the PR.
-4. Use the PR template checklist.
-
-## Issues
-
-Use the GitHub issue templates. Security reports go to [SECURITY.md](SECURITY.md), not public issues.
-
 ## License
 
-By contributing you agree your work is licensed under the MIT License (see [LICENSE](LICENSE)).
+Code in this repository is under the MIT License (see [LICENSE](LICENSE)).

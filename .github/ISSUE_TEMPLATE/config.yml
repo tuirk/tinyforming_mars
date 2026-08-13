@@ -5,4 +5,4 @@ contact_links:
     about: Privately report a vulnerability. Do not file a public issue.
   - name: Play / rules questions
     url: https://github.com/tuirk/tinyforming_mars/blob/main/README.md
-    about: How to play, guest mode, and local setup are in the README.
+    about: How to play, guest mode, and local setup are in the README. This repo is not accepting public contributions.
