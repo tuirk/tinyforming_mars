@@ -15,6 +15,7 @@ interface TutorialOverlayProps {
   learnMoreSection?: string;
   onDismiss: () => void;
   onSkipAll: () => void;
+  onNeverShow?: () => void;
   onLearnMore?: (section: string) => void;
 }
 
@@ -31,6 +32,7 @@ export function TutorialOverlay({
   learnMoreSection,
   onDismiss,
   onSkipAll,
+  onNeverShow,
   onLearnMore,
 }: TutorialOverlayProps) {
   const [visible, setVisible] = useState(false);
@@ -229,8 +231,13 @@ export function TutorialOverlay({
               Got it
             </Button>
             <Button variant="ghost" size="sm" onClick={onSkipAll}>
-              Skip all
+              Skip
             </Button>
+            {onNeverShow && (
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onNeverShow}>
+                Never show
+              </Button>
+            )}
           </div>
         </CardFooter>
       </Card>

@@ -17,7 +17,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'welcome',
     title: 'Welcome!',
     content:
-      "Welcome to TINYforming Mars! You'll compete against an AI to terraform Mars. Follow these tips in order — tap Got it to continue, or Skip all to play freely.",
+      "Welcome to TINYforming Mars! You'll compete against an AI to terraform Mars. Follow these tips in order — tap Got it to continue, Skip for this game, or Never show to turn the guide off permanently.",
     position: 'center',
   },
   // 2
@@ -34,7 +34,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'color_assignment',
     title: 'Your Color',
     content:
-      "You're playing as {color}. White goes first in odd generations (1, 3, 5\u2026), Black goes first in even generations (2, 4, 6\u2026).",
+      "You're playing as {color}. White goes first in odd generations (1, 3, 5\u2026), Black goes first in even generations (2, 4, 6\u2026). Tap Continue when you're ready.",
     position: 'center',
     learnMoreSection: 'game_flow',
   },
@@ -146,7 +146,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     id: 'income_phase',
     title: 'Income Phase',
     content:
-      "Generation over! Income time: you earn 1 credit per city and 1 credit per water tile next to your cities. But watch out \u2014 you can't keep more than 5 credits. Any extras go back to the supply.",
+      "Generation over! Income pays from the shared credit pool (only 10 credits exist). You earn 1 per city and 1 per adjacent water — if the pool is short, unpaid income is skipped. You also can't keep more than 5 credits.",
     position: 'center',
     learnMoreSection: 'income',
   },

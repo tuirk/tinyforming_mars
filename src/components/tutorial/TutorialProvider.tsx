@@ -27,7 +27,8 @@ export interface TutorialContextType {
   state: TutorialState;
   triggerStep: (stepId: string) => void; // show step if not already shown
   dismissStep: () => void; // close current step
-  skipAll: () => void; // suppress all remaining steps
+  skipAll: () => void; // suppress remaining steps this game only
+  neverShow: () => void; // permanently disable tutorial (local + Firestore)
   resetTutorial: () => void; // clear localStorage, restart
   isActive: boolean; // is a tutorial step currently showing
 }
@@ -176,6 +177,20 @@ export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { c
     }));
   }, []);
 
+  const neverShow = useCallback(() => {
+    writeCompleted(true);
+    if (uid) {
+      updateUserDocument(uid, { tutorialCompleted: true }).catch(() => {});
+    }
+    setState((prev) => ({
+      ...prev,
+      completed: true,
+      skipped: true,
+      currentStepId: null,
+      pendingStepIds: [],
+    }));
+  }, [uid]);
+
   const resetTutorial = useCallback(() => {
     writeCompleted(false);
     setState(initialState(false));
@@ -185,7 +200,7 @@ export function TutorialProvider({ children, uid, tutorialCompletedFromDB }: { c
 
   return (
     <TutorialContext.Provider
-      value={{ state, triggerStep, dismissStep, skipAll, resetTutorial, isActive }}
+      value={{ state, triggerStep, dismissStep, skipAll, neverShow, resetTutorial, isActive }}
     >
       {children}
     </TutorialContext.Provider>
