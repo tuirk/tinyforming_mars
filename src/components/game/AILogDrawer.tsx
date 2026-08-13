@@ -5,7 +5,14 @@ import type { AILogEntry, AIMode, GameAction } from '@/engine/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Brain, ChevronRight, ChevronLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AILogDrawerProps {
   entries: AILogEntry[];
@@ -21,6 +28,8 @@ const MODE_LABELS: Record<AIMode, string> = {
   minimax: 'Mini',
   gemini: 'Gem',
 };
+
+const CLOUD_DISABLED_MODES = new Set<AIMode>(['gemini']);
 
 function describeAction(action: GameAction): string {
   switch (action.type) {
@@ -97,19 +106,51 @@ export function AILogDrawer({ entries, isOpen, onToggle, aiMode, onAIModeChange 
       {/* AI Mode Selector */}
       {aiMode && onAIModeChange && (
         <div className="px-2 py-1.5 border-b border-border">
-          <div className="flex bg-[#12121f] rounded-md p-0.5 gap-0.5">
-            {(Object.keys(MODE_LABELS) as AIMode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => onAIModeChange(m)}
-                className={`flex-1 text-center py-1 text-[10px] font-body rounded transition-colors ${
-                  aiMode === m ? 'text-[#e0e0e0] bg-[#2a2a3e]' : 'text-[#5a5a7a] hover:text-[#8a8aaa]'
-                }`}
-              >
-                {MODE_LABELS[m]}
-              </button>
-            ))}
-          </div>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex bg-[#12121f] rounded-md p-0.5 gap-0.5">
+              {(Object.keys(MODE_LABELS) as AIMode[]).map((m) => {
+                const cloudDisabled = CLOUD_DISABLED_MODES.has(m);
+                const selected = aiMode === m;
+
+                const button = (
+                  <button
+                    type="button"
+                    disabled={cloudDisabled}
+                    onClick={() => {
+                      if (!cloudDisabled) onAIModeChange(m);
+                    }}
+                    className={cn(
+                      'w-full text-center py-1 text-[10px] font-body rounded transition-colors',
+                      cloudDisabled && 'opacity-40 cursor-not-allowed text-[#5a5a7a]',
+                      !cloudDisabled && selected && 'text-[#e0e0e0] bg-[#2a2a3e]',
+                      !cloudDisabled && !selected && 'text-[#5a5a7a] hover:text-[#8a8aaa]',
+                    )}
+                  >
+                    {MODE_LABELS[m]}
+                  </button>
+                );
+
+                if (!cloudDisabled) {
+                  return (
+                    <div key={m} className="flex-1">
+                      {button}
+                    </div>
+                  );
+                }
+
+                return (
+                  <Tooltip key={m}>
+                    <TooltipTrigger asChild>
+                      <span className="flex-1">{button}</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      Not enabled for cloud.
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
         </div>
       )}
 

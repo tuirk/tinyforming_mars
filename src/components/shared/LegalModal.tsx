@@ -234,6 +234,27 @@ function TermsContent() {
         We do not warrant that rules logic is error-free, that games will be saved, or that AI play is fair or available.
       </p>
 
+      <h4 style={h4Style}>Security and data integrity</h4>
+      <p style={pStyle}>
+        TINYforming Mars is a free hobby project operated on a best-effort basis. We do not guarantee the
+        confidentiality, integrity, or availability of the service, accounts, or stored data, and we do not
+        warrant that the application or its infrastructure is free from vulnerabilities, unauthorized access,
+        interception, or other security incidents.
+      </p>
+      <p style={pStyle}>
+        Like any internet-connected system, this service may be subject to compromise despite reasonable
+        precautions. You acknowledge that account credentials, guest session identifiers, game progress, and
+        related data could be accessed, altered, deleted, or disclosed by unauthorized parties. Do not use
+        the app to store passwords reused elsewhere, personal secrets, financial information, or other
+        sensitive data.
+      </p>
+      <p style={pStyle}>
+        To the maximum extent permitted by law, the operator is not responsible for loss, corruption, or
+        exposure of data resulting from security incidents, third-party service failures, or misuse of
+        accounts. If you believe your account has been compromised, sign out, secure your authentication
+        methods, and contact us via the channels below.
+      </p>
+
       <h4 style={h4Style}>Limitation of liability</h4>
       <p style={pStyle}>
         To the maximum extent permitted by law, the operator is not liable for any indirect, incidental,

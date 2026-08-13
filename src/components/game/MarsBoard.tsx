@@ -190,7 +190,7 @@ export function MarsBoard({
       width="100%"
       viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
       xmlns="http://www.w3.org/2000/svg"
-      style={{ maxWidth: 800, pointerEvents: disabled ? 'none' : undefined }}
+      style={{ maxWidth: 680, pointerEvents: disabled ? 'none' : undefined }}
     >
       <defs>
         <radialGradient id="mars-bg" cx="50%" cy="48%" r="48%">

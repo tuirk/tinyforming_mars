@@ -25,13 +25,13 @@ const resourceLabels: Record<string, string> = {
 export function ResourceTokenSupply({ resourceTokenSupply, compact }: ResourceTokenSupplyProps) {
   if (compact) {
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2.5">
         {(Object.entries(resourceTokenSupply) as [keyof typeof resourceStamps, number][]).map(([type, value]) => {
           const Stamp = resourceStamps[type];
           return (
-            <div key={type} className="flex items-center gap-1.5" title={resourceLabels[type]}>
-              <Stamp size={28} />
-              <span className="font-bold">{value}</span>
+            <div key={type} className="flex items-center gap-1" title={`${resourceLabels[type]} tokens in supply`}>
+              <Stamp size={18} />
+              <span className="font-bold text-sm">{value}</span>
             </div>
           );
         })}

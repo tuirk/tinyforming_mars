@@ -46,6 +46,8 @@ export function GameFooter() {
           flexShrink: 0,
           flexWrap: 'wrap',
           gap: '8px',
+          position: 'relative',
+          zIndex: 2,
         }}
       >
         <div style={{ fontSize: '11px', lineHeight: 1.6, ...muted }}>

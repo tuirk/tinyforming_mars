@@ -26,17 +26,17 @@ const parameterLabels: Record<string, string> = {
 export function Supply({ parameterSupply, creditSupply, compact }: SupplyProps) {
   if (compact) {
     return (
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5" title="Credits in Supply">
-          <CreditsStamp size={28} />
-          <span className="font-bold">{creditSupply}</span>
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1" title="Credits in shared supply">
+          <CreditsStamp size={18} />
+          <span className="font-bold text-sm">{creditSupply}</span>
         </div>
         {(Object.entries(parameterSupply) as [keyof typeof parameterStamps, number][]).map(([type, value]) => {
           const Stamp = parameterStamps[type];
           return (
-            <div key={type} className="flex items-center gap-1.5" title={parameterLabels[type]}>
-              <Stamp size={28} />
-              <span className="font-bold">{value}</span>
+            <div key={type} className="flex items-center gap-1" title={`${parameterLabels[type]} tiles in supply`}>
+              <Stamp size={18} />
+              <span className="font-bold text-sm">{value}</span>
             </div>
           );
         })}

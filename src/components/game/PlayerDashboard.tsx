@@ -50,22 +50,22 @@ export function PlayerDashboard({ player, tagCounts, isCurrentTurn }: PlayerDash
         'transition-all duration-300 w-full',
         isCurrentTurn ? 'border-primary shadow-lg shadow-primary/20' : ''
       )}>
-        <CardHeader className="flex-row items-center justify-between pb-2 pt-3 px-4">
-          <CardTitle className="font-headline text-base flex items-center gap-2">
+        <CardHeader className="flex-row items-center justify-between pb-1 pt-2 px-3">
+          <CardTitle className="font-headline text-sm flex items-center gap-1.5">
             <div className={cn(
-              "w-3 h-3 rounded-full",
+              "w-2.5 h-2.5 rounded-full",
               player.color === 'white' ? 'bg-gray-200' : 'bg-gray-700'
             )} />
             {playerLabel} ({colorLabel})
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-3 pt-0">
-          <div className="flex justify-between items-center mb-2">
+        <CardContent className="px-3 pb-2 pt-0">
+          <div className="flex justify-between items-center mb-1 text-sm">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5">
-                  <CreditsStamp size={18} />
-                  <span className="font-bold text-green-400">Credits: {player.credits}</span>
+                <div className="flex items-center gap-1" data-tutorial="credits">
+                  <CreditsStamp size={14} />
+                  <span className="font-bold text-green-400 text-xs">Credits: {player.credits}</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top">
@@ -74,9 +74,9 @@ export function PlayerDashboard({ player, tagCounts, isCurrentTurn }: PlayerDash
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5">
-                  <HeatStamp size={18} />
-                  <span className="font-bold text-red-400">Heat: {player.heatTilesPersonal}</span>
+                <div className="flex items-center gap-1">
+                  <HeatStamp size={14} />
+                  <span className="font-bold text-red-400 text-xs">Heat: {player.heatTilesPersonal}</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top">
@@ -85,18 +85,18 @@ export function PlayerDashboard({ player, tagCounts, isCurrentTurn }: PlayerDash
             </Tooltip>
           </div>
 
-          <Separator className="my-2" />
+          <Separator className="my-1" />
 
-          <div className="flex items-center gap-3 my-2 text-sm">
-            <span className="text-muted-foreground text-xs">Tags:</span>
+          <div className="flex items-center gap-2 my-1 text-xs">
+            <span className="text-muted-foreground text-[10px]">Tags:</span>
             {hasTags ? (
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 {TAG_ORDER.map(tag => (
                   tagCounts[tag] > 0 && (
                     <Tooltip key={tag}>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1">
-                          <TagBadge tag={tag} size={16} />
+                        <div className="flex items-center gap-0.5">
+                          <TagBadge tag={tag} size={12} />
                           <span>{tagCounts[tag]}</span>
                         </div>
                       </TooltipTrigger>
@@ -108,24 +108,24 @@ export function PlayerDashboard({ player, tagCounts, isCurrentTurn }: PlayerDash
                 ))}
               </div>
             ) : (
-              <span className="text-muted-foreground italic">None</span>
+              <span className="text-muted-foreground italic text-[10px]">None</span>
             )}
           </div>
 
-          <Separator className="my-2" />
+          <Separator className="my-1" />
 
-          <div className="flex items-center gap-3 text-sm my-2">
-            <span className="text-muted-foreground text-xs">Tokens:</span>
+          <div className="flex items-center gap-2 text-xs my-1">
+            <span className="text-muted-foreground text-[10px]">Tokens:</span>
             {hasResourceTokens ? (
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 {(Object.entries(resourceCounts) as [ResourceType, number][]).map(([type, count]) => {
                   if (count === 0) return null;
                   const Stamp = RESOURCE_STAMPS[type];
                   return (
                     <Tooltip key={type}>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center gap-1">
-                          <Stamp size={18} />
+                        <div className="flex items-center gap-0.5">
+                          <Stamp size={14} />
                           <span>x{count}</span>
                         </div>
                       </TooltipTrigger>
@@ -137,13 +137,13 @@ export function PlayerDashboard({ player, tagCounts, isCurrentTurn }: PlayerDash
                 })}
               </div>
             ) : (
-              <span className="text-muted-foreground italic">None</span>
+              <span className="text-muted-foreground italic text-[10px]">None</span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 text-sm mt-2">
-            <CityStamp size={18} />
-            <span className="text-muted-foreground">Cities: {player.cities.length}</span>
+          <div className="flex items-center gap-1 text-xs mt-1">
+            <CityStamp size={14} />
+            <span className="text-muted-foreground text-[10px]">Cities: {player.cities.length}</span>
           </div>
         </CardContent>
       </Card>

@@ -47,9 +47,9 @@ function GenerationTracker({ generation }: { generation: number }) {
 
 export function TopBar({ generation, phase, humanPlayer, isAIThinking, onBack }: TopBarProps) {
   return (
-    <div className="flex items-center justify-between border-b border-border px-4 py-2 bg-card/80 backdrop-blur">
+    <div className="flex items-center justify-between border-b border-border px-3 py-1.5 bg-card/80 backdrop-blur">
       {/* Left: back button + generation tracker + AI thinking */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {onBack && (
           <button onClick={onBack} className="text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1" title="Back to Dashboard">
             <ArrowLeft className="h-4 w-4" />
@@ -62,17 +62,17 @@ export function TopBar({ generation, phase, humanPlayer, isAIThinking, onBack }:
       </div>
 
       {/* Right: player color + phase badge */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <div className="flex items-center gap-1.5">
           <div
             className={cn(
-              'w-3 h-3 rounded-full',
+              'w-2.5 h-2.5 rounded-full',
               humanPlayer.color === 'white' ? 'bg-gray-200' : 'bg-gray-700',
             )}
           />
           <span className="text-xs text-muted-foreground capitalize">{humanPlayer.color}</span>
         </div>
-        <span className="font-headline text-[11px] font-medium text-[#e0e0e0] bg-[#2a2a3e] rounded-full px-3 py-0.5">
+        <span className="font-headline text-[10px] font-medium text-[#e0e0e0] bg-[#2a2a3e] rounded-full px-2.5 py-0.5">
           {PHASE_LABELS[phase]}
         </span>
       </div>

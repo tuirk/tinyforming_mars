@@ -219,6 +219,30 @@ describe('executeAction — standard project: energy_farms', () => {
     expect(result.parameterSupply.heat).toBe(10); // was 11
   });
 
+  it('never places heat on the map, even with a rogue targetHexId', () => {
+    const state = withCredits(makeGameState(), { human: 5, supply: 5 });
+    const action: GameAction = {
+      type: 'standard_project',
+      projectId: 'energy_farms',
+      targetHexId: 1,
+    };
+    const result = executeAction(state, action, 'human');
+    expect(result.players.human.heatTilesPersonal).toBe(1);
+    expect(result.board.every((h) => h.tile !== 'heat')).toBe(true);
+  });
+
+  it('uses the same personal-heat rule for AI (no player override)', () => {
+    const state = withCredits(makeGameState(), { ai: 5, supply: 5 });
+    const action: GameAction = {
+      type: 'standard_project',
+      projectId: 'energy_farms',
+      targetHexId: 5,
+    };
+    const result = executeAction(state, action, 'ai');
+    expect(result.players.ai.heatTilesPersonal).toBe(1);
+    expect(result.board.every((h) => h.tile !== 'heat')).toBe(true);
+  });
+
   it('does not gain heat if supply is empty', () => {
     const state = withCredits(
       makeGameState({ parameterSupply: { heat: 0, greenery: 7, water: 4 } }),
@@ -456,6 +480,28 @@ describe('executeAction — project card: gain_heat effect', () => {
     const result = executeAction(state, action, 'human');
     expect(result.players.human.heatTilesPersonal).toBe(1);
     expect(result.parameterSupply.heat).toBe(10); // was 11
+  });
+
+  it('ignores targetHexId — gain_heat never paints the board', () => {
+    let state = makeGameState();
+    state = withDraftedCard(state, 2, 'B');
+    state = {
+      ...state,
+      creditSupply: 5,
+      players: {
+        ...state.players,
+        human: { ...state.players.human, credits: 5 },
+      },
+    };
+    const action: GameAction = {
+      type: 'activate_project',
+      cardId: 2,
+      side: 'B',
+      targetHexId: 1,
+    };
+    const result = executeAction(state, action, 'human');
+    expect(result.players.human.heatTilesPersonal).toBe(1);
+    expect(result.board.find((h) => h.id === 1)?.tile).toBeNull();
   });
 });
 

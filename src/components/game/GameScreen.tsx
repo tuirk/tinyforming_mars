@@ -248,7 +248,10 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   } | null>(null);
   const [aiMode, setAIMode] = useState<AIMode>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('aiMode') as AIMode) || 'minimax';
+      const stored = localStorage.getItem('aiMode') as AIMode | null;
+      // Gemini is cloud-disabled for now
+      if (stored === 'gemini' || !stored) return 'minimax';
+      return stored;
     }
     return 'minimax';
   });
@@ -259,6 +262,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
 
   // Persist AI mode on change
   const handleAIModeChange = useCallback((mode: AIMode) => {
+    if (mode === 'gemini') return; // not enabled for cloud
     setAIMode(mode);
     if (typeof window !== 'undefined') localStorage.setItem('aiMode', mode);
   }, []);
@@ -328,13 +332,12 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
     if (setupStep === 'map-reveal') tutorial.triggerStep('map_reveal');
     if (setupStep === 'color-reveal') {
       tutorial.triggerStep('color_assignment');
-      tutorial.triggerStep('starting_credits');
     }
     if (setupStep === 'city-black' || setupStep === 'city-white') {
       tutorial.triggerStep('first_city');
       tutorial.triggerStep('bonus_hex_tip');
     }
-  }, [setupStep, tutorial]);
+  }, [setupStep, tutorial.triggerStep]);
 
   // ----------------------------------------------------------
   // Tutorial triggers — phase transitions
@@ -342,6 +345,8 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   useEffect(() => {
     if (!gameState) return;
     if (gameState.phase === 'research' && gameState.generation === 1) {
+      // Credits live on the player dashboard — only tip them once that UI exists
+      tutorial.triggerStep('starting_credits');
       tutorial.triggerStep('card_draft_intro');
       tutorial.triggerStep('reading_a_card');
       tutorial.triggerStep('tags_explained');
@@ -360,14 +365,14 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
       tutorial.triggerStep('scoring_breakdown');
       tutorial.triggerStep('tutorial_complete');
     }
-  }, [gameState?.phase, gameState?.generation, tutorial]);
+  }, [gameState?.phase, gameState?.generation, tutorial.triggerStep]);
 
   // ----------------------------------------------------------
   // Tutorial triggers — AI thinking
   // ----------------------------------------------------------
   useEffect(() => {
     if (isAIThinking) tutorial.triggerStep('ai_turn');
-  }, [isAIThinking, tutorial]);
+  }, [isAIThinking, tutorial.triggerStep]);
 
   // ----------------------------------------------------------
   // Setup Flow: Step 1 — Loading
@@ -727,10 +732,19 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
       }
 
       if (needsPlacement(cardSide.effect)) {
+        const tileType = getPlacementTileType(cardSide.effect);
         placement.startPlacement({
-          type: getPlacementTileType(cardSide.effect),
+          type: tileType,
           playerId: 'human',
           constraint: getPlacementConstraint(cardSide.effect),
+          prompt:
+            tileType === 'heat'
+              ? 'Place heat on an unoccupied land hex (Lava Flows — map heat hurts adjacent cities)'
+              : tileType === 'water'
+                ? 'Place water tile'
+                : tileType === 'greenery'
+                  ? 'Place greenery tile'
+                  : 'Select a hex',
           onComplete: (hexId: HexId) => maybeAskTokenThenCommit({ hexId }),
         });
       } else {
@@ -1041,11 +1055,13 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
     if (!tutorial.isActive || !tutorial.state.currentStepId) return null;
     const step = getStepById(tutorial.state.currentStepId);
     if (!step) return null;
+    const colorLabel = gameState?.players.human.color === 'black' ? 'Black' : 'White';
+    const content = step.content.replace('{color}', colorLabel);
     return (
       <TutorialOverlay
         stepId={step.id}
         title={step.title}
-        content={step.content}
+        content={content}
         stepNumber={getStepIndex(step.id) + 1}
         totalSteps={TUTORIAL_STEPS.length}
         position={step.position}
@@ -1053,7 +1069,8 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
         learnMoreSection={step.learnMoreSection}
         onDismiss={() => tutorial.dismissStep()}
         onSkipAll={() => tutorial.skipAll()}
-        onLearnMore={(section) => {
+        onNeverShow={() => tutorial.neverShow()}
+        onLearnMore={() => {
           setIsRulesOpen(true);
         }}
       />
@@ -1222,7 +1239,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
         )}
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 p-2 md:p-3 xl:p-4 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-2 md:gap-3 xl:gap-4">
+          <div className="flex-1 p-1.5 md:p-2 xl:p-3 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-1.5 md:gap-2 xl:gap-3">
             {/* Left 60%: Mars board centered */}
             <div className="flex flex-col items-center justify-center gap-2">
               <MarsBoard
@@ -1249,18 +1266,28 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
             </div>
 
             {/* Right 40%: supply + dashboards + standard projects + cards */}
-            <div className="flex flex-col gap-2 md:gap-3 xl:gap-4 min-w-0 overflow-y-auto justify-center">
-              {/* Compact supply bar */}
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-lg bg-card/60 border border-border px-2 py-1.5 md:px-4 md:py-2.5 md:gap-x-5">
-                <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} compact />
-                <div className="w-px h-5 bg-border" />
-                <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} compact />
+            <div className="flex flex-col gap-1.5 md:gap-2 min-w-0 overflow-y-auto justify-start py-0.5">
+              {/* Compact supply bar — Supply (credits + params) | Tokens (spendable as tags) */}
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg bg-card/60 border border-border px-2 py-1 md:px-3 md:py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold shrink-0">
+                    Supply
+                  </span>
+                  <Supply parameterSupply={gameState.parameterSupply} creditSupply={gameState.creditSupply} compact />
+                </div>
+                <div className="w-0.5 h-6 shrink-0 self-center rounded-full bg-muted-foreground/55" aria-hidden />
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold shrink-0" title="Resource tokens — spend as tags">
+                    Tokens
+                  </span>
+                  <ResourceTokenSupply resourceTokenSupply={gameState.resourceTokenSupply} compact />
+                </div>
               </div>
 
               {/* Scoreboard: side by side */}
-              <div className="rounded-lg border border-border bg-card/40 p-2 md:p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 md:mb-2">Scoreboard</p>
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
+              <div className="rounded-lg border border-border bg-card/40 p-1.5 md:p-2">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Scoreboard</p>
+                <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                   <PlayerDashboard
                     player={humanPlayer}
                     tagCounts={humanTags}
@@ -1275,8 +1302,8 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
               </div>
 
               {/* Actions: standard projects + pass */}
-              <div className="rounded-lg border border-border bg-card/40 p-2 md:p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 md:mb-2 text-center">Actions</p>
+              <div className="rounded-lg border border-border bg-card/40 p-1.5 md:p-2">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 text-center">Actions</p>
                 <StandardProjects
                   canActivate={stdProjectCanActivate}
                   alreadyUsedThisGen={humanPlayer.usedStandardProjectThisGen}
@@ -1288,8 +1315,8 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
               </div>
 
               {/* Project cards */}
-              <div data-tutorial="bottom-panel" className="rounded-lg border border-border bg-card/40 p-2 md:p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 md:mb-2 text-center">Project Cards</p>
+              <div data-tutorial="bottom-panel" className="rounded-lg border border-border bg-card/40 p-1.5 md:p-2">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 text-center">Project Cards</p>
                 <CardPanel
                   cardSides={humanPlayer.projectCardsFacing}
                   effectiveCosts={effectiveCosts}
