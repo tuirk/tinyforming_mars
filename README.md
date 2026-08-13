@@ -8,13 +8,15 @@ Original materials and community discussion: [BoardGameGeek](https://boardgamege
 
 I built this so my friends and I always have a complete, playable adaptation. Solo and two-player modes are on the backlog. This project is not affiliated with Michael Bevilacqua, FryxGames, Stronghold Games, or Terraforming Mars. It is a non-commercial fan adaptation.
 
-## Play (happy path)
+## Play
 
 1. Open the app. You do not need to create an account: use **Play as guest**, or sign in with Google / email if you prefer. Guest and new accounts need to accept Terms and Privacy first.
 2. On the dashboard, start **Player vs AI** (Solo and Play with a Friend are coming soon).
 3. Setup is automatic: the app picks a map (Tharsis or Elysium) and your color (Black or White), then you confirm the reveal screens. Per the rules, Black places the first city, then White places theirs (not adjacent). You place when it is your color; the AI places when it is theirs.
 4. Each generation: draft project cards, then take turns in the action phase (play a project, use a standard project, or pass) until both sides have passed. Income runs, then the next generation starts. White leads odd generations; Black leads even ones.
-5. The game ends after a generation when at least two of the three parameter supplies (Heat, Greenery, Water) are empty, the map has no empty hexes, or generation 12 is reached, whichever comes first. Then you get the score breakdown. Opponent AI defaults to Minimax; you can change mode in the AI panel during the game (Gemini is off on the cloud build).
+5. The game ends after a generation when at least two of the three parameter supplies (Heat, Greenery, Water) are empty, the map has no empty hexes, or generation 12 is reached, whichever comes first. Then you get the score breakdown.
+
+Opponent AI defaults to Minimax; you can change mode in the AI panel during the game (Gemini is off on the cloud build).
 
 Leaving mid-game discards progress. Matches are not saved.
 
