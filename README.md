@@ -1,8 +1,10 @@
 # TINYforming Mars
 
-Unofficial digital adaptation of Michael Bevilacqua’s [TINYforming Mars](https://boardgamegeek.com/boardgame/282493/tinyforming-mars) print-and-play. Built by [Tuirk](https://github.com/tuirk).
+TINYforming Mars is a light Eurogame inspired by Terraforming Mars, designed by Michael Bevilacqua and published as a print-and-play. This repo is a digital adaptation of the game by Tuirk based on the official game materials.
 
-You and an AI opponent share one Mars map. You draft projects, spend a scarce credit supply, place cities, and raise Heat, Greenery, and Water. Score from the board: greenery next to your cities, water over time, personal heat, and penalties from map heat next to cities.
+In TINYforming Mars you and your (AI for now, 2p coming soon) opponent share one Mars map. Over a series of generations you draft project cards, spend a scarce credit supply, place cities, and raise Heat, Greenery, and Water. When the game ends, victory points come from how you shaped the board: greenery next to your cities, water income over time, personal heat, and a few nasty surprises like heat tiles sitting on the map next to somebody’s city.
+
+Original materials and community discussion: [BoardGameGeek](https://boardgamegeek.com/boardgame/282493/tinyforming-mars).
 
 This is a non-commercial fan project. It is not affiliated with Michael Bevilacqua, FryxGames, Stronghold Games, or Terraforming Mars. Solo and two-player human modes are not in yet.
 
@@ -26,6 +28,15 @@ No account required. Tick Terms and Privacy, then **Play as guest**. Google or e
 Default opponent is Minimax (2-ply). You can switch to Heuristic or Random in the AI panel. Gemini is off on the hosted build.
 
 Leaving mid-game discards the match. Games are not saved.
+
+## How the AI works
+
+Opponent modes are classical game AI. Default is **Minimax**.
+
+- **Minimax** searches ahead a few plies with alpha-beta pruning. At the leaves it uses the same board evaluation as heuristic mode (personal heat, greenery adjacency, water, map heat next to cities, credits, tokens, etc.). Moves are ordered by a quick eval so pruning cuts more. Search depth in the app is currently 2 plies.
+- **Heuristic** scores each legal action with that evaluation function and picks a strong one (no lookahead).
+- **Random** picks a legal action at random.
+- **LLM (Gemini)** is optional: Minimax proposes candidates, then Gemini re-ranks them. It is not the main path and is disabled on the cloud build. Clone the repo, set `GOOGLE_GENAI_API_KEY`, and turn Gemini on locally if you want it.
 
 ## Run locally
 
@@ -80,13 +91,6 @@ Optional Gemini opponent: set `GOOGLE_GENAI_API_KEY`, run `npm run genkit:dev`, 
 Coding agents: [AGENTS.md](AGENTS.md). Humans: this README, plus [docs/rulebook.md](docs/rulebook.md) for rules.
 
 This repo is not accepting public issues or pull requests ([CONTRIBUTING.md](CONTRIBUTING.md)). Forks are fine under MIT.
-
-## How the AI works
-
-- **Minimax** (default): 2-ply search with alpha-beta pruning. Leaf scores use the same evaluation as heuristic mode.
-- **Heuristic**: scores legal actions and picks a strong one. No lookahead.
-- **Random**: a legal action at random.
-- **Gemini**: Minimax proposes, Gemini re-ranks. Local only.
 
 ## License
 
