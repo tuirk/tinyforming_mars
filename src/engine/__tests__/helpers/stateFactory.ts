@@ -86,6 +86,7 @@ export function makeGameState(overrides?: Partial<GameState>): GameState {
   const base: GameState = {
     id: 'test-game',
     map: 'tharsis',
+    matchType: 'human-vs-ai',
     generation: 1,
     phase: 'action',
     startPlayerId: 'human',
