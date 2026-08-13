@@ -75,6 +75,7 @@ Path alias: `@/*` → `src/*`.
 - Use Immer for game-state mutations in the engine path that already uses it.
 - Match existing UI patterns (Mars ochre / Orbitron headings / Inter body). Do not invent a new design system.
 - Gemini opponent mode is disabled on the cloud build; do not re-enable without an explicit ask.
+- Gemini server actions must verify a Firebase ID token (Google/email, not guest).
 - Do not commit `.env`, `.env.local`, or secrets. Use `.env.example` only as the template.
 - License is MIT. Do not relicense without an explicit ask.
 - Global npm often has `ignore-scripts=true`. Do not disable it without approval; use `npm rebuild` if a package needs scripts.

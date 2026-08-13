@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { requireFirebaseUser } from '@/lib/firebase/requireAuth';
 
 const ExplainAIMoveInputSchema = z.object({
   move: z.string().describe('The AI player move to be explained.'),
@@ -24,8 +25,13 @@ const ExplainAIMoveOutputSchema = z.object({
 
 export type ExplainAIMoveOutput = z.infer<typeof ExplainAIMoveOutputSchema>;
 
-export async function explainAIMove(input: ExplainAIMoveInput): Promise<ExplainAIMoveOutput> {
-  return explainAIMoveFlow(input);
+export async function explainAIMove(
+  input: ExplainAIMoveInput & { idToken: string },
+): Promise<ExplainAIMoveOutput> {
+  await requireFirebaseUser(input.idToken);
+  const { idToken: _idToken, ...promptInput } = input;
+  void _idToken;
+  return explainAIMoveFlow(promptInput);
 }
 
 const explainAIMovePrompt = ai.definePrompt({

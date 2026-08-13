@@ -8,6 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { requireFirebaseUser } from '@/lib/firebase/requireAuth';
 
 const GeminiDecisionInputSchema = z.object({
   gameContext: z.string().describe('Serialized game state summary.'),
@@ -24,8 +25,13 @@ const GeminiDecisionOutputSchema = z.object({
 
 export type GeminiDecisionOutput = z.infer<typeof GeminiDecisionOutputSchema>;
 
-export async function geminiDecision(input: GeminiDecisionInput): Promise<GeminiDecisionOutput> {
-  return geminiDecisionFlow(input);
+export async function geminiDecision(
+  input: GeminiDecisionInput & { idToken: string },
+): Promise<GeminiDecisionOutput> {
+  await requireFirebaseUser(input.idToken);
+  const { idToken: _idToken, ...promptInput } = input;
+  void _idToken;
+  return geminiDecisionFlow(promptInput);
 }
 
 const geminiDecisionPrompt = ai.definePrompt({

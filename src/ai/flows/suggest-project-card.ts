@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { requireFirebaseUser } from '@/lib/firebase/requireAuth';
 
 const SuggestProjectCardInputSchema = z.object({
   projectCards: z
@@ -26,8 +27,13 @@ const SuggestProjectCardOutputSchema = z.object({
 });
 export type SuggestProjectCardOutput = z.infer<typeof SuggestProjectCardOutputSchema>;
 
-export async function suggestProjectCard(input: SuggestProjectCardInput): Promise<SuggestProjectCardOutput> {
-  return suggestProjectCardFlow(input);
+export async function suggestProjectCard(
+  input: SuggestProjectCardInput & { idToken: string },
+): Promise<SuggestProjectCardOutput> {
+  await requireFirebaseUser(input.idToken);
+  const { idToken: _idToken, ...promptInput } = input;
+  void _idToken;
+  return suggestProjectCardFlow(promptInput);
 }
 
 const prompt = ai.definePrompt({

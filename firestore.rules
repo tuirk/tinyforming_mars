@@ -10,36 +10,67 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    // Saved games (unused by current human-vs-AI client play, but keep locked).
+    function isAnonymous() {
+      return signedIn()
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function isDurableAccount() {
+      return signedIn() && !isAnonymous();
+    }
+
+    function zeroStats() {
+      return request.resource.data.stats.wins == 0
+        && request.resource.data.stats.losses == 0
+        && request.resource.data.stats.totalGames == 0;
+    }
+
+    // Saved games: Google/email only. Guests stay local-only.
     match /games/{gameId} {
-      allow create: if signedIn()
+      allow create: if isDurableAccount()
         && request.resource.data.userId == request.auth.uid;
-      allow read, delete: if signedIn()
+      allow read, delete: if isDurableAccount()
         && resource.data.userId == request.auth.uid;
-      allow update: if signedIn()
+      allow update: if isDurableAccount()
         && resource.data.userId == request.auth.uid
         && request.resource.data.userId == resource.data.userId;
     }
 
-    // User profiles: own document only. uid cannot be retargeted.
+    // User profiles: own document only. Clients cannot set stats after create.
     match /users/{userId} {
       allow read: if isUser(userId);
 
       allow create: if isUser(userId)
-        && request.resource.data.uid == userId;
+        && request.resource.data.uid == userId
+        && zeroStats()
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'email',
+          'displayName',
+          'photoURL',
+          'authProvider',
+          'stats',
+          'createdAt',
+          'updatedAt',
+          'tutorialCompleted'
+        ]);
 
       allow update: if isUser(userId)
         && request.resource.data.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly([
-              'displayName',
-              'photoURL',
-              'email',
-              'authProvider',
-              'stats',
-              'tutorialCompleted',
-              'updatedAt'
-            ]);
+        && (
+          isAnonymous()
+            ? request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['tutorialCompleted', 'updatedAt'])
+            : request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly([
+                  'displayName',
+                  'photoURL',
+                  'email',
+                  'authProvider',
+                  'tutorialCompleted',
+                  'updatedAt'
+                ])
+        );
 
       allow delete: if isUser(userId);
     }

@@ -53,6 +53,7 @@ Fill `.env.local` from `.env.example`:
 
 - `NEXT_PUBLIC_FIREBASE_*` — Firebase web app config
 - `GOOGLE_GENAI_API_KEY` — only needed for Gemini mode (`npm run genkit:dev` / local LLM path)
+- `NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` — optional App Check (reCAPTCHA v3). Turn on enforcement in the Firebase console after it works locally.
 
 Enable Anonymous Auth (and whatever other providers you use) in the Firebase console. Point Firestore at the same project.
 

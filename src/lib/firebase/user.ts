@@ -52,7 +52,7 @@ export async function getUserDocument(uid: string): Promise<UserProfile | null> 
 
 export async function updateUserDocument(
   uid: string,
-  data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>,
+  data: Partial<Omit<UserProfile, 'uid' | 'createdAt' | 'stats'>>,
 ): Promise<void> {
   const userRef = doc(db, 'users', uid);
   await updateDoc(userRef, {

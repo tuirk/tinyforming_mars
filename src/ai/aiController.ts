@@ -236,10 +236,17 @@ export async function pickActionByMode(state: GameState, mode: AIMode): Promise<
           const gameContext = serializeGameState(state);
           const candidatesText = serializeCandidates(top5, state);
 
+          const { auth } = await import('@/lib/firebase/config');
+          const idToken = await auth.currentUser?.getIdToken();
+          if (!idToken) {
+            throw new Error('Sign in required for Gemini');
+          }
+
           const geminiResult = await geminiDecision({
             gameContext,
             candidates: candidatesText,
             candidateCount: top5.length,
+            idToken,
           });
 
           const chosenAction = top5[geminiResult.chosenIndex]?.action ?? mmResult.bestAction;

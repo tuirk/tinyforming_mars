@@ -42,4 +42,8 @@ Use `.env.example` as the template only.
 
 Firebase **web** config (`NEXT_PUBLIC_FIREBASE_*`) is client-side by design. Restrict it in the Firebase console (HTTP referrers / authorized domains), and keep Firestore / Auth rules tight. Do not treat the web API key as a server secret.
 
+Optional: set `NEXT_PUBLIC_FIREBASE_APPCHECK_SITE_KEY` and turn on App Check enforcement for Auth/Firestore in the Firebase console.
+
+Gemini server actions require a verified Firebase ID token from a Google or email account (not guest).
+
 If a secret ever lands in git history, rotate it even after the file is removed.

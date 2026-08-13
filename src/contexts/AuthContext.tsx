@@ -5,6 +5,7 @@ import { type User as FirebaseUser } from 'firebase/auth';
 import { onAuthChange, signOut } from '@/lib/firebase/auth';
 import { doc, onSnapshot, db } from '@/lib/firebase/firestore';
 import { createUserDocument } from '@/lib/firebase/user';
+import { initAppCheck } from '@/lib/firebase/appCheck';
 import type { UserProfile } from '@/types/user';
 
 interface AuthContextType {
@@ -40,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState(false);
   const loadingResolved = useRef(false);
+
+  useEffect(() => {
+    initAppCheck();
+  }, []);
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
