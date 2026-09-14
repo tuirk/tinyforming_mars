@@ -379,8 +379,15 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   // Tutorial triggers — setup steps
   // ----------------------------------------------------------
   useEffect(() => {
-    if (setupStep === 'loading') tutorial.triggerStep('welcome');
-    if (setupStep === 'map-reveal') tutorial.triggerStep('map_reveal');
+    // 'welcome' deliberately waits for map-reveal rather than firing during
+    // 'loading': over the "Preparing Mars..." screen the spinner's animate-spin
+    // transform creates its own stacking context and paints through the tooltip.
+    // triggerStep queues instead of interrupting, so the player still sees
+    // Welcome first, then The Mars Map — both over a settled screen.
+    if (setupStep === 'map-reveal') {
+      tutorial.triggerStep('welcome');
+      tutorial.triggerStep('map_reveal');
+    }
     if (setupStep === 'color-reveal') {
       tutorial.triggerStep('color_assignment');
     }
