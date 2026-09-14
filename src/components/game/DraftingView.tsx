@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { GameState, CardId, CardSideId } from '@/engine/types';
 import { getCard } from '@/engine/cards';
 import { draftCard, getDraftingPlayerId } from '@/engine/gameState';
 import { pickBestDraftSide } from '@/ai/aiController';
+import { useDemoBridge } from '@/dev/demoBridge';
+import { pickHumanDraftSide } from '@/dev/autoHumanBrain';
 import { CardSideView } from './CardSideView';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,23 @@ export function DraftingView({ state, drawnCardIds, onDraftComplete }: DraftingV
   const currentCard = draftIndex < drawnCardIds.length
     ? getCard(drawnCardIds[draftIndex])
     : undefined;
+
+  // Demo recorder bridge. The draft runs on `localState`, which GameScreen does
+  // not see until the draft completes, so this screen publishes its own slot.
+  useDemoBridge(
+    'draft',
+    useMemo(
+      () => ({
+        isHumanTurn,
+        isAIThinking,
+        draftIndex,
+        cardId: currentCard?.id ?? null,
+        suggestSide: (): CardSideId =>
+          currentCard ? pickHumanDraftSide(localState, currentCard.id) : 'A',
+      }),
+      [isHumanTurn, isAIThinking, draftIndex, currentCard, localState],
+    ),
+  );
 
   const handleHumanDraft = useCallback((humanSide: CardSideId) => {
     if (!currentCard || isAIThinking) return;

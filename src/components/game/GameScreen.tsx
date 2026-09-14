@@ -40,6 +40,8 @@ import { STANDARD_PROJECTS } from '@/engine/standardProjects';
 import { usePlacementMode } from '@/hooks/usePlacementMode';
 import { useTutorial } from '@/hooks/useTutorial';
 import { pickActionByMode, pickDraftByMode, pickCityByMode } from '@/ai/aiController';
+import { useDemoBridge } from '@/dev/demoBridge';
+import { pickHumanAction, pickHumanCityHex } from '@/dev/autoHumanBrain';
 
 import { MarsBoard } from './MarsBoard';
 import { PlayerDashboard } from './PlayerDashboard';
@@ -259,6 +261,48 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
 
   const placement = usePlacementMode(gameState);
   const tutorial = useTutorial();
+
+  // Demo recorder bridge — inert unless localStorage.__tfDemo === '1'
+  useDemoBridge(
+    'game',
+    useMemo(
+      () =>
+        gameState
+          ? {
+              setupStep,
+              phase: gameState.phase,
+              generation: gameState.generation,
+              humanColor: gameState.players.human.color,
+              humanPassed: gameState.players.human.hasPassed,
+              aiPassed: gameState.players.ai.hasPassed,
+              endCondition: gameState.endCondition,
+              winner: gameState.winner,
+              // Several placements (the standard projects) start without a
+              // prompt string, so the prompt element is not a reliable signal
+              // that the board is waiting for a hex click.
+              placementActive: placement.isActive,
+              placementPrompt: placement.prompt,
+              placementValidHexIds: placement.validHexIds,
+              // Lets the recorder log AI turns too, so the turn log shows both
+              // sides rather than only the moves it makes itself.
+              aiTurnCount: aiLogEntries.length,
+              lastAiDecision: aiLogEntries.length
+                ? aiLogEntries[aiLogEntries.length - 1].decision
+                : null,
+              suggestAction: () => pickHumanAction(gameState),
+              suggestCityHex: () => pickHumanCityHex(gameState),
+            }
+          : null,
+      [
+        gameState,
+        setupStep,
+        placement.isActive,
+        placement.prompt,
+        placement.validHexIds,
+        aiLogEntries,
+      ],
+    ),
+  );
 
   // Persist AI mode on change
   const handleAIModeChange = useCallback((mode: AIMode) => {
