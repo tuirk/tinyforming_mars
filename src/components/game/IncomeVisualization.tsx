@@ -54,7 +54,7 @@ export function IncomeVisualization({ state, onComplete }: IncomeVisualizationPr
   }
 
   return (
-    <div className="flex min-h-[300px] items-center justify-center">
+    <div data-testid="income" className="flex min-h-[300px] items-center justify-center">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2 text-lg font-semibold">

@@ -1260,7 +1260,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
               {placement.isActive && (
                 <div className="flex flex-col items-center gap-1">
                   {placement.prompt && (
-                    <p className="text-sm text-foreground font-medium">{placement.prompt}</p>
+                    <p data-testid="placement-prompt" className="text-sm text-foreground font-medium">{placement.prompt}</p>
                   )}
                   <button
                     className="text-sm text-muted-foreground underline hover:text-foreground"

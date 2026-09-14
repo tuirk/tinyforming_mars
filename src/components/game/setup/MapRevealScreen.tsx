@@ -32,6 +32,7 @@ export function MapRevealScreen({ state, onContinue }: MapRevealScreenProps) {
           variant="launch"
           size="xs"
           className="normal-case tracking-wide"
+          data-testid="setup-continue"
           onClick={onContinue}
         >
           Continue

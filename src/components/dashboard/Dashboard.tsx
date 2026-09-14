@@ -99,6 +99,7 @@ export function Dashboard({ userProfile, isGuest, onStartGame }: DashboardProps)
             return (
               <div
                 key={mode.type}
+                data-testid={`mode-${mode.type}`}
                 onClick={canAccess ? () => onStartGame(mode.type) : undefined}
                 style={{
                   width: '220px',

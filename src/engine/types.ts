@@ -16,7 +16,7 @@ export type CardColor = 'red' | 'green' | 'blue' | 'grey';
 export type CardSideId = 'A' | 'B';
 export type EndCondition = 'parameters' | 'hexes_full' | 'generation_12';
 
-/** Hex IDs are integers 0–18 */
+/** Hex IDs are integers 1–19 (see maps.ts — hexIndex starts at 1) */
 export type HexId = number;
 
 /** Card IDs are integers 1–14 */

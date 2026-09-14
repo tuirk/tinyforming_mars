@@ -42,10 +42,10 @@ export function OptionalConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" data-testid="confirm-no" variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button type="button" onClick={onConfirm}>
+          <Button type="button" data-testid="confirm-yes" onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </DialogFooter>

@@ -55,9 +55,10 @@ export function TopBar({ generation, phase, humanPlayer, isAIThinking, onBack }:
             <ArrowLeft className="h-4 w-4" />
           </button>
         )}
+        <span data-testid="generation" data-generation={generation} hidden />
         <GenerationTracker generation={generation} />
         {isAIThinking && (
-          <span className="text-xs text-amber-400 animate-pulse font-body">AI thinking...</span>
+          <span data-testid="ai-thinking" className="text-xs text-amber-400 animate-pulse font-body">AI thinking...</span>
         )}
       </div>
 
@@ -72,7 +73,11 @@ export function TopBar({ generation, phase, humanPlayer, isAIThinking, onBack }:
           />
           <span className="text-xs text-muted-foreground capitalize">{humanPlayer.color}</span>
         </div>
-        <span className="font-headline text-[10px] font-medium text-[#e0e0e0] bg-[#2a2a3e] rounded-full px-2.5 py-0.5">
+        <span
+          data-testid="phase-badge"
+          data-phase={phase}
+          className="font-headline text-[10px] font-medium text-[#e0e0e0] bg-[#2a2a3e] rounded-full px-2.5 py-0.5"
+        >
           {PHASE_LABELS[phase]}
         </span>
       </div>

@@ -175,6 +175,7 @@ export function TutorialOverlay({
       {/* Tooltip card */}
       <Card
         ref={tooltipRef}
+        data-testid="tutorial-step"
         className="bg-card border-primary/30 shadow-xl max-w-md z-50 transition-all duration-300"
         style={{
           ...tooltipStyle,
@@ -227,10 +228,10 @@ export function TutorialOverlay({
                 Learn more <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             )}
-            <Button size="sm" onClick={onDismiss}>
+            <Button size="sm" data-testid="tutorial-gotit" onClick={onDismiss}>
               Got it
             </Button>
-            <Button variant="ghost" size="sm" onClick={onSkipAll}>
+            <Button variant="ghost" size="sm" data-testid="tutorial-skip" onClick={onSkipAll}>
               Skip
             </Button>
             {onNeverShow && (

@@ -106,6 +106,7 @@ export function DraftingView({ state, drawnCardIds, onDraftComplete }: DraftingV
                 <div className="flex flex-col items-center gap-1">
                   <Button
                     className="w-full"
+                    data-testid="draft-A"
                     onClick={() => handleHumanDraft('A')}
                     disabled={isAIThinking}
                   >
@@ -129,6 +130,7 @@ export function DraftingView({ state, drawnCardIds, onDraftComplete }: DraftingV
                 <div className="flex flex-col items-center gap-1">
                   <Button
                     className="w-full"
+                    data-testid="draft-B"
                     onClick={() => handleHumanDraft('B')}
                     disabled={isAIThinking}
                   >

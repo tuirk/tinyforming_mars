@@ -44,7 +44,12 @@ export function GameOverScreen({ state, onPlayAgain, onBackToDashboard }: GameOv
         : 'text-muted-foreground';
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div
+      data-testid="game-over"
+      data-winner={result.winner ?? 'tie'}
+      data-end-condition={state.endCondition ?? ''}
+      className="flex min-h-screen items-center justify-center p-4"
+    >
       <Card className="w-full max-w-lg shadow-xl">
         <CardHeader className="text-center pb-2">
           <div className="flex flex-col items-center gap-2">
