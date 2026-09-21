@@ -276,6 +276,8 @@ export function MarsBoard({
         return (
           <g
             key={id}
+            data-testid={`hex-${id}`}
+            data-hex-valid={isValid ? '1' : '0'}
             onClick={() => handleHexClick(id)}
             style={{
               cursor: onHexClick && !disabled ? 'pointer' : 'default',

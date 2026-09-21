@@ -57,6 +57,7 @@ export function ResourceTokenPicker({
             return (
               <button
                 key={type}
+                data-testid={`token-${type}`}
                 type="button"
                 disabled={!enabled}
                 onClick={() => onPick(type)}

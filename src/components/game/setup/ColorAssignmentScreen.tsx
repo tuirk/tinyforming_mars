@@ -36,6 +36,7 @@ export function ColorAssignmentScreen({ humanColor, onContinue }: ColorAssignmen
         variant="launch"
         size="xs"
         className="normal-case tracking-wide"
+        data-testid="setup-continue"
         onClick={onContinue}
       >
         Continue

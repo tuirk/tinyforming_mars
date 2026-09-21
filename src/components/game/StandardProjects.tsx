@@ -75,6 +75,7 @@ export function StandardProjects({
               passDisabled && 'opacity-50 pointer-events-none',
               highlightPass && !passDisabled && 'pass-nudge',
             )}
+            data-testid="pass"
             disabled={passDisabled}
             onClick={onPass}
             onMouseEnter={onPassMouseEnter}
@@ -122,6 +123,7 @@ export function StandardProjects({
                 'h-8 w-full gap-1 px-1.5 py-0',
                 disabled && 'opacity-50 pointer-events-none',
               )}
+              data-testid={`std-${project.id}`}
               disabled={disabled}
               onClick={() => onStandardProject(project.id)}
             >

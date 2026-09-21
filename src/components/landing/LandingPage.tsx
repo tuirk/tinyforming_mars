@@ -180,6 +180,7 @@ export function LandingPage() {
       }}
     >
       <input
+        data-testid="accept-legal"
         type="checkbox"
         checked={acceptedLegal}
         onChange={(e) => {
@@ -719,6 +720,7 @@ export function LandingPage() {
                   <span style={{ color: '#8a8aaa' }}>Continue with Google</span>
                 </button>
                 <button
+                  data-testid="play-as-guest"
                   onClick={handleGuest}
                   disabled={loading || !acceptedLegal}
                   style={{

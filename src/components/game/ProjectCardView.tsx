@@ -165,6 +165,7 @@ export function ProjectCardView({
         <Button
           size="sm"
           className="w-full"
+          data-testid={`activate-${cardSide.cardId}${cardSide.side}`}
           disabled={!canActivate || isUsedThisGen || !isHumanTurn}
           onClick={onActivate}
         >
