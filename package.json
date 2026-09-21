@@ -13,10 +13,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "deploy": "firebase deploy --only apphosting,hosting,firestore:rules --project studio-3765470109-337fd",
-    "demo:record": "node scripts/demo.mjs",
-    "demo:video": "node scripts/make-video.mjs",
-    "demo": "node scripts/demo.mjs && node scripts/make-video.mjs"
+    "deploy": "firebase deploy --only apphosting,hosting,firestore:rules --project studio-3765470109-337fd"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
@@ -64,7 +61,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
