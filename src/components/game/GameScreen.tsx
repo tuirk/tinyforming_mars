@@ -1224,7 +1224,10 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
   // --- Action Phase (main game view) ---
   if (gameState.phase === 'action' && humanPlayer && aiPlayer && humanTags && aiTags) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
+      // On lg+ the screen is capped at the viewport so the drawers and columns
+      // scroll inside themselves; otherwise a long AI Log or Rules panel
+      // stretches the page and pushes the board out of view.
+      <div className="min-h-screen lg:h-screen bg-background text-foreground flex flex-col">
         <TopBar
           generation={gameState.generation}
           phase={gameState.phase}
@@ -1252,10 +1255,10 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
           </div>
         )}
 
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 p-1.5 md:p-2 xl:p-3 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-1.5 md:gap-2 xl:gap-3">
-            {/* Left 60%: Mars board centered */}
-            <div className="flex flex-col items-center justify-center gap-2">
+        <div className="flex flex-1 overflow-hidden lg:min-h-0">
+          <div className="flex-1 p-1.5 md:p-2 xl:p-3 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-1.5 md:gap-2 xl:gap-3 lg:min-h-0">
+            {/* Left 60%: Mars board centered (safe centering keeps its top reachable on short screens) */}
+            <div className="flex flex-col items-center justify-center lg:[justify-content:safe_center] gap-2 lg:min-h-0 lg:overflow-y-auto">
               <MarsBoard
                 board={gameState.board}
                 mapId={gameState.map}
@@ -1280,7 +1283,7 @@ function GameScreenInner({ onBackToDashboard }: { onBackToDashboard?: () => void
             </div>
 
             {/* Right 40%: supply + dashboards + standard projects + cards */}
-            <div className="flex flex-col gap-1.5 md:gap-2 min-w-0 overflow-y-auto justify-start py-0.5">
+            <div className="flex flex-col gap-1.5 md:gap-2 min-w-0 lg:min-h-0 overflow-y-auto justify-start py-0.5">
               {/* Compact supply bar — Supply (credits + params) | Tokens (spendable as tags) */}
               <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg bg-card/60 border border-border px-2 py-1 md:px-3 md:py-1.5">
                 <div className="flex items-center gap-2">
